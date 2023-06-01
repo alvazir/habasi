@@ -1,0 +1,13 @@
+*
+/target
+!/src
+!/src/**
+!/Cargo.lock
+!/Cargo.toml
+!/README.md
+!/COPYING
+!/UNLICENSE
+!/LICENSE-MIT
+!/.gitignore
+!/release.sh
+!/rustfmt.toml
