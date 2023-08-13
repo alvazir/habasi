@@ -1,14 +1,17 @@
 use crate::{GlobalMaster, Helper, LocalMaster, LocalMergedMaster, MasterNameLow, Out, StatsUpdateKind};
 use anyhow::{anyhow, Result};
-use tes3::esp::Header;
+use tes3::esp::TES3Object;
 
-pub(crate) fn process_header(header: Header, out: &mut Out, h: &mut Helper) -> Result<()> {
+pub(crate) fn process_header(record: TES3Object, out: &mut Out, h: &mut Helper) -> Result<()> {
+    let header = match record {
+        TES3Object::Header(header) => header,
+        _ => return Err(anyhow!("Plugin's first record is not a header")),
+    };
     for ((master_name, master_size), id) in header.masters.iter().zip(1u32..) {
         let name_low: MasterNameLow = master_name.to_lowercase();
-        if h.g.plugins_processed.contains(&name_low) {
-            h.l.merged_masters.push(LocalMergedMaster { local_id: id, name_low });
-        } else {
-            match h.g.masters.iter().find(|x| x.name_low == name_low) {
+        match h.g.plugins_processed.iter().find(|x| x.name_low == name_low) {
+            Some(_) => h.l.merged_masters.push(LocalMergedMaster { local_id: id, name_low }),
+            None => match h.g.masters.iter().find(|x| x.name_low == name_low) {
                 None => {
                     let next_global_master_id = h.g.masters.len() as u32 + 1;
                     h.l.masters.push(LocalMaster {
@@ -42,7 +45,7 @@ pub(crate) fn process_header(header: Header, out: &mut Out, h: &mut Helper) -> R
                         }
                     };
                 }
-            }
+            },
         }
     }
     h.l.stats.tes3(StatsUpdateKind::Merged);

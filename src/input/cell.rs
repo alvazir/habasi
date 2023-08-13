@@ -1,25 +1,28 @@
 use crate::{
-    msg, references_sorted, CellExtGrid, CellMeta, Cfg, Helper, IgnoredRefError, LocalMaster, LocalMergedMaster, Log,
-    MergedPluginMeta, MergedPluginRefr, Mode, MovedInstanceGrids, MovedInstanceId, Out, RefrId, StatsUpdateKind,
+    msg, references_sorted, CellExtGrid, CellMeta, Cfg, Helper, IgnoredRefError, ListOptions, LocalMaster, LocalMergedMaster, Log,
+    MastId, MergedPluginMeta, MergedPluginRefr, Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, RefSources, RefrId,
+    StatsUpdateKind,
 };
 use anyhow::{anyhow, Context, Result};
 use hashbrown::{hash_map::Entry, HashMap};
 use tes3::esp::{Cell, CellFlags, Reference};
 
 pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    let plugin_num = h.g.plugins_processed.len() as MastId;
     let mut missing_cell_in_merged_master_shown = false;
     let mut missing_ref_in_merged_master_shown = false;
     let mut plugin_refrs: Vec<MergedPluginRefr> = Vec::new();
-    let mut local_references: Vec<&Reference> = match h.g.mode {
+    let mut local_references: Vec<&Reference> = match h.g.list_options.mode {
         Mode::Grass => cell
             .references
             .values()
-            .filter(|x| !cfg.guts.grass_filter.contains(&x.id.to_lowercase()))
+            .filter(|x| !cfg.advanced.grass_filter.contains(&x.id.to_lowercase()))
             .collect(),
 
         _ => cell.references.values().collect(),
     };
-    if let Mode::Grass = h.g.mode {
+    h.l.stats.instances_processed_add_count(cell.references.len());
+    if let Mode::Grass = h.g.list_options.mode {
         h.l.stats.grass_filtered(cell.references.len() - local_references.len());
     }
     references_sorted(&mut local_references);
@@ -27,11 +30,16 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
         ($name:expr, $key:ident, $grid:expr) => {
             match $name.entry($key) {
                 Entry::Vacant(v) => {
-                    let mut references: HashMap<(u32, u32), Reference> = HashMap::new();
+                    let mut references: HashMap<(MastId, RefrId), Reference> = HashMap::new();
+                    let mut ref_sources = (HashMap::new(), HashMap::new());
                     for local_reference in local_references {
                         if local_reference.mast_index == 0 {
-                            h.g.refr += 1;
-                            add_simple_reference(local_reference, &mut references, &mut plugin_refrs, h.g.refr);
+                            if h.g.refr < u32::MAX {
+                                h.g.refr += 1;
+                            } else {
+                                return Err(anyhow!("Error: limit of {} references per plugin reached. Split the list into smaller parts.", u32::MAX));
+                            }
+                            add_simple_reference(local_reference, &mut references, &mut plugin_refrs, h.g.refr, plugin_num, &mut ref_sources, h.g.list_options.turn_normal_grass);
                             if !h.g.contains_non_external_refs {
                                 h.g.contains_non_external_refs = true;
                             }
@@ -39,20 +47,20 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                             match h.l.merged_masters.iter().find(|x| x.local_id == local_reference.mast_index) {
                                 Some(merged_master) => {
                                     let text = missing_ref_text(&cell, &merged_master.name_low, 0);
-                                    if h.g.no_ignore_errors {
+                                    if h.g.list_options.no_ignore_errors {
                                         return Err(anyhow!("Merged {}", text));
                                     } else {
-                                        missing_ref_append(text, &mut h.l.ignored_cell_errors, &merged_master, &mut missing_cell_in_merged_master_shown, cfg, log)?;
+                                        missing_ref_append(text, &mut h.l.ignored_cell_errors, &merged_master, &mut missing_cell_in_merged_master_shown, &h.g.list_options, cfg, log)?;
                                         continue;
                                     }
                                 }
                                 None => {
-                                    if h.g.strip_masters {
-                                        let text = format!("Output plugin \"{}\": masters will not be stripped due to encountering external reference", name);
+                                    if h.g.list_options.strip_masters {
+                                        let text = format!("Output plugin \"{name}\": masters will not be stripped due to encountering external reference");
                                         msg(text, 0, cfg, log)?;
-                                        h.g.strip_masters = false;
+                                        h.g.list_options.strip_masters = false;
                                     }
-                                    add_external_reference(local_reference, &mut references, &h.l.masters)
+                                    add_external_reference(local_reference, &mut references, &h.l.masters, &mut ref_sources, h.g.list_options.turn_normal_grass)
                                         .with_context(|| format!("Failed to add vacant external reference"))?
                                 }
                             }
@@ -62,10 +70,15 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                     v.insert(CellMeta {
                         global_cell_id: cell_len,
                         plugin_metas: vec![MergedPluginMeta {
-                            plugin_name_low: h.l.plugin_name_low.clone(),
+                            plugin_name_low: h.l.plugin_info.name_low.clone(),
                             plugin_refrs,
                         }],
                     });
+                    if h.g.list_options.turn_normal_grass {
+                        if let Some(grid) = $grid {
+                            h.g.r.ext_ref_sources.insert(grid, ref_sources);
+                        }
+                    }
                     out.cell.push((
                         Cell {
                             references,
@@ -77,6 +90,17 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                 }
                 Entry::Occupied(o) => {
                     let o_cell = &mut out.cell[o.get().global_cell_id];
+                    let mut dummy_source = (HashMap::new(), HashMap::new());
+                    let mut ref_sources = match h.g.list_options.turn_normal_grass {
+                        false => &mut dummy_source,
+                        true => match $grid {
+                            None => &mut dummy_source,
+                            Some(grid) => match h.g.r.ext_ref_sources.get_mut(&grid) {
+                                None => return Err(anyhow!("Bug: failed to find cell \"{:?}\" in in ext_ref_sources", &grid)),
+                                Some(v) => v,
+                            },
+                        },
+                    };
                     if o_cell.0.flags != cell.flags
                         || o_cell.0.name != cell.name
                         || o_cell.0.data != cell.data
@@ -116,12 +140,27 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                         if cell.map_color.is_some() && o_cell.0.atmosphere_data != cell.atmosphere_data {
                             o_cell.0.atmosphere_data = cell.atmosphere_data;
                         }
+                    } else if h.g.list_options.debug {
+                        if o_cell.1.is_empty() {
+                            o_cell.1.push(Cell {
+                                references: HashMap::new(),
+                                ..o_cell.0.clone()
+                            });
+                        }
+                        o_cell.1.push(Cell {
+                            references: HashMap::new(),
+                            ..cell.clone()
+                        });
                     }
 
                     for local_reference in local_references {
                         if local_reference.mast_index == 0 {
-                            h.g.refr += 1;
-                            add_simple_reference(local_reference, &mut o_cell.0.references, &mut plugin_refrs, h.g.refr);
+                            if h.g.refr < u32::MAX {
+                                h.g.refr += 1;
+                            } else {
+                                return Err(anyhow!("Error: limit of {} references per plugin reached. Split the list into smaller parts.", u32::MAX));
+                            }
+                            add_simple_reference(local_reference, &mut o_cell.0.references, &mut plugin_refrs, h.g.refr, plugin_num, ref_sources, h.g.list_options.turn_normal_grass);
                             if !h.g.contains_non_external_refs {
                                 h.g.contains_non_external_refs = true;
                             }
@@ -139,24 +178,24 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                                         .with_context(|| format!("Failed to modify global reference"))?,
                                         Err(err) => {
                                             let text = missing_ref_text(&o_cell.0, &local_merged_master.name_low, local_reference.refr_index);
-                                            if h.g.no_ignore_errors {
-                                                return Err(anyhow!("Merged {}\n{}", text, err));
+                                            if h.g.list_options.no_ignore_errors {
+                                                return Err(anyhow!("Merged {}\n{:#}", text, err));
                                             } else {
-                                                missing_ref_append(text, &mut h.l.ignored_ref_errors, &local_merged_master, &mut missing_ref_in_merged_master_shown, cfg, log)?;
+                                                missing_ref_append(text, &mut h.l.ignored_ref_errors, &local_merged_master, &mut missing_ref_in_merged_master_shown, &h.g.list_options, cfg, log)?;
                                                 continue;
                                             }
                                         }
                                     };
                                 }
                                 None => {
-                                    add_external_reference(local_reference, &mut o_cell.0.references, &h.l.masters)
+                                    add_external_reference(local_reference, &mut o_cell.0.references, &h.l.masters, &mut ref_sources, h.g.list_options.turn_normal_grass)
                                         .with_context(|| format!("Failed to add occupied external reference"))?;
                                 }
                             }
                         }
                     }
                     o.into_mut().plugin_metas.push(MergedPluginMeta {
-                        plugin_name_low: h.l.plugin_name_low.clone(),
+                        plugin_name_low: h.l.plugin_info.name_low.clone(),
                         plugin_refrs,
                     });
                     h.l.stats.cell(StatsUpdateKind::Merged);
@@ -166,7 +205,7 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
     }
     if cell.data.flags.contains(CellFlags::IS_INTERIOR) {
         let cell_name_low = cell.name.to_lowercase();
-        int_or_ext_cell!(h.g.r.int_cells, cell_name_low, None);
+        int_or_ext_cell!(h.g.r.int_cells, cell_name_low, None::<(i32, i32)>);
     } else {
         let cell_data_grid = cell.data.grid;
         int_or_ext_cell!(h.g.r.ext_cells, cell_data_grid, Some(cell_data_grid));
@@ -176,9 +215,12 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
 
 fn add_simple_reference(
     local_reference: &Reference,
-    references: &mut HashMap<(u32, u32), Reference>,
+    references: &mut HashMap<(MastId, RefrId), Reference>,
     local_plugin_refrs: &mut Vec<MergedPluginRefr>,
     refr: RefrId,
+    plugin_num: MastId,
+    ref_sources: &mut (RefSources, OldRefSources),
+    turn_normal_grass: bool,
 ) {
     let new_reference = Reference {
         refr_index: refr,
@@ -192,9 +234,19 @@ fn add_simple_reference(
         } else {
             local_reference.scale
         },
+        temporary: if local_reference.destination.is_some() {
+            false
+        } else {
+            local_reference.temporary
+        },
         ..local_reference.clone()
     };
     references.insert((0, refr), new_reference);
+    if turn_normal_grass {
+        ref_sources
+            .0
+            .insert((0, refr), ((plugin_num, local_reference.refr_index), false, false));
+    }
     local_plugin_refrs.push(MergedPluginRefr {
         local_refr: local_reference.refr_index,
         global_refr: refr,
@@ -205,6 +257,8 @@ fn add_external_reference(
     local_reference: &Reference,
     references: &mut HashMap<(u32, u32), Reference>,
     local_masters: &[LocalMaster],
+    ref_sources: &mut (RefSources, OldRefSources),
+    turn_normal_grass: bool,
 ) -> Result<()> {
     let mast_index = match local_masters.iter().find(|x| x.local_id == local_reference.mast_index) {
         Some(local_master) => local_master.global_id,
@@ -228,6 +282,11 @@ fn add_external_reference(
         } else {
             local_reference.scale
         },
+        temporary: if local_reference.destination.is_some() {
+            false
+        } else {
+            local_reference.temporary
+        },
         moved_cell: if local_reference.deleted.is_some() {
             None
         } else {
@@ -236,6 +295,12 @@ fn add_external_reference(
         ..local_reference.clone()
     };
     references.insert((mast_index, local_reference.refr_index), new_reference);
+    if turn_normal_grass {
+        ref_sources.0.insert(
+            (mast_index, local_reference.refr_index),
+            ((mast_index, local_reference.refr_index), true, false),
+        );
+    }
     Ok(())
 }
 
@@ -273,7 +338,7 @@ fn get_global_refr(
 
 fn modify_global_reference(
     local_reference: &Reference,
-    references: &mut HashMap<(u32, u32), Reference>,
+    references: &mut HashMap<(MastId, RefrId), Reference>,
     refr_index: RefrId,
     moved_instances: &mut HashMap<MovedInstanceId, MovedInstanceGrids>,
     grid: Option<CellExtGrid>,
@@ -320,6 +385,11 @@ fn modify_global_reference(
                 } else {
                     local_reference.scale
                 },
+                temporary: if local_reference.destination.is_some() {
+                    false
+                } else {
+                    local_reference.temporary
+                },
                 ..local_reference.clone()
             };
         }
@@ -350,6 +420,7 @@ fn missing_ref_append(
     ignored_ref_errors: &mut Vec<IgnoredRefError>,
     merged_master: &LocalMergedMaster,
     flag: &mut bool,
+    list_options: &ListOptions,
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<()> {
@@ -358,15 +429,19 @@ fn missing_ref_append(
         Some(ignored_ref_error) => {
             if !*flag {
                 ignored_ref_error.cell_counter += 1;
-                msg(&text, 2, cfg, log)?;
+                if !list_options.no_show_missing_refs {
+                    msg(&text, 2, cfg, log)?;
+                }
                 *flag = true;
-            } else if cfg.show_all_missing_refs {
+            } else if !list_options.no_show_missing_refs && list_options.show_all_missing_refs {
                 msg(&text, 2, cfg, log)?;
             }
             ignored_ref_error.ref_counter += 1;
         }
         None => {
-            msg(&text, 2, cfg, log)?;
+            if !list_options.no_show_missing_refs {
+                msg(&text, 2, cfg, log)?;
+            }
             *flag = true;
             ignored_ref_errors.push(IgnoredRefError {
                 master: merged_master.name_low.clone(),

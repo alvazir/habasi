@@ -8,6 +8,7 @@ pub(crate) enum StatsUpdateKind {
     ResultUnique,
     ResultMergeableUnique,
     ResultMergeableTotal,
+    Excluded,
 }
 
 macro_rules! make_stats_per_type {
@@ -23,13 +24,35 @@ macro_rules! make_stats_per_type {
                 $(self.$n = 0;)+
             }
 
+            pub(crate) fn reset_output(&mut self) {
+                self.result_plugins = 0;
+                self.total = 0;
+                self.instances_total = 0;
+                self.unique = 0;
+                self.mergeable_unique = 0;
+                self.mergeable_total = 0;
+            }
+
             pub(crate) fn self_check(&self) -> bool {
-                (self.processed - self.duplicate - self.merged - self.replaced == self.unique) &&
+                (self.processed - self.duplicate - self.merged - self.replaced - self.excluded == self.unique) &&
                     (self.unique + self.mergeable_total == self.total)
             }
 
             pub(crate) fn add(&mut self, other: &$name) {
                 $(self.$n += other.$n;)+
+            }
+
+            pub(crate) fn add_output(&mut self, other: &$name) {
+                self.result_plugins += other.result_plugins;
+                self.total += other.total;
+                self.instances_total += other.instances_total;
+                self.unique += other.unique;
+                self.mergeable_unique += other.mergeable_unique;
+                self.mergeable_total += other.mergeable_total;
+            }
+
+            pub(crate) fn substract(&mut self, other: &$name) {
+                $(self.$n -= other.$n;)+
             }
 
             pub(crate) fn is_empty(&self) -> bool {
@@ -38,12 +61,20 @@ macro_rules! make_stats_per_type {
             }
 
             $(pub(crate) fn $n(&mut self) {
-                self.$n += 1;
+                    self.$n += 1;
             }
             )+
 
             pub(crate) fn grass_filtered_add_count(&mut self, count: usize) {
                 self.grass_filtered += count;
+            }
+
+            pub(crate) fn instances_processed_add_count(&mut self, count: usize) {
+                self.instances_processed += count;
+            }
+
+            pub(crate) fn instances_total_add_count(&mut self, count: usize) {
+                self.instances_total += count;
             }
 
             pub(crate) fn decrease_merged(&mut self) {
@@ -65,16 +96,19 @@ macro_rules! make_stats_per_type {
                 plugins_count!(result_plugins);
                 plugins_count!(merged_plugins);
                 empty_if_zero!(processed, "", "processed");
+                empty_if_zero!(instances_processed, "(", "instances)");
                 empty_if_zero!(duplicate, ", ", "removed(dup)");
                 empty_if_zero!(merged, ", ", "merged");
                 empty_if_zero!(replaced, ", ", "replaced");
                 empty_if_zero!(grass_filtered, ", ", "instances filtered(grass)");
                 empty_if_zero!(total, "", "total");
+                empty_if_zero!(instances_total, "(", "instances)");
                 empty_if_zero!(unique, ", ", "unique");
                 empty_if_zero!(mergeable_unique, ", ", "mergeable(unique)");
                 empty_if_zero!(mergeable_total, ", ", "mergeable(total)");
+                empty_if_zero!(excluded, ", ", "excluded");
 
-                format!("  input({merged_plugins}): {processed}{duplicate}{merged}{replaced}{grass_filtered}\n  output({result_plugins}): {total}{unique}{mergeable_unique}{mergeable_total}, {:.3}s duration", timer.elapsed().as_secs_f64())
+                format!("  input({merged_plugins}): {processed}{instances_processed}{duplicate}{merged}{replaced}{grass_filtered}\n  output({result_plugins}): {total}{instances_total}{unique}{mergeable_unique}{mergeable_total}{excluded}{}{:.3}s duration", if result_plugins.is_empty() { "" } else { ", " }, timer.elapsed().as_secs_f64())
             }
         }
 
@@ -101,6 +135,11 @@ macro_rules! make_stats {
                 $(self.$n.reset();)+
             }
 
+            pub(crate) fn reset_output(&mut self) {
+                self.$total.reset_output();
+                $(self.$n.reset_output();)+
+            }
+
             pub(crate) fn header_adjust(&mut self) {
                 self.tes3.decrease_merged();
                 self.$total.decrease_merged();
@@ -113,6 +152,16 @@ macro_rules! make_stats {
             pub(crate) fn add(&mut self, other: &$name) {
                 self.$total.add(&other.$total);
                 $(self.$n.add(&other.$n);)+
+            }
+
+            pub(crate) fn add_output(&mut self, other: &$name) {
+                self.$total.add_output(&other.$total);
+                $(self.$n.add_output(&other.$n);)+
+            }
+
+            pub(crate) fn substract(&mut self, other: &$name) {
+                self.$total.substract(&other.$total);
+                $(self.$n.substract(&other.$n);)+
             }
 
             pub(crate) fn total(&mut self) -> u32 {
@@ -133,6 +182,14 @@ macro_rules! make_stats {
 
             pub(crate) fn grass_filtered(&mut self, count: usize) {
                         self.$total.grass_filtered_add_count(count);
+            }
+
+            pub(crate) fn instances_processed_add_count(&mut self, count: usize) {
+                        self.$total.instances_processed_add_count(count);
+            }
+
+            pub(crate) fn instances_total_add_count(&mut self, count: usize) {
+                        self.$total.instances_total_add_count(count);
             }
 
             $(pub(crate) fn $n(&mut self, status: StatsUpdateKind) {
@@ -175,6 +232,10 @@ macro_rules! make_stats {
                         self.$total.mergeable_total();
                         self.$n.mergeable_total();
                     },
+                    StatsUpdateKind::Excluded => {
+                        self.$total.excluded();
+                        self.$n.excluded();
+                    },
                 }
             }
             )+
@@ -191,5 +252,5 @@ macro_rules! make_stats {
 
 }
 
-make_stats_per_type!(StatsPerType; usize; merged_plugins, result_plugins, processed, duplicate, merged, replaced, unique, mergeable_unique, mergeable_total, total, grass_filtered);
+make_stats_per_type!(StatsPerType; usize; merged_plugins, result_plugins, processed, duplicate, merged, replaced, unique, mergeable_unique, mergeable_total, total, excluded, instances_processed, instances_total, grass_filtered);
 make_stats!(Stats; StatsPerType; total; tes3, gmst, glob, clas, fact, race, soun, sndg, skil, mgef, scpt, regn, bsgn, sscr, ltex, spel, stat, door, misc, weap, cont, crea, body, ligh, ench, npc_, armo, clot, repa, acti, appa, lock, prob, ingr, book, alch, levi, levc, cell, land, pgrd, dial, info);

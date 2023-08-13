@@ -3,7 +3,10 @@ use anyhow::{anyhow, Result};
 use hashbrown::hash_map::Entry;
 use tes3::esp::LandscapeTexture;
 
-pub(crate) fn process_ltex(ltex: LandscapeTexture, out: &mut Out, h: &mut Helper) -> Result<()> {
+pub(crate) fn process_ltex(ltex: LandscapeTexture, land_found: &bool, out: &mut Out, h: &mut Helper) -> Result<()> {
+    if *land_found {
+        return Err(anyhow!("Plugin is corrupted, because LTEX record comes after LAND records"));
+    }
     match h.g.r.ltex.entry(ltex.id.to_lowercase()) {
         Entry::Vacant(v) => {
             let ltex_len = out.ltex.len();

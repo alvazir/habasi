@@ -3,7 +3,10 @@ use anyhow::{anyhow, Result};
 use hashbrown::{hash_map::Entry, HashMap};
 use tes3::esp::{Landscape, TextureIndices};
 
-pub(crate) fn process_land(land: Landscape, out: &mut Out, h: &mut Helper) -> Result<()> {
+pub(crate) fn process_land(land: Landscape, land_found: &mut bool, out: &mut Out, h: &mut Helper) -> Result<()> {
+    if !*land_found {
+        *land_found = true
+    };
     match h.g.r.land.entry(land.grid) {
         Entry::Vacant(v) => {
             let land_len = out.land.len();
@@ -32,6 +35,12 @@ pub(crate) fn process_land(land: Landscape, out: &mut Out, h: &mut Helper) -> Re
                 out_v.0 = new_land;
                 h.l.stats.land(StatsUpdateKind::Replaced);
             } else {
+                if h.g.list_options.debug {
+                    if out_v.1.is_empty() {
+                        out_v.1.push(out_v.0.clone());
+                    }
+                    out_v.1.push(new_land.clone());
+                }
                 h.l.stats.land(StatsUpdateKind::Duplicate);
             }
         }

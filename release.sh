@@ -3,7 +3,7 @@ release_folder="Habasi"
 release_zip="Habasi.zip"
 
 build() {
-cargo build --profile release-lto --target x86_64-unknown-linux-gnu  || return 1
+cargo build --profile release-lto --target x86_64-unknown-linux-gnu || return 1
 cargo ndk -t arm64-v8a build --profile release-lto || return 1
 cargo xwin build --profile release-lto --target x86_64-pc-windows-msvc || return 1
 cargo build --profile release-lto --target x86_64-pc-windows-gnu || return 1
