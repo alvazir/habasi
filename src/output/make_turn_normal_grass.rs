@@ -370,6 +370,7 @@ fn make_del_ref_cells(del_ref_master_renum_num_cells: NumCellsRefCounted) -> Del
         for reference in cell.references.values_mut() {
             reference.translation = [0.0; 3];
             reference.rotation = [0.0; 3];
+            reference.scale = None;
         }
     }
     del_ref_cells

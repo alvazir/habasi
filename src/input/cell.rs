@@ -277,7 +277,7 @@ fn add_external_reference(
         } else {
             local_reference.object_count
         },
-        scale: if local_reference.scale == Some(1.0) {
+        scale: if local_reference.scale == Some(1.0) || local_reference.deleted.is_some() {
             None
         } else {
             local_reference.scale
@@ -380,7 +380,7 @@ fn modify_global_reference(
                 } else {
                     local_reference.object_count
                 },
-                scale: if local_reference.scale == Some(1.0) {
+                scale: if local_reference.scale == Some(1.0) || local_reference.deleted.is_some() {
                     None
                 } else {
                     local_reference.scale
