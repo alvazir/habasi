@@ -205,7 +205,7 @@ fn exclude_infos(out: &mut Out, name: &str, cfg: &Cfg, log: &mut Log) -> Result<
                                 &info.id
                             ))
                         }
-                        Some(topics) => match topics.get(&dial.dialogue.id) {
+                        Some(topics) => match topics.get(&dial.dialogue.id.to_lowercase()) {
                             None => {
                                 return Err(anyhow!(
                                     "Bug: failed to find DIAL \"{}\" for INFO ID \"{}\" in settings.advanced.keep_only_last_info_ids",

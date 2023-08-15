@@ -1,8 +1,9 @@
 use crate::{
-    get_cell_name, msg, select_header_description, show_removed_record_ids, Cfg, HeaderText, Helper, Log, Mode, Out, StatsUpdateKind,
+    get_cell_name, msg, select_header_description, show_removed_record_ids, Cfg, Dial, HeaderText, Helper, Log, Mode, Out,
+    StatsUpdateKind,
 };
 use anyhow::Result;
-use tes3::esp::{FixedString, Header, ObjectFlags, Plugin, TES3Object};
+use tes3::esp::{DialogueType2, FixedString, Header, ObjectFlags, Plugin, TES3Object};
 
 pub(crate) fn make_output_plugin(
     name: &str,
@@ -104,14 +105,7 @@ pub(crate) fn make_output_plugin(
     move_out!(cell, Cell, h.g.list_options.mode);
     move_out!(land, Landscape, h.g.list_options.mode);
     move_out!(pgrd, PathGrid, h.g.list_options.mode);
-    for dial in out.dial.into_iter() {
-        objects.push(TES3Object::Dialogue(dial.0.dialogue));
-        h.g.stats.dial(StatsUpdateKind::ResultUnique);
-        for info in dial.0.info {
-            objects.push(TES3Object::DialogueInfo(info));
-            h.g.stats.info(StatsUpdateKind::ResultUnique);
-        }
-    }
+    move_out_dial(out.dial, &mut objects, h);
     if h.g.list_options.exclude_deleted_records && !removed_record_ids.is_empty() {
         let reason = "\"exclude_deleted_records\" and DELETED record flag";
         show_removed_record_ids(removed_record_ids, reason, name, 1, cfg, log)?;
@@ -197,4 +191,31 @@ fn get_removed_record_id(tes3object: TES3Object) -> String {
         TES3Object::Dialogue(v) => format!("{:?}", v.id),
         TES3Object::DialogueInfo(v) => format!("{:?}", v.id),
     }
+}
+
+fn move_out_dial(out_dial: Vec<(Dial, Vec<Dial>)>, objects: &mut Vec<TES3Object>, h: &mut Helper) {
+    let mut is_journal: bool;
+    let mut journal = Vec::new();
+    let mut non_journal = Vec::new();
+    for dial in out_dial.into_iter() {
+        if dial.0.dialogue.kind == DialogueType2::Journal {
+            println!("Journal! {}", dial.0.dialogue.id);
+            is_journal = true;
+            journal.push(TES3Object::Dialogue(dial.0.dialogue));
+        } else {
+            is_journal = false;
+            non_journal.push(TES3Object::Dialogue(dial.0.dialogue));
+        };
+        h.g.stats.dial(StatsUpdateKind::ResultUnique);
+        for info in dial.0.info {
+            if is_journal {
+                journal.push(TES3Object::DialogueInfo(info));
+            } else {
+                non_journal.push(TES3Object::DialogueInfo(info));
+            }
+            h.g.stats.info(StatsUpdateKind::ResultUnique);
+        }
+    }
+    objects.append(&mut journal);
+    objects.append(&mut non_journal);
 }

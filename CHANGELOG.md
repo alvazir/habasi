@@ -5,9 +5,13 @@
 
 ## TBD
 
+Bug fixes
+
+* Move Journal records in front of all the other dialogue types. Morrowind.exe and TES-CS drop journal conditions from dialogues(INFO records) if corresponding Journal records are defined *after*. Thanks to **AstralJam8** for finding the issue and thorough investigating!
+
 Fixes
 
-* Introduce keep_only_last_info_ids mechanic(configurable in settings) to exclude 1 problematic INFO record when merging plugis *LGNPC_GnaarMok* and *LGNPC_SecretMasters*(details in KNOWN_ISSUES.md)
+* Introduce keep_only_last_info_ids mechanic(configurable in settings) to exclude 1 problematic INFO record when merging plugis *LGNPC_GnaarMok* and *LGNPC_SecretMasters*(details in KNOWN_ISSUES.md).
 
 ## 0.2.0 (2023-08-13)
 
