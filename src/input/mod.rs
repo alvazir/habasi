@@ -73,7 +73,7 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
                 0 => process_header(record, out, h)?,
                 _ => match record {
                     TES3Object::Dialogue(dial) => process_dial(dial, out, h),
-                    TES3Object::DialogueInfo(info) => process_info(info, out, h)?,
+                    TES3Object::DialogueInfo(info) => process_info(info, out, h, cfg)?,
                     _ => {
                         if h.l.active_dial_id.is_some() {
                             h.l.active_dial_id = None

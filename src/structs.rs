@@ -258,6 +258,7 @@ pub(crate) struct MergedPluginMeta {
 pub(crate) struct Dial {
     pub(crate) dialogue: Dialogue,
     pub(crate) info: Vec<DialogueInfo>,
+    pub(crate) excluded_infos: Vec<usize>,
 }
 
 pub(crate) struct IgnoredRefError {
@@ -458,6 +459,7 @@ pub(crate) struct HelperRecords {
     pub(crate) land: HashMap<CellExtGrid, GlobalRecordId>,
     pub(crate) pgrd: HashMap<RecordNameLow, GlobalRecordId>,
     pub(crate) dials: HashMap<RecordNameLow, DialMeta>,
+    pub(crate) infos: HashMap<InfoName, RecordNameLow>,
 }
         impl HelperRecords {
             pub(crate) fn clear(&mut self) {
@@ -468,7 +470,7 @@ pub(crate) struct HelperRecords {
     };
 }
 
-make_helper_records!(gmst, glob, clas, fact, race, soun, sndg, scpt, regn, bsgn, sscr, ltex, spel, stat, door, misc, weap, cont, crea, body, ligh, ench, npc_, armo, clot, repa, acti, appa, lock, prob, ingr, book, alch, levi, levc; skil, mgef, int_cells, ext_cells, ext_ref_sources, moved_instances, land, pgrd, dials);
+make_helper_records!(gmst, glob, clas, fact, race, soun, sndg, scpt, regn, bsgn, sscr, ltex, spel, stat, door, misc, weap, cont, crea, body, ligh, ench, npc_, armo, clot, repa, acti, appa, lock, prob, ingr, book, alch, levi, levc; skil, mgef, int_cells, ext_cells, ext_ref_sources, moved_instances, land, pgrd, dials, infos);
 
 #[derive(Default)]
 pub(crate) struct HelperLocal {

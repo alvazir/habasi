@@ -195,6 +195,9 @@ pub(crate) struct Advanced {
 // "Tamriel_Data.esm:T_Glb_Flora_WtHyacinth_04",
     ])]
     pub(crate) turn_normal_grass_stat_ids: Vec<String>,
+    /// [keep_only_last_info_ids] Previous instance of the INFO record is removed when record with the same ID(and from the same topic) comes into a merged plugin. Format: ["ID", "Topic(case insensitive)", "Reason"].
+    #[config(default = [["19511310302976825065", "threaten", "This record is problematic when coming from both LGNPC_GnaarMok and LGNPC_SecretMasters. I've failed to find the reason. Error in OpenMW-CS: \"Loading failed: attempt to change the ID of a record\"."]])]
+    pub(crate) keep_only_last_info_ids: Vec<Vec<String>>,
 }
 
 #[derive(Config)]

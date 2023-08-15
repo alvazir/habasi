@@ -16,6 +16,7 @@ pub(crate) fn process_dial(dial: Dialogue, out: &mut Out, h: &mut Helper) {
                 Dial {
                     dialogue: dial,
                     info: Vec::new(),
+                    excluded_infos: Vec::new(),
                 },
                 Vec::new(),
             ));

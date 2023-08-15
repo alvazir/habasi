@@ -13,6 +13,7 @@ pub(crate) fn transform_output(name: &str, mut out: Out, h: &mut Helper, cfg: &C
         out.stat = exclude_non_grass_statics(out.stat, name, h, cfg, log)?;
         out.cell = exclude_interior_and_empty_cells(out.cell, name, h, cfg, log)?;
     }
+    exclude_infos(&mut out, name, cfg, log)?;
     if h.g.list_options.reindex {
         reindex_references(name, &mut out, h, cfg, log)?;
     }
@@ -187,5 +188,43 @@ fn reindex_references(name: &str, out: &mut Out, h: &mut Helper, cfg: &Cfg, log:
     h.g.r.ext_ref_sources = new_ext_ref_sources;
     let text = format!("Output plugin \"{}\": references reindexed", name);
     msg(text, 1, cfg, log)?;
+    Ok(())
+}
+
+fn exclude_infos(out: &mut Out, name: &str, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    let mut removed_record_ids = Vec::new();
+    for (dial, _) in out.dial.iter_mut() {
+        if !dial.excluded_infos.is_empty() {
+            dial.excluded_infos.sort();
+            for n in dial.excluded_infos.iter().rev() {
+                let info = dial.info.remove(*n);
+                match cfg.advanced.keep_only_last_info_ids.get(&info.id) {
+                        None => {
+                            return Err(anyhow!(
+                                "Bug: failed to find INFO ID \"{}\" in settings.advanced.keep_only_last_info_ids",
+                                &info.id
+                            ))
+                        }
+                        Some(topics) => match topics.get(&dial.dialogue.id) {
+                            None => {
+                                return Err(anyhow!(
+                                    "Bug: failed to find DIAL \"{}\" for INFO ID \"{}\" in settings.advanced.keep_only_last_info_ids",
+                                    &dial.dialogue.id,
+                                    &info.id
+                                ))
+                            }
+                            Some(reason) => removed_record_ids.push(
+                                format!(
+                                    "    Record INFO: non-last instance of \"{}\" from DIAL \"{}\" was excluded from the result\n      Reason: {reason})",
+                                    &info.id,
+                                    &dial.dialogue.id
+                                    )
+                                ),
+                        }
+                    }
+            }
+        }
+    }
+    show_removed_record_ids(removed_record_ids, "settings.advanced.keep_only_last_info_ids", name, 2, cfg, log)?;
     Ok(())
 }

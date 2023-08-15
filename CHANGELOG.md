@@ -1,10 +1,17 @@
 <!-- markdownlint-disable MD013 -->
 <!-- markdownlint-disable MD033 -->
+<!-- markdownlint-disable MD036 -->
 # Changelog
+
+## TBD
+
+Fixes
+
+* Introduce keep_only_last_info_ids mechanic(configurable in settings) to exclude 1 problematic INFO record when merging plugis *LGNPC_GnaarMok* and *LGNPC_SecretMasters*(details in KNOWN_ISSUES.md)
 
 ## 0.2.0 (2023-08-13)
 
-### Breaking changes
+**Breaking changes**
 
 * Several option names has been changed.
 * References sorting is now better. Merged plugins' contents is almost identical to TES-CS produced plugins. This means that recreating previously made merged plugins may require new game. Habasi would warn you if that's the case.
@@ -61,7 +68,7 @@
   
   </details>
 
-### New features
+New features
 
 * Presets:
   * `-T`: "Turn Normal Grass" turns normal grass and kelp into groundcover(as in original [Hemaris](https://www.nexusmods.com/morrowind/users/102938538)' mods: [1](https://www.nexusmods.com/morrowind/mods/52010), [2](https://www.nexusmods.com/morrowind/mods/52058)) for your setup.
@@ -79,12 +86,12 @@
   * `-?`: Get help for individual option, because extended help `habasi --help` became too long to quickly find something.
   * Few more minor options.
 
-### Performance improvements
+Performance improvements
 
 * Comparison of newly created and previous version of merged plugin is now slighly faster.
 * Grass processing also became slightly faster.
 
-### Feature enhancements
+Feature enhancements
 
 * Grass processing produces slimer output. Non-grass statics, empty and interior cells are automatically excluded.
 * Slightly improved output plugin description with the number of plugins merged.
@@ -96,17 +103,17 @@
 * All list options are now available as global and per list options, allowing more flexibility by combining them.
 * More forgiving argument names processing. For example `--dry_run` would be treated as correct form of `--dry-run`, per list option `DRY-RUN` would also be treated as the correct form of `dry_run`.
 
-### Fixes
+Fixes
 
 * Reword `--mode` help section slightly, add note about [DeltaPlugin](https://gitlab.com/bmwinger/delta-plugin). I made a [mistake](https://github.com/alvazir/habasi/issues/1) when [wrote](https://www.reddit.com/r/tes3mods/comments/13xnji3/habasi_tes3_plugin_merging_tool/) that DeltaPlugin would work with `keep` or `replace` modes the same way as if it worked with unmerged plugins. DeltaPlugin processes records the same way as both engines, e.g. discards different variants of mergeable records except the last one. Possible way to use both utilities is to make additional openmw.cfg file with paths to unmerged plugins, then run `delta_plugin -c openmw.cfg`, then run `habasi`.
 
-### Miscellaneous
+Miscellaneous
 
 * Almost half of the initial code has been edited, the amount of code added is roughly equal to initial. That means bugs probability has been increased :-)
 
 ## 0.1.0 (2023-06-01)
 
-### Features
+Features
 
 * Merge plugins
 * Keep mergeable records for record mergers(optional, enabled by default)

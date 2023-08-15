@@ -1,7 +1,7 @@
 use super::{Options, SettingsFile, StringOsPath, TngStatIds};
 use crate::{read_lines, Mode};
 use anyhow::{anyhow, Context, Result};
-use hashbrown::{HashMap, HashSet};
+use hashbrown::{hash_map::Entry, HashMap, HashSet};
 use std::{
     env::current_exe,
     fs::copy,
@@ -155,7 +155,7 @@ pub(crate) fn make_tng_stat_ids(list: Vec<String>, separator: &str) -> Result<Tn
             source_map.insert(stat_id.clone(), fallback_plugin.clone());
             set.insert(stat_id);
         } else {
-            return Err(anyhow!("Error: config.guts.turn_normal_grass_stat_ids line is incorrect\n  Should be \"fallback_plugin{0}name_of_static\", e.g. \"Morrowind.esm{0}Flora_kelp_01\"\n  Incorrect line is \"{1}\"", separator, line));
+            return Err(anyhow!("Error: settings.advanced.turn_normal_grass_stat_ids line is incorrect\n  Should be \"fallback_plugin{0}name_of_static\", e.g. \"Morrowind.esm{0}Flora_kelp_01\"\n  Incorrect line is \"{1}\"", separator, line));
         }
     }
     Ok(TngStatIds { set, source_map })
@@ -166,7 +166,7 @@ pub(crate) fn set_new_name_retries(num: u8) -> Result<u8> {
         Ok(num)
     } else {
         Err(anyhow!(
-            "Error: guts.turn_normal_grass_new_name_retries should be larger than \"1\", though it's set to \"{}\" now",
+            "Error: settings.guts.turn_normal_grass_new_name_retries should be larger than \"1\", though it's set to \"{}\" now",
             num
         ))
     }
@@ -214,4 +214,50 @@ pub(crate) fn backup_settings_file(settings_file: &mut SettingsFile, backup_suff
     } else {
         Ok(0)
     }
+}
+
+pub(crate) fn make_keep_only_last_info_ids(list: Vec<Vec<String>>) -> Result<HashMap<String, HashMap<String, String>>> {
+    let mut res = HashMap::new();
+    for (n, line) in list.into_iter().enumerate() {
+        let line_len = line.len();
+        if line_len < 2 {
+            let description = "Should contain at least 2 subelements [\"ID\", \"Topic\"]";
+            return Err(anyhow!(make_keep_only_last_info_ids_err_text(description, n, &line)));
+        } else if line_len > 3 {
+            let description = "Should contain no more than 3 subelements [\"ID\", \"Topic\", \"Reason\"]";
+            return Err(anyhow!(make_keep_only_last_info_ids_err_text(description, n, &line)));
+        }
+        let id = line[0].clone();
+        if !id.chars().all(|b| "0123456789".contains(b)) {
+            let description = "ID should only contain digits(0-9)";
+            return Err(anyhow!(make_keep_only_last_info_ids_err_text(description, n, &line)));
+        }
+        let topic = line[1].to_lowercase();
+        let reason = if line_len == 3 {
+            line[2].clone()
+        } else {
+            String::from("Reason not defined.")
+        };
+        match res.entry(id) {
+            Entry::Vacant(v) => {
+                v.insert(HashMap::from([(topic, reason)]));
+            }
+            Entry::Occupied(mut o) => {
+                let value = o.get_mut();
+                if let Some(b) = value.insert(topic, reason) {
+                    let description = &format!("There is already a pair of \"ID\" and \"Topic\" with \"Reason\": \"{}\"", b);
+                    return Err(anyhow!(make_keep_only_last_info_ids_err_text(description, n, &line)));
+                }
+            }
+        };
+    }
+    Ok(res)
+}
+
+fn make_keep_only_last_info_ids_err_text(description: &str, line_num: usize, line: &[String]) -> String {
+    format!(
+        "Error: settings.advanced.keep_only_last_info_ids element \"{}\" is incorrect\nDescription: {description}\nElement: [{}]",
+        line_num + 1,
+        line.iter().map(|x| format!("\"{x}\"")).collect::<Vec<_>>().join(", ")
+    )
 }

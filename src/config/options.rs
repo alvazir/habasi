@@ -569,7 +569,7 @@ pub(crate) struct Options {
     ///
     ///   -v: Show list options, total stats per list, list of new grass meshes written, count of new static records, list of records excluded(with exclude_deleted_records option), "references reindexed" and "master subrecords stripped" messages.
     ///
-    ///   -vv: Show detailed total stats, ignored reference errors, list of new grass meshes untouched, list of new static records, list of records excluded(grass mode),"processing plugin" messages.
+    ///   -vv: Show detailed total stats, ignored reference errors, list of new grass meshes untouched, list of new static records, list of records excluded(grass mode, INFO records from settings.advanced.keep_only_last_info_ids),"processing plugin" messages.
     ///
     ///   -vvv: Show detailed list stats, previous log file backup message, failed guesses of new grass meshes filenames.
     ///

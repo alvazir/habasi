@@ -10,7 +10,7 @@ use options::{get_options, Options};
 use settings::{get_settings, Settings};
 use util::{
     backup_settings_file, check_base_dir, check_mode, check_settings_version, get_exe_name_and_dir, get_lists, get_log_file,
-    get_settings_file, make_tng_stat_ids, set_low_string_osstring, set_new_name_retries,
+    get_settings_file, make_keep_only_last_info_ids, make_tng_stat_ids, set_low_string_osstring, set_new_name_retries,
 };
 
 pub(crate) struct Cfg {
@@ -30,6 +30,7 @@ pub(crate) struct Cfg {
 pub(crate) struct Advanced {
     pub(crate) grass_filter: Vec<String>,
     pub(crate) turn_normal_grass_stat_ids: TngStatIds,
+    pub(crate) keep_only_last_info_ids: HashMap<String, HashMap<String, String>>,
 }
 
 pub(crate) struct Guts {
@@ -186,6 +187,7 @@ impl Cfg {
                     set.advanced.turn_normal_grass_stat_ids,
                     &set.guts.turn_normal_grass_stat_ids_separator,
                 )?,
+                keep_only_last_info_ids: make_keep_only_last_info_ids(set.advanced.keep_only_last_info_ids)?,
             },
             guts: Guts {
                 // [Section: Presets]
