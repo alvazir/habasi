@@ -177,7 +177,7 @@ pub(crate) fn check_settings_version(settings_file: &mut SettingsFile) -> Result
         let settings_toml_lines = read_lines(&settings_file.path)
             .with_context(|| format!("Failed to read program configuration file \"{}\"", &settings_file.path.display()))?;
         let settings_version_prefix = "# # Settings version: ";
-        let expected_settings_version = String::from("0.2.0");
+        let expected_settings_version = String::from("0.2.5");
         let mut detected_settings_version = String::from("0.1.0");
         for line in settings_toml_lines.flatten() {
             if line.starts_with(settings_version_prefix) {

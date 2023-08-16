@@ -5,11 +5,12 @@ use crate::{
 use anyhow::{anyhow, Result};
 use hashbrown::HashMap;
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
-use tes3::esp::{Cell, Reference, Static};
+use tes3::esp::{Cell, ObjectFlags, Reference, Static};
 
 pub(crate) fn transform_output(name: &str, mut out: Out, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Out> {
     resort_skil_mgef(&mut out);
     set_creature_scale_to_none_if_default(&mut out);
+    remove_ambi_whgt_from_deleted_cells(&mut out);
     if matches!(h.g.list_options.mode, Mode::Grass) {
         out.stat = exclude_non_grass_statics(out.stat, name, h, cfg, log)?;
         out.cell = exclude_interior_and_empty_cells(out.cell, name, h, cfg, log)?;
@@ -248,4 +249,13 @@ fn exclude_deleted_refs_mast_id_0(out: &mut Out) {
             }
         }
     });
+}
+
+fn remove_ambi_whgt_from_deleted_cells(out: &mut Out) {
+    for (cell, _) in out.cell.iter_mut() {
+        if cell.is_interior() && cell.flags.contains(ObjectFlags::DELETED) {
+            cell.water_height = None;
+            cell.atmosphere_data = None;
+        }
+    }
 }

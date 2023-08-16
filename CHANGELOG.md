@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
-## TBD
+## 0.2.5 (2023-08-16)
 
 Bug fixes
 
@@ -17,6 +17,7 @@ Feature enhancements
 Fixes
 
 * Introduce keep_only_last_info_ids mechanic(configurable in settings) to exclude 1 problematic INFO record when merging plugis *LGNPC_GnaarMok* and *LGNPC_SecretMasters*(details in KNOWN_ISSUES.md).
+* Remove AMBI, WHGT from deleted cells. This fixes OpenMW-CS(and probably OpenMW) error "Loading failed: ESM Error: Previous record contains unread bytes" on loading a cell with both deleted flag(0x0020) and DELE subrecord.
 
 ## 0.2.0 (2023-08-13)
 

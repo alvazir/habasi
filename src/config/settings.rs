@@ -205,7 +205,7 @@ pub(crate) struct Guts {
     /// Guts of the program. Use at your own risk ;-)
     ///
     /// # Following line is used to determine version of used settings to warn about outdated version:
-    /// # Settings version: 0.2.0
+    /// # Settings version: 0.2.5
     ///
     /// [Section: Presets]
     #[config(default = ["CheckReferences.esp", "dry_run", "use_load_order", "show_missing_refs", "complete_replace", "no_compare", "ignore_errors", "insufficient_merge", "dry_run_dismiss_stats"])]

@@ -228,7 +228,7 @@ fn add_missing_plugin_stats(level: u8, plugin_objects: &[TES3Object], h: &mut He
 
 fn get_cell_name(cell: &Cell) -> String {
     if cell.data.flags.contains(CellFlags::IS_INTERIOR) {
-        format!("{:?}", cell.name)
+        cell.name.clone()
     } else {
         format!("{:?}", cell.data.grid)
     }
