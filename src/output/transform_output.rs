@@ -4,6 +4,7 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 use hashbrown::HashMap;
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use tes3::esp::{Cell, Reference, Static};
 
 pub(crate) fn transform_output(name: &str, mut out: Out, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Out> {
@@ -14,6 +15,7 @@ pub(crate) fn transform_output(name: &str, mut out: Out, h: &mut Helper, cfg: &C
         out.cell = exclude_interior_and_empty_cells(out.cell, name, h, cfg, log)?;
     }
     exclude_infos(&mut out, name, cfg, log)?;
+    exclude_deleted_refs_mast_id_0(&mut out);
     if h.g.list_options.reindex {
         reindex_references(name, &mut out, h, cfg, log)?;
     }
@@ -227,4 +229,23 @@ fn exclude_infos(out: &mut Out, name: &str, cfg: &Cfg, log: &mut Log) -> Result<
     }
     show_removed_record_ids(removed_record_ids, "settings.advanced.keep_only_last_info_ids", name, 2, cfg, log)?;
     Ok(())
+}
+
+fn exclude_deleted_refs_mast_id_0(out: &mut Out) {
+    out.cell.par_iter_mut().for_each(|(cell, _)| {
+        if !cell.references.is_empty() {
+            let references: Vec<&Reference> = cell.references.values().collect();
+            let mut deleted_ref_indexes = Vec::new();
+            for reference in &references {
+                if reference.mast_index == 0 && reference.deleted.is_some() {
+                    deleted_ref_indexes.push((reference.mast_index, reference.refr_index));
+                }
+            }
+            if !deleted_ref_indexes.is_empty() {
+                for deleted_ref_index in deleted_ref_indexes.iter() {
+                    cell.references.remove(deleted_ref_index);
+                }
+            }
+        }
+    });
 }

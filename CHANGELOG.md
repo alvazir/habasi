@@ -12,6 +12,7 @@ Bug fixes
 Feature enhancements
 
 * Remove XSCL(scale) subrecord from deleted instances. Most files produced are now slightly slimer, which in turn leads to a bit faster loading. Turn Normal Grass -CONTENT plugins get considerable ~20% decrease in size.
+* Remove deleted non-external instances from merged plugin.
 
 Fixes
 
