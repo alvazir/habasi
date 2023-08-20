@@ -10,3 +10,9 @@
   Solved by creating keep_only_last_info_ids mechanic. It performs following steps:  
   \- takes INFO IDs(and DIAL) from `advanced.settings.keep_only_last_info_ids`  
   \- on each incoming INFO if there is already the one with the same ID and DIAL the older gets excluded from the result  
+
+2. Very rare SSCR records with empty ID may misbehave in Morrowind.exe  
+  **Status**: mostly solved  
+  **Description**: It's very rare case. It may cause problems only when using plugins made with OpenMW-CS(containing SSCR) in Morrowind.exe.  
+  OpenMW and Morrowind.exe process SSCR records differently. OpenMW doesn't even look at ID, only noticing Script mentioned. OpenMW-CS may create SSCR with empty IDs. That means that multiple plugins with empty id SSCRs would have their SSCRs overwritten.  
+  Solved by assigning IDs to SSCRs with empty IDs. New ID is a CRC64 of Script name, so it should also be the same for the same Script name. Check log for new IDs or run with -vv.  

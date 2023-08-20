@@ -3,12 +3,15 @@ use crate::{
     ListOptions, Mode, Out, Plugin, PluginName,
 };
 use anyhow::{anyhow, Context, Result};
+use crc::{Crc, CRC_64_ECMA_182};
 use std::{
     fs::{copy, create_dir_all, File},
     io::{self, BufRead, BufWriter, Write},
     path::{Path, PathBuf},
 };
 use tes3::esp::{Cell, CellFlags, Reference};
+
+pub(crate) const CRC64: Crc<u64> = Crc::<u64>::new(&CRC_64_ECMA_182);
 
 macro_rules! msg {
     ($text:ident, $verbose:ident, $cfg:ident) => {

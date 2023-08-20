@@ -1,7 +1,7 @@
-use crate::{Cfg, Helper, Log, Mode, Out, StatsUpdateKind};
+use crate::{msg, Cfg, Helper, Log, Mode, Out, StatsUpdateKind, CRC64};
 use anyhow::{anyhow, Result};
 use hashbrown::hash_map::Entry;
-use tes3::esp::{Plugin, TES3Object};
+use tes3::esp::{Plugin, StartScript, TES3Object};
 mod cell;
 mod dial;
 mod header;
@@ -85,7 +85,12 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
                             TES3Object::Script(v) => process!(scpt, v, v.id.to_lowercase(), true),
                             TES3Object::Region(v) => process!(regn, v, v.id.to_lowercase(), true),
                             TES3Object::Birthsign(v) => process!(bsgn, v, v.id.to_lowercase(), false),
-                            TES3Object::StartScript(v) => process!(sscr, v, v.id.to_lowercase(), true),
+                            TES3Object::StartScript(mut v) => {
+                                if v.id.is_empty() {
+                                    assign_id_to_sscr_with_empty_id(&mut v, cfg, log)?;
+                                }
+                                process!(sscr, v, v.id.to_lowercase(), true)
+                            }
                             TES3Object::LandscapeTexture(ltex) => process_ltex(ltex, &land_found, out, h)?,
                             TES3Object::Spell(v) => process!(spel, v, v.id.to_lowercase(), false),
                             TES3Object::Static(v) => process!(stat, v, v.id.to_lowercase(), false),
@@ -134,3 +139,13 @@ macro_rules! keep_previous {
 }
 
 pub(crate) use keep_previous;
+
+pub(crate) fn assign_id_to_sscr_with_empty_id(sscr: &mut StartScript, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    sscr.id = CRC64.checksum(sscr.script.as_bytes()).to_string();
+    let text = format!(
+        "    StartScript with empty id(Script:\"{}\") was assigned id \"{}\"",
+        sscr.script, sscr.id
+    );
+    msg(text, 2, cfg, log)?;
+    Ok(())
+}

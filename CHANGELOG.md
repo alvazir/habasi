@@ -3,6 +3,12 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## TBD
+
+Fixes
+
+* Assign ID(CRC64 of script name) to SSCR records with empty IDs. Solves very rare problem when using multiple plugins(created with OpenMW-CS) with empty ID SSCR in Morrowind.exe.
+
 ## 0.2.5 (2023-08-16)
 
 Bug fixes
