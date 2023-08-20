@@ -30,19 +30,13 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
                     let out_v = &mut out.$type[global_id];
                     if out_v.0 != $value {
                         if !$simple || h.g.list_options.debug {
-                            if out_v.1.is_empty() {
-                                out_v.1.push(out_v.0.clone());
-                            }
-                            out_v.1.push($value.clone());
+                            keep_previous!(out_v, $value);
                         }
                         out_v.0 = $value;
                         h.l.stats.$type(StatsUpdateKind::Replaced);
                     } else {
                         if h.g.list_options.debug {
-                            if out_v.1.is_empty() {
-                                out_v.1.push(out_v.0.clone());
-                            }
-                            out_v.1.push($value.clone());
+                            keep_previous!(out_v, $value);
                         }
                         h.l.stats.$type(StatsUpdateKind::Duplicate);
                     }
@@ -129,3 +123,14 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
     }
     Ok(())
 }
+
+macro_rules! keep_previous {
+    ($out_tuple:ident, $value:expr) => {
+        if $out_tuple.1.is_empty() {
+            $out_tuple.1.push($out_tuple.0.clone());
+        }
+        $out_tuple.1.push($value.clone());
+    };
+}
+
+pub(crate) use keep_previous;

@@ -1,3 +1,4 @@
+use super::keep_previous;
 use crate::{GlobalVtexId, Helper, LocalVtexId, Out, StatsUpdateKind};
 use anyhow::{anyhow, Result};
 use hashbrown::{hash_map::Entry, HashMap};
@@ -28,18 +29,12 @@ pub(crate) fn process_land(land: Landscape, land_found: &mut bool, out: &mut Out
             };
             let out_v = &mut out.land[land_global_id];
             if out_v.0 != new_land {
-                if out_v.1.is_empty() {
-                    out_v.1.push(out_v.0.clone());
-                }
-                out_v.1.push(new_land.clone());
+                keep_previous!(out_v, new_land);
                 out_v.0 = new_land;
                 h.l.stats.land(StatsUpdateKind::Replaced);
             } else {
                 if h.g.list_options.debug {
-                    if out_v.1.is_empty() {
-                        out_v.1.push(out_v.0.clone());
-                    }
-                    out_v.1.push(new_land.clone());
+                    keep_previous!(out_v, new_land);
                 }
                 h.l.stats.land(StatsUpdateKind::Duplicate);
             }
