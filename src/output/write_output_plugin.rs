@@ -26,7 +26,6 @@ pub(crate) fn write_output_plugin(
             let (is_plugin_equal, mut text) =
                 is_plugin_equal_to_previous(name, plugin, old_plugin, &mut plugins_differ_insignificantly);
             if is_plugin_equal {
-                text = format!("Output plugin \"{}\" is equal to previous version", name);
                 if cfg.verbose < 1 {
                     msg_no_log(&text, 0, cfg);
                 }
@@ -92,6 +91,7 @@ pub(crate) fn write_output_plugin(
 
 fn is_plugin_equal_to_previous(name: &str, new_plugin: &Plugin, old_plugin: &Plugin, almost_equal: &mut bool) -> (bool, String) {
     let mut almost_equal_text = String::new();
+    let mut only_size_of_masters_changed = false;
     let mut text = format!("Output plugin \"{}\" differs from previous version. First difference is: ", name);
     if new_plugin.objects.len() != old_plugin.objects.len() {
         text.push_str(&format!(
@@ -107,8 +107,8 @@ fn is_plugin_equal_to_previous(name: &str, new_plugin: &Plugin, old_plugin: &Plu
             TES3Object::Header(new_header) => match old {
                 TES3Object::Header(old_header) => {
                     if new_header != old_header {
-                        let new_header_stripped = strip_author_description(&new_header);
-                        let old_header_stripped = strip_author_description(&old_header);
+                        let new_header_stripped = strip_author_description_master_sizes(&new_header);
+                        let old_header_stripped = strip_author_description_master_sizes(&old_header);
                         if new_header_stripped != old_header_stripped {
                             if new_header_stripped.num_objects != old_header_stripped.num_objects {
                                 text.push_str(&format!(
@@ -128,19 +128,37 @@ fn is_plugin_equal_to_previous(name: &str, new_plugin: &Plugin, old_plugin: &Plu
                             }
                             return (false, text);
                         } else {
-                            *almost_equal = true;
                             almost_equal_text = format!("Output plugin \"{}\" differs from previous version insignificantly:", name);
                             if new_header.author != old_header.author {
+                                *almost_equal = true;
                                 almost_equal_text.push_str(&format!(
                                     "\n  Author field was changed from \"{}\" to \"{}\"",
                                     *old_header.author, *new_header.author,
                                 ));
                             };
                             if new_header.description != old_header.description {
+                                *almost_equal = true;
                                 almost_equal_text.push_str(&format!(
                                     "\n  Description field was changed from \"{}\" to \"{}\"",
                                     *old_header.description, *new_header.description,
                                 ));
+                            };
+                            if new_header.masters != old_header.masters {
+                                if !*almost_equal {
+                                    almost_equal_text = format!(
+                                        "Output plugin \"{}\" is equal to previous version, only size of master(s) was changed:",
+                                        name
+                                    );
+                                }
+                                for ((master, new_size), (_, old_size)) in new_header.masters.iter().zip(old_header.masters.iter()) {
+                                    if new_size != old_size {
+                                        only_size_of_masters_changed = true;
+                                        almost_equal_text.push_str(&format!(
+                                            "\n  Size of master \"{}\" was changed from \"{}\" to \"{}\"",
+                                            master, old_size, new_size,
+                                        ));
+                                    }
+                                }
                             };
                         }
                     }
@@ -187,8 +205,10 @@ fn is_plugin_equal_to_previous(name: &str, new_plugin: &Plugin, old_plugin: &Plu
     }
     if *almost_equal {
         (false, almost_equal_text)
+    } else if only_size_of_masters_changed {
+        (true, almost_equal_text)
     } else {
-        (true, String::new())
+        (true, format!("Output plugin \"{}\" is equal to previous version", name))
     }
 }
 
@@ -234,10 +254,11 @@ fn get_cell_name(cell: &Cell) -> String {
     }
 }
 
-fn strip_author_description(header: &Header) -> Header {
+fn strip_author_description_master_sizes(header: &Header) -> Header {
     Header {
         author: FixedString(String::new()),
         description: FixedString(String::new()),
+        masters: header.masters.iter().map(|(name, _)| (name.to_owned(), 0)).collect::<Vec<_>>(),
         ..header.clone()
     }
 }

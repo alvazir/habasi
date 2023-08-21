@@ -3,7 +3,11 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
-## TBD
+## 0.2.8 (2023-08-21)
+
+Feature enhancements
+
+* Output plugin with only size of master(s) changed is now considered equal to previous version.
 
 Fixes
 
