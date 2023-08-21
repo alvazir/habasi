@@ -1,6 +1,6 @@
 [package]
 name = "habasi"
-version = "0.2.6"
+version = "0.2.7"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
 rust-version = "1.71.1"
@@ -27,7 +27,7 @@ features = ["esp"]
 [dependencies]
 clap = { version = "~4.3.23", features = ["derive", "suggestions", "wrap_help"] } # CLI
 confique = { version = "~0.2.4", default-features = false, features = ["toml"] }  # settings file
-serde = "~1.0.183"                                                                # required by confique
+serde = "~1.0.185"                                                                # required by confique
 anyhow = "~1.0.75"    																													  # error management
 hashbrown = { version = "~0.14.0", features = ["rayon"] }                         # references
 dirs = "~5.0.1"                                                                   # find openmw.cfg

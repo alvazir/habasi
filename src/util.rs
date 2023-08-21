@@ -12,6 +12,9 @@ use std::{
 use tes3::esp::{Cell, CellFlags, Reference};
 
 pub(crate) const CRC64: Crc<u64> = Crc::<u64>::new(&CRC_64_ECMA_182);
+pub(crate) const SNDG_ID_MAX_LEN: usize = 32;
+pub(crate) const SNDG_ID_SUFFIX_LEN: usize = 4;
+pub(crate) const SNDG_MAX_SOUND_FLAG: u32 = 7;
 
 macro_rules! msg {
     ($text:ident, $verbose:ident, $cfg:ident) => {

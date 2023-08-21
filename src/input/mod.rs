@@ -1,7 +1,7 @@
-use crate::{msg, Cfg, Helper, Log, Mode, Out, StatsUpdateKind, CRC64};
+use crate::{msg, Cfg, Helper, Log, Mode, Out, StatsUpdateKind, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG};
 use anyhow::{anyhow, Result};
 use hashbrown::hash_map::Entry;
-use tes3::esp::{Plugin, StartScript, TES3Object};
+use tes3::esp::{Plugin, SoundGen, StartScript, TES3Object};
 mod cell;
 mod dial;
 mod header;
@@ -79,16 +79,17 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
                             TES3Object::Faction(v) => process!(fact, v, v.id.to_lowercase(), true),
                             TES3Object::Race(v) => process!(race, v, v.id.to_lowercase(), false),
                             TES3Object::Sound(v) => process!(soun, v, v.id.to_lowercase(), false),
-                            TES3Object::SoundGen(v) => process!(sndg, v, v.id.to_lowercase(), false),
+                            TES3Object::SoundGen(mut v) => {
+                                assign_id_to_sndg_with_empty_id(&mut v, cfg, log)?;
+                                process!(sndg, v, v.id.to_lowercase(), false)
+                            }
                             TES3Object::Skill(v) => process!(skil, v, v.skill_id, false),
                             TES3Object::MagicEffect(v) => process!(mgef, v, v.effect_id, false),
                             TES3Object::Script(v) => process!(scpt, v, v.id.to_lowercase(), true),
                             TES3Object::Region(v) => process!(regn, v, v.id.to_lowercase(), true),
                             TES3Object::Birthsign(v) => process!(bsgn, v, v.id.to_lowercase(), false),
                             TES3Object::StartScript(mut v) => {
-                                if v.id.is_empty() {
-                                    assign_id_to_sscr_with_empty_id(&mut v, cfg, log)?;
-                                }
+                                assign_id_to_sscr_with_empty_id(&mut v, cfg, log)?;
                                 process!(sscr, v, v.id.to_lowercase(), true)
                             }
                             TES3Object::LandscapeTexture(ltex) => process_ltex(ltex, &land_found, out, h)?,
@@ -141,11 +142,35 @@ macro_rules! keep_previous {
 pub(crate) use keep_previous;
 
 pub(crate) fn assign_id_to_sscr_with_empty_id(sscr: &mut StartScript, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    sscr.id = CRC64.checksum(sscr.script.as_bytes()).to_string();
-    let text = format!(
-        "    StartScript with empty id(Script:\"{}\") was assigned id \"{}\"",
-        sscr.script, sscr.id
-    );
-    msg(text, 2, cfg, log)?;
+    if sscr.id.is_empty() {
+        sscr.id = CRC64.checksum(sscr.script.as_bytes()).to_string();
+        let text = format!("    SSCR with empty id(Script:\"{}\") was assigned id \"{}\"", sscr.script, sscr.id);
+        msg(text, 2, cfg, log)?;
+    }
+    Ok(())
+}
+
+pub(crate) fn assign_id_to_sndg_with_empty_id(sndg: &mut SoundGen, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    if sndg.id.is_empty() {
+        let mut text = format!(
+            "    SNDG with empty id(Creature_ID:\"{}\", Sound_ID:\"{}\") was ",
+            sndg.creature, sndg.sound
+        );
+        if sndg.sound_flags > SNDG_MAX_SOUND_FLAG {
+            text.push_str(&format!(
+                "NOT assigned id due to unknown Type(sound_flags \"{}\" > \"{}\")",
+                sndg.sound_flags, SNDG_MAX_SOUND_FLAG
+            ));
+        } else {
+            let sndg_creature_truncated = if sndg.creature.len() > (SNDG_ID_MAX_LEN - SNDG_ID_SUFFIX_LEN) {
+                &sndg.creature[..SNDG_ID_MAX_LEN - SNDG_ID_SUFFIX_LEN]
+            } else {
+                &sndg.creature[..]
+            };
+            sndg.id = format!("{}{:>0SNDG_ID_SUFFIX_LEN$}", sndg_creature_truncated, sndg.sound_flags);
+            text.push_str(&format!("assigned id \"{}\"", sndg.id));
+        }
+        msg(text, 2, cfg, log)?;
+    }
     Ok(())
 }

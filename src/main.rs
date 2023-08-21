@@ -27,7 +27,7 @@ use util::{
     get_tng_content_name_low, get_tng_dir_and_plugin_names, msg, msg_no_log, process_moved_instances, process_plugin,
     process_turn_normal_grass, read_lines, references_sorted, scan_load_order, select_header_description, should_skip_list,
     show_global_list_options, show_ignored_ref_errors, show_log_path, show_removed_record_ids, show_settings_version_message,
-    show_settings_written, truncate_header_text, Log, CRC64,
+    show_settings_written, truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG,
 };
 
 fn main() {

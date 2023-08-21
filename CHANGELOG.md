@@ -7,7 +7,8 @@
 
 Fixes
 
-* Assign ID(CRC64 of script name) to SSCR records with empty IDs. Solves very rare problem when using multiple plugins(created with OpenMW-CS) with empty ID SSCR in Morrowind.exe.
+* Assign ID to SSCR records with empty IDs. New ID is a CRC64 of script name. This solves very rare problem when using multiple plugins(created with OpenMW-CS) with empty ID SSCR in Morrowind.exe. Check log for new IDs or run with -vv.
+* Assign ID to SNDG records with empty IDs. New ID is a creature name and sound type data id padded with three zeros, e.g. alit0006 for alit scream. This solves very rare problem when several SNDG records with emptry IDs overwrite each other even if they are for different creatures. Check log for new IDs or run with -vv.
 
 ## 0.2.5 (2023-08-16)
 
