@@ -8,9 +8,9 @@ pub(crate) fn process_info(info: DialogueInfo, out: &mut Out, h: &mut Helper, cf
         None => return Err(anyhow!("Failed to get dialogue id for info record \"{}\"", info.id)),
         Some(active_dial_id) => active_dial_id,
     };
-    // COMMENT: kind is renamed into dialogue_type in commit 52c19b2e
-    // if out.dial[active_dial_id].0.dialogue.dialogue_type as u8 != info.data.dialogue_type as u8
-    if out.dial[active_dial_id].0.dialogue.kind as u8 != info.data.kind as u8 && !info.flags.contains(ObjectFlags::DELETED) {
+    if out.dial[active_dial_id].0.dialogue.dialogue_type as u8 != info.data.dialogue_type as u8
+        && !info.flags.contains(ObjectFlags::DELETED)
+    {
         return Err(anyhow!(
             "Error: \"{}\" info record's kind is different to \"{}\" dialogue's",
             info.id,

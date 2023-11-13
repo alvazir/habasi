@@ -198,7 +198,7 @@ fn move_out_dial(out_dial: Vec<(Dial, Vec<Dial>)>, objects: &mut Vec<TES3Object>
     let mut journal = Vec::new();
     let mut non_journal = Vec::new();
     for dial in out_dial.into_iter() {
-        if dial.0.dialogue.kind == DialogueType2::Journal {
+        if dial.0.dialogue.dialogue_type == DialogueType2::Journal {
             is_journal = true;
             journal.push(TES3Object::Dialogue(dial.0.dialogue));
         } else {

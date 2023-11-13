@@ -3,6 +3,17 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.2.9 (2023-11-13)
+
+Fixes
+
+* Remove error when encountering omwscripts plugin, auto-skip processing of omwscripts plugins(or any other type of plugins via setting guts.plugin_extensions_to_ignore)
+
+Miscellaneous
+
+* Slightly improve default display output by moving "Skipped plugin processing ..." messages to verbose mode
+* Update versions of rust and all dependencies, notably tes3 library to latest commit(2fae07a0)
+
 ## 0.2.8 (2023-08-21)
 
 Feature enhancements

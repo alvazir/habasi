@@ -254,8 +254,13 @@ pub(crate) struct Guts {
     pub(crate) omw_line_beginning_fallback_archive: String,
     #[config(default = "groundcover=")]
     pub(crate) omw_line_beginning_groundcover: String,
-    #[config(default = ["esm", "esp", "omwaddon", "bsa"])]
+    #[config(default = ["esm", "esp", "omwaddon", "bsa", "omwscripts"])]
     pub(crate) omw_plugin_extensions: Vec<String>,
+    /// Plugins with following extensions will not be processed. It's made to ignore .omwscripts, though may be used for anything else.
+    #[config(default = ["omwscripts"])]
+    pub(crate) plugin_extensions_to_ignore: Vec<String>,
+    #[config(default = 1)]
+    pub(crate) skipped_processing_plugins_msg_verbosity: u8,
     /// [Section: Turn normal grass]
     #[config(default = ":")]
     pub(crate) turn_normal_grass_stat_ids_separator: String,

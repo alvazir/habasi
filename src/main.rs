@@ -102,12 +102,25 @@ fn process_list(
     let skip_plugin_name_low = get_skip_plugin_name_low(h);
     for plugin_name in &plugin_list[index..] {
         let plugin_name_low = plugin_name.to_lowercase();
+        if cfg
+            .guts
+            .plugin_extensions_to_ignore
+            .iter()
+            .any(|ext| plugin_name_low.ends_with(ext))
+        {
+            text = format!("  Skipped processing plugin \"{plugin_name}\" because it has extension to ignore");
+            msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
+            h.total_add_skipped_processing_plugin(text);
+            continue;
+        }
         if !tng_content_name_low.is_empty() && plugin_name_low.ends_with(&tng_content_name_low) {
             text = format!("  Skipped processing plugin \"{plugin_name}\" trying to recreate it from scratch");
-            msg(text, 0, cfg, log)?;
+            msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
+            h.total_add_skipped_processing_plugin(text);
         } else if !skip_plugin_name_low.is_empty() && plugin_name_low.ends_with(&skip_plugin_name_low) {
             text = format!("  Skipped processing plugin \"{plugin_name}\" due to \"skip_from_use_load_order\"");
-            msg(text, 0, cfg, log)?;
+            msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
+            h.total_add_skipped_processing_plugin(text);
         } else {
             if let Err(err) = process_plugin(plugin_name, &mut out, name, h, cfg, log) {
                 {

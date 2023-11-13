@@ -156,10 +156,10 @@ pub(crate) fn assign_id_to_sndg_with_empty_id(sndg: &mut SoundGen, cfg: &Cfg, lo
             "    SNDG with empty id(Creature_ID:\"{}\", Sound_ID:\"{}\") was ",
             sndg.creature, sndg.sound
         );
-        if sndg.sound_flags > SNDG_MAX_SOUND_FLAG {
+        if sndg.sound_gen_type as u32 > SNDG_MAX_SOUND_FLAG {
             text.push_str(&format!(
                 "NOT assigned id due to unknown Type(sound_flags \"{}\" > \"{}\")",
-                sndg.sound_flags, SNDG_MAX_SOUND_FLAG
+                sndg.sound_gen_type as u32, SNDG_MAX_SOUND_FLAG
             ));
         } else {
             let sndg_creature_truncated = if sndg.creature.len() > (SNDG_ID_MAX_LEN - SNDG_ID_SUFFIX_LEN) {
@@ -167,7 +167,7 @@ pub(crate) fn assign_id_to_sndg_with_empty_id(sndg: &mut SoundGen, cfg: &Cfg, lo
             } else {
                 &sndg.creature[..]
             };
-            sndg.id = format!("{}{:>0SNDG_ID_SUFFIX_LEN$}", sndg_creature_truncated, sndg.sound_flags);
+            sndg.id = format!("{}{:>0SNDG_ID_SUFFIX_LEN$}", sndg_creature_truncated, sndg.sound_gen_type as u32);
             text.push_str(&format!("assigned id \"{}\"", sndg.id));
         }
         msg(text, 2, cfg, log)?;

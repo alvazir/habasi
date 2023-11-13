@@ -74,8 +74,8 @@ main "$@" || echo "error"
 # # https://github.com/tpoechtrager/osxcross - how to get sdk
 # # go to mac, install homebrew with Xcode Command Line Tools
 # git clone https://github.com/tpoechtrager/osxcross.git
-# cd osxcross/tools/
-# ./gen_sdk_package_tools.sh
+# cd osxcross/
+# ./tools/gen_sdk_package_tools.sh
 # # transfer files to linux
 # git clone https://github.com/tpoechtrager/osxcross.git
 # cd osxcross/

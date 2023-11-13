@@ -112,7 +112,7 @@ Please see the [CHANGELOG](CHANGELOG.md) for a release history.
 
 <details>
 
-<summary>Habasi is written in Rust, so you'll need to grab a [Rust installation](https://www.rust-lang.org) in order to compile it. Habasi compiles with Rust 1.71.1(stable) or newer</summary>
+<summary>Habasi is written in Rust, so you'll need to grab a [Rust installation](https://www.rust-lang.org) in order to compile it. Habasi compiles with Rust 1.73.0(stable) or newer</summary>
 
 ```shell
 git clone https://github.com/alvazir/habasi

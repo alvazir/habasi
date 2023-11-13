@@ -290,6 +290,7 @@ pub(crate) struct HelperTotal {
     pub(crate) game_configs: Vec<GameConfig>,
     pub(crate) assets: Vec<Assets>,
     pub(crate) fallback_statics: Vec<FallbackStatics>,
+    pub(crate) skipped_processing_plugins: Vec<String>,
 }
 
 #[derive(Default)]
@@ -569,7 +570,24 @@ impl Helper {
         }
         text = format!("{}{}", text, self.t.stats);
         msg(text, 2, cfg, log)?;
+        if !self.t.skipped_processing_plugins.is_empty() && cfg.verbose < cfg.guts.skipped_processing_plugins_msg_verbosity {
+            let skipped_processing_plugins_len = self.t.skipped_processing_plugins.len();
+            let text = format!(
+                "Skipped processing {} plugin{}({}add -{} to get list)",
+                skipped_processing_plugins_len,
+                if skipped_processing_plugins_len == 1 { "" } else { "s" },
+                if cfg.no_log { "" } else { "check log or " },
+                "v".repeat(cfg.guts.skipped_processing_plugins_msg_verbosity as usize),
+            );
+            msg(text, 0, cfg, log)?;
+        }
         Ok(())
+    }
+
+    pub(crate) fn total_add_skipped_processing_plugin(&mut self, msg: String) {
+        if !self.t.skipped_processing_plugins.contains(&msg) {
+            self.t.skipped_processing_plugins.push(msg);
+        }
     }
 
     pub(crate) fn add_game_config(&mut self, path: PathBuf, path_canonical: PathBuf) {

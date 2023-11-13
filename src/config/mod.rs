@@ -10,7 +10,8 @@ use options::{get_options, Options};
 use settings::{get_settings, Settings};
 use util::{
     backup_settings_file, check_base_dir, check_mode, check_settings_version, get_exe_name_and_dir, get_lists, get_log_file,
-    get_settings_file, make_keep_only_last_info_ids, make_tng_stat_ids, set_low_string_osstring, set_new_name_retries,
+    get_settings_file, make_keep_only_last_info_ids, make_tng_stat_ids, prepare_plugin_extensions_to_ignore, set_low_string_osstring,
+    set_new_name_retries,
 };
 
 pub(crate) struct Cfg {
@@ -55,6 +56,8 @@ pub(crate) struct Guts {
     pub(crate) omw_line_beginning_fallback_archive: String,
     pub(crate) omw_line_beginning_groundcover: String,
     pub(crate) omw_plugin_extensions: Vec<OsString>,
+    pub(crate) plugin_extensions_to_ignore: Vec<String>,
+    pub(crate) skipped_processing_plugins_msg_verbosity: u8,
     // [Section: Turn normal grass]
     pub(crate) turn_normal_grass_new_name_retries: u8,
     pub(crate) turn_normal_grass_plugin_name_suffix_deleted_content: String,
@@ -217,6 +220,8 @@ impl Cfg {
                 omw_line_beginning_fallback_archive: set.guts.omw_line_beginning_fallback_archive,
                 omw_line_beginning_groundcover: set.guts.omw_line_beginning_groundcover,
                 omw_plugin_extensions: set_ext_vec!(set.guts.omw_plugin_extensions),
+                plugin_extensions_to_ignore: prepare_plugin_extensions_to_ignore(set.guts.plugin_extensions_to_ignore),
+                skipped_processing_plugins_msg_verbosity: set.guts.skipped_processing_plugins_msg_verbosity,
                 // [Section: Turn normal grass]
                 turn_normal_grass_new_name_retries: set_new_name_retries(set.guts.turn_normal_grass_mesh_new_name_retries)?,
                 turn_normal_grass_plugin_name_suffix_deleted_content: set.guts.turn_normal_grass_plugin_name_suffix_deleted_content,

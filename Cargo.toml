@@ -1,9 +1,9 @@
 [package]
 name = "habasi"
-version = "0.2.8"
+version = "0.2.9"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
-rust-version = "1.71.1"
+rust-version = "1.73.0"
 description = "Habasi - TES3 Plugin Merging Tool"
 readme = "README.md"
 homepage = "https://www.nexusmods.com/morrowind/mods/53002"
@@ -19,20 +19,21 @@ maintenance = { status = "actively-developed" }
 [dependencies.tes3]
 # path = "../tes3"
 git = "https://github.com/Greatness7/tes3"
-rev = "6b6a0ff"
+# rev = "6b6a0ff"
+rev = "2fae07a0"
 # branch = "dev"
 default-features = false
 features = ["esp"]
 
 [dependencies]
-clap = { version = "~4.3.23", features = ["derive", "suggestions", "wrap_help"] } # CLI
+clap = { version = "~4.4.8", features = ["derive", "suggestions", "wrap_help"] }  # CLI
 confique = { version = "~0.2.4", default-features = false, features = ["toml"] }  # settings file
-serde = "~1.0.185"                                                                # required by confique
+serde = "~1.0.192"                                                                # required by confique
 anyhow = "~1.0.75"    																													  # error management
-hashbrown = { version = "~0.14.0", features = ["rayon"] }                         # references
+hashbrown = { version = "~0.14.2", features = ["rayon"] }                         # references
 dirs = "~5.0.1"                                                                   # find openmw.cfg
-walkdir = "~2.3.3"                                                                # find files
-rayon = "~1.7.0"                                                                  # find files in parallel
+walkdir = "~2.4.0"                                                                # find files
+rayon = "~1.8.0"                                                                  # find files in parallel
 crc = "~3.0.1"                                                                    # create id for sscr with empty id
 
 [profile.release-lto]

@@ -261,3 +261,13 @@ fn make_keep_only_last_info_ids_err_text(description: &str, line_num: usize, lin
         line.iter().map(|x| format!("\"{x}\"")).collect::<Vec<_>>().join(", ")
     )
 }
+
+pub(super) fn prepare_plugin_extensions_to_ignore(list: Vec<String>) -> Vec<String> {
+    let mut res = Vec::new();
+    for extension in list.iter() {
+        let mut prepared = extension.to_lowercase();
+        prepared.insert(0, '.');
+        res.push(prepared)
+    }
+    res
+}
