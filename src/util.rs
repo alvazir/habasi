@@ -4,8 +4,8 @@ use crate::{
 };
 use anyhow::{anyhow, Context, Result};
 use crc::{Crc, CRC_64_ECMA_182};
+use fs_err::{copy, create_dir_all, File};
 use std::{
-    fs::{copy, create_dir_all, File},
     io::{self, BufRead, BufWriter, Write},
     path::{Path, PathBuf},
 };
@@ -544,11 +544,8 @@ pub(crate) fn get_tng_dir_and_plugin_names(name: &str, cfg: &Cfg) -> Result<(Pat
     Ok((dir, plugin_deleted_content_name, plugin_grass_name))
 }
 
-pub(crate) fn read_lines<P>(filename: P) -> Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(&filename).with_context(|| format!("Failed to open file \"{}\"", filename.as_ref().display()))?;
+pub(crate) fn read_lines(filename: &Path) -> Result<io::Lines<io::BufReader<File>>> {
+    let file = File::open(filename).with_context(|| format!("Failed to open file \"{}\"", filename.display()))?;
     Ok(io::BufReader::new(file).lines())
 }
 

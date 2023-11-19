@@ -3,6 +3,7 @@ use crate::{
     msg_no_log, show_ignored_ref_errors, truncate_header_text, Bsa, Cfg, Log, Stats, StatsUpdateKind,
 };
 use anyhow::{anyhow, Context, Result};
+use fs_err::read;
 use hashbrown::{HashMap, HashSet};
 use std::{
     fmt,
@@ -391,7 +392,7 @@ impl TurnNormalGrass {
                     "Bug: trying to read from loose file, though there is no info about loose file"
                 ))
             }
-            Some(path) => match std::fs::read(path) {
+            Some(path) => match read(path) {
                 Ok(file) => {
                     self.src_info = format!("loose mesh \"{}\"", path.display());
                     file

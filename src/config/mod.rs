@@ -1,7 +1,8 @@
 use crate::{create_dir_early, ListOptions};
 use anyhow::{Context, Result};
+use fs_err::write;
 use hashbrown::{HashMap, HashSet};
-use std::{ffi::OsString, fs::write, path::PathBuf};
+use std::{ffi::OsString, path::PathBuf};
 mod options;
 mod settings;
 mod util;

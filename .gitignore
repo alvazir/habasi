@@ -7,9 +7,7 @@
 !/README.md
 !/CHANGELOG.md
 !/KNOWN_ISSUES.md
-!/COPYING
-!/UNLICENSE
-!/LICENSE-MIT
+!/LICENSE
 !/.gitignore
 !/release.sh
 !/rustfmt.toml

@@ -1,9 +1,7 @@
 use crate::{msg, msg_no_log, references_sorted, Cfg, Helper, Log, Mode, StatsUpdateKind};
 use anyhow::{anyhow, Context, Result};
-use std::{
-    fs::create_dir_all,
-    path::{Path, PathBuf},
-};
+use fs_err::create_dir_all;
+use std::path::{Path, PathBuf};
 use tes3::esp::{Cell, CellFlags, FixedString, Header, Plugin, Reference, TES3Object};
 
 pub(crate) fn write_output_plugin(

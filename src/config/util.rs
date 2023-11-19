@@ -1,10 +1,10 @@
 use super::{Options, SettingsFile, StringOsPath, TngStatIds};
 use crate::{read_lines, Mode};
 use anyhow::{anyhow, Context, Result};
+use fs_err::copy;
 use hashbrown::{hash_map::Entry, HashMap, HashSet};
 use std::{
     env::current_exe,
-    fs::copy,
     path::{Path, PathBuf},
 };
 

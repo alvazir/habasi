@@ -11,13 +11,13 @@ use clap::{builder::StyledStr, Arg, CommandFactory, Parser};
   - Don't clean the output plugin. It's not designed to be cleaned.
   - Cell references added by merged plugins(unlike external references coming from masters) are reindexed, so starting new game is required to use such merged plugins. Similar message is displayed for every written output plugin that contains non-external references."
 )]
-/// Habasi - TES3 Plugin Merging Tool
+/// Habasi - TES3 plugin merging and utility tool
 ///
 /// Author: alvazir
-/// License: Unlicense OR MIT
+/// License: GNU GPLv3
 /// GitHub: https://github.com/alvazir/habasi
 /// Nexus Mods: https://www.nexusmods.com/morrowind/mods/53002
-pub(crate) struct Options {
+pub(super) struct Options {
     /// List(s) of plugins to merge. This option is handy for one-shot merges. Settings file should be more convenient for "permanent" or longer lists , see --settings.
     ///
     /// Each list is a double-quoted(*) string that consists of output plugin name, optional list options("replace" in second example) and comma-separated list of plugins to merge. Ouput plugin's name should come first. Examples:
@@ -46,7 +46,7 @@ pub(crate) struct Options {
         num_args = 1..,
         verbatim_doc_comment,
     )]
-    pub(crate) merge: Option<Vec<String>>,
+    pub(super) merge: Option<Vec<String>>,
     /// Name of the log file. May be provided as a path. Non-existent directories will be created.
     ///
     /// Log contains display output of the program as if it was run with maximum verboseness. It is enabled by default, use --no-log to disable. Previous log will be saved with ".previous" extension.
@@ -59,10 +59,10 @@ pub(crate) struct Options {
         value_hint = clap::ValueHint::Other,
         help = "Name of the log file"
     )]
-    pub(crate) log: Option<String>,
+    pub(super) log: Option<String>,
     /// Do not write log.
     #[arg(short = 'L', long, alias = "no_log", help = "Do not write log")]
-    pub(crate) no_log: bool,
+    pub(super) no_log: bool,
     /// Name of the program settings file. May be provided as a path. Non-existent directories will be created. Extension will be replaced with ".toml".
     ///
     /// Default value: "<program_name>.toml"(file will be created in program directory).
@@ -73,7 +73,7 @@ pub(crate) struct Options {
         value_hint = clap::ValueHint::FilePath,
         help = "Name of the program settings file"
     )]
-    pub(crate) settings: Option<String>,
+    pub(super) settings: Option<String>,
     /// Write default program settings file and exit.
     ///
     /// Use this option if you keep using the same arguments. Modify default settings to suit your needs.
@@ -82,12 +82,12 @@ pub(crate) struct Options {
     ///
     /// This flag conflicts with everything except --settings, --log, --no-log, --verbose, --quiet.
     #[arg(long, aliases = ["settings_write", "write-settings", "write_settings"], help = "Write default program settings file and exit")]
-    pub(crate) settings_write: bool,
+    pub(super) settings_write: bool,
     /// Process grass lists(enabled by default).
     ///
     /// Grass rarely changes and it's processing may take more time then other plugins combined due to the size. Consider setting this option to "false" in settings file and then use this flag sometimes.
     #[arg(conflicts_with = "settings_write", short, long, help = "Process grass lists(enabled by default)")]
-    pub(crate) grass: bool,
+    pub(super) grass: bool,
     /// Print help for specific option. Accepts both short and long option names.
     ///
     /// Long help(--help) is very long. Combining short help(-h) and this option(-?) is a convenient alternative.
@@ -99,7 +99,7 @@ pub(crate) struct Options {
         value_name = "OPTION",
         allow_hyphen_values = true
     )]
-    pub(crate) help_option: Option<String>,
+    pub(super) help_option: Option<String>,
     /// Check for missing references in the whole load order.
     ///
     /// This preset is used to:
@@ -127,7 +127,7 @@ pub(crate) struct Options {
         help = "Check for missing references in the whole load order",
         verbatim_doc_comment
     )]
-    pub(crate) preset_check_references: bool,
+    pub(super) preset_check_references: bool,
     /// Turn Normal Grass and Kelp into Groundcover for the whole load order. See --turn-normal-grass for details.
     ///
     /// This preset is used to:
@@ -159,7 +159,7 @@ pub(crate) struct Options {
         help = "Turn Normal Grass and Kelp into Groundcover for the whole load order",
         verbatim_doc_comment
     )]
-    pub(crate) preset_turn_normal_grass: bool,
+    pub(super) preset_turn_normal_grass: bool,
     /// Merge the whole load order. The pinnacle of the program.
     ///
     /// This preset is used to:
@@ -200,7 +200,7 @@ pub(crate) struct Options {
         help = "Merge the whole load order",
         verbatim_doc_comment
     )]
-    pub(crate) preset_merge_load_order: bool,
+    pub(super) preset_merge_load_order: bool,
     /// Mode defines how to process possibly mergeable record. Available modes are:
     ///
     ///   "keep"
@@ -213,7 +213,7 @@ pub(crate) struct Options {
     ///     - All records are replaced(hence no records to merge, that's how Morrowind works with records), except leveled lists. Most leveled list merging utilities(tes3cmd, OMWLLF, Jobasha, TES3Merge etc) would be able to do their work as if plugins were not merged together. You may use this mode if you don't merge any records except leveled lists. Engine processes merged plugins of "keep" and "replace" modes exactly the same, but "replace" produces slightly smaller results.
     ///
     ///   "complete_replace"
-    ///     - Same as replace, but leveled lists are replaced too. You may use this mode if you don't merge any records. I'd only recommend this mode for minimalistic mode setups or whole load order merges.
+    ///     - Same as replace, but leveled lists are replaced too. You may use this mode if you don't merge any records. I'd only recommend this mode for minimalistic mod setups or whole load order merges.
     ///
     ///   "grass"
     ///     - Same as replace, but designed for grass. Allows excluding instances that you don't like. By default it excludes "UNKNOWN GRASS" records from Remiros' Groundcover. Check "advanced.grass_filter" option in settings file if you want to exclude anything else(i.e. mushrooms).
@@ -233,7 +233,7 @@ pub(crate) struct Options {
         help = "How to process possibly mergeable records",
         verbatim_doc_comment
     )]
-    pub(crate) mode: Option<String>,
+    pub(super) mode: Option<String>,
     /// Base directory for plugin lists.
     ///
     /// By default program uses current directory("") as a base for plugin's relative paths. Plugin's absolute paths ignore this option.
@@ -255,7 +255,7 @@ pub(crate) struct Options {
         value_name = "PATH",
         verbatim_doc_comment
     )]
-    pub(crate) base_dir: Option<String>,
+    pub(super) base_dir: Option<String>,
     /// Do not write output plugin.
     ///
     /// Corresponding per list options: "dry_run", "no_dry_run".
@@ -267,7 +267,7 @@ pub(crate) struct Options {
         alias = "dry_run",
         help = "Do not write output plugin"
     )]
-    pub(crate) dry_run: bool,
+    pub(super) dry_run: bool,
     /// Use plugins list from game config file, replacing list of plugins defined in list(if any). Program tries to automatically find config, though sometimes it should be pointed to it with --config. It will report game config file errors(missing plugins, missing directories).
     ///
     /// This option implicitly sets --base-dir to ""(empty).
@@ -281,7 +281,7 @@ pub(crate) struct Options {
         alias = "use_load_order",
         help = "Use plugins list from game config file"
     )]
-    pub(crate) use_load_order: bool,
+    pub(super) use_load_order: bool,
     /// Path to the game config file, e.g.: "C:\Users\Username\Documents\My Games\OpenMW\openmw.cfg"(absolute), "../Morrowind.ini"(relative). May be used to provide alternative game config file or in case the game config file was not found automatically.
     ///
     /// Some options(--turn-normal-grass) require list of mods directories to scan for meshes. OpenMW's game config file contains it. Morrowind's "classic" approach also has it(Data Files dir with all the mods dumped into). Morrowind with Mod Organizer and mods stored in different directories doesn't provide this list. Use "ModOrganizer-to-OpenMW" MO plugin to create openmw.cfg and point to it.
@@ -300,7 +300,7 @@ pub(crate) struct Options {
         value_hint = clap::ValueHint::FilePath,
         help = "Path to the game config file"
     )]
-    pub(crate) config: Option<String>,
+    pub(super) config: Option<String>,
     /// Show all missing references.
     ///
     /// By default only first missing reference per cell is logged to prevent noise.
@@ -314,7 +314,7 @@ pub(crate) struct Options {
         alias = "show_all_missing_refs",
         help = "Show all missing references"
     )]
-    pub(crate) show_all_missing_refs: bool,
+    pub(super) show_all_missing_refs: bool,
     /// Turn Normal Grass and Kelp into Groundcover. Idea, name of the option and list of statics(reversed from list of meshes) are taken from the same name original mod and "Stirk Performance Improver" by Hemaris.
     ///
     /// It's possible to recreate original Hemaris' mods(example comes further), but the goal is to provide easy-to-use automatic way to make the same thing for any plugin or list of plugins. See --preset-turn-normal-grass to quickly make it for your whole load order. Check original mod's description for more details.
@@ -357,7 +357,7 @@ pub(crate) struct Options {
         help = "Turn Normal Grass and Kelp into Groundcover",
         verbatim_doc_comment
     )]
-    pub(crate) turn_normal_grass: bool,
+    pub(super) turn_normal_grass: bool,
     /// Get mesh from BSA only when loose mesh not available. Only effective with --turn-normal-grass. By default younger mesh is used if it's available both in BSA and as a loose file(engine's behaviour, loose files are selected in most cases).
     ///
     /// Corresponding per list options: "prefer_loose_over_bsa", "no_prefer_loose_over_bsa".
@@ -369,7 +369,7 @@ pub(crate) struct Options {
         alias = "prefer_loose_over_bsa",
         help = "Get mesh from BSA only when loose mesh not available"
     )]
-    pub(crate) prefer_loose_over_bsa: bool,
+    pub(super) prefer_loose_over_bsa: bool,
     /// Reindex references twice.
     ///
     /// References are numbered as they appear by default. Cells would contain non-continious ranges of reference ids as a result. Use this option to reindex references again at the expense of additional processing time(up to 30%). This option doesn't change anything gameplay wise, it only makes output plugin internally look like it was produced by TES-CS.
@@ -382,7 +382,7 @@ pub(crate) struct Options {
         long,
         help = "Reindex references twice"
     )]
-    pub(crate) reindex: bool,
+    pub(super) reindex: bool,
     /// Strip masters when possible.
     ///
     /// Master-file subrecords are placed into the output plugin's header. They are not strictly required for some plugins, e.g. grass plugins or any other plugin that doesn't have external cell references. Program would strip master subrecords when enabled. It's all or nothing operation. One or more of external cell references would result in keeping all the master subrecords.
@@ -396,7 +396,7 @@ pub(crate) struct Options {
         alias = "strip_masters",
         help = "Strip masters when possible"
     )]
-    pub(crate) strip_masters: bool,
+    pub(super) strip_masters: bool,
     /// Exclude deleted records with --use-load-order.
     ///
     /// Records with DELETED flag are excluded from the output plugin with this option.
@@ -414,7 +414,7 @@ pub(crate) struct Options {
         alias = "exclude_deleted_records",
         help = "Exclude deleted records with --use-load-order"
     )]
-    pub(crate) exclude_deleted_records: bool,
+    pub(super) exclude_deleted_records: bool,
     /// Do not show missing references.
     ///
     /// This option takes precedence when used together with --show-all-missing-refs.
@@ -428,7 +428,7 @@ pub(crate) struct Options {
         alias = "no_show_missing_refs",
         help = "Do not show missing references"
     )]
-    pub(crate) no_show_missing_refs: bool,
+    pub(super) no_show_missing_refs: bool,
     /// All versions of record would be placed into the output plugin. May be useful for investigating record mutations.
     ///
     /// Corresponding per list options: "debug", "no_debug".
@@ -439,7 +439,7 @@ pub(crate) struct Options {
         long,
         help = "Enable additional debug mode"
     )]
-    pub(crate) debug: bool,
+    pub(super) debug: bool,
     /// Do not ignore non-important errors.
     ///
     /// By default program ignores external references that are missing in master, mimicing game engines behaviour. Those references are simply not placed into the output plugin.
@@ -453,7 +453,7 @@ pub(crate) struct Options {
         alias = "no_ignore_errors",
         help = "Do not ignore non-important errors"
     )]
-    pub(crate) no_ignore_errors: bool,
+    pub(super) no_ignore_errors: bool,
     /// Do not compare output plugin with previous version if it exists.
     ///
     /// By default program doesn't overwrite previous version of output plugin if it's not changed. Disabling comparison would slightly improve processing time.
@@ -467,7 +467,7 @@ pub(crate) struct Options {
         alias = "no_compare",
         help = "Do not compare output plugin with previous version"
     )]
-    pub(crate) no_compare: bool,
+    pub(super) no_compare: bool,
     /// Do not compare secondary output plugin with previous version if it exists.
     ///
     /// Some options(see --turn-normal-grass) may produce "secondary" output plugins in addition to the "primary" merged plugin. By default program doesn't overwrite previous version of output plugin if it's not changed. Disabling comparison would slightly improve processing time.
@@ -480,7 +480,7 @@ pub(crate) struct Options {
         alias = "no_compare_secondary",
         help = "Do not compare output secondary plugin with previous version"
     )]
-    pub(crate) no_compare_secondary: bool,
+    pub(super) no_compare_secondary: bool,
     /// Do not write secondary output plugin.
     ///
     /// Some options(see --turn-normal-grass) may produce "secondary" output plugins in addition to the "primary" merged plugin.
@@ -493,7 +493,7 @@ pub(crate) struct Options {
         alias = "dry_run_secondary",
         help = "Do not write secondary output plugin"
     )]
-    pub(crate) dry_run_secondary: bool,
+    pub(super) dry_run_secondary: bool,
     /// Dismiss stats with --dry-run.
     ///
     /// It's made specifically for -C and -T presets, which are designed not to produce "primary" file. It's hardly needed for anything else, but I've tried to make presets as transparent and reproducible as possible.
@@ -506,7 +506,7 @@ pub(crate) struct Options {
         alias = "dry_run_dismiss_stats",
         help = "Dismiss stats with --dry-run"
     )]
-    pub(crate) dry_run_dismiss_stats: bool,
+    pub(super) dry_run_dismiss_stats: bool,
     /// Ignore non-critical errors, e.g. missing or broken plugins.
     ///
     /// It may be useful, though it's better to fix underlying problems. May rarely lead to unexpected behaviour.
@@ -519,7 +519,7 @@ pub(crate) struct Options {
         alias = "ignore_important_errors",
         help = "Ignore non-critical errors"
     )]
-    pub(crate) ignore_important_errors: bool,
+    pub(super) ignore_important_errors: bool,
     /// Process only cell references(and statics with '-M grass' or '-t').
     ///
     /// This option improves performance a bit, allows filtering out unneeded records with grass mode. Should obviously be used with care. It's made specifically for grass mode and presets -C, -T.
@@ -532,7 +532,7 @@ pub(crate) struct Options {
         alias = "insufficient_merge",
         help = "Process only cell references(and statics with '-M grass' or '-t')"
     )]
-    pub(crate) insufficient_merge: bool,
+    pub(super) insufficient_merge: bool,
     /// Append plugin path to --use-load-order list. This option would only be effective combined with --use-load-order.
     ///
     /// It's made specifically for combination of -O and -T presets to allow adding newly created -GROUNDCOVER plugin into groundcover plugins list. May probably be used for similar tasks. Similar to --skip-from-use-load-order, though requires path to plugin instead of plugin name.
@@ -548,7 +548,7 @@ pub(crate) struct Options {
         value_name = "PATH",
         help = "Append plugin path to --use-load-order list"
     )]
-    pub(crate) append_to_use_load_order: Option<String>,
+    pub(super) append_to_use_load_order: Option<String>,
     /// Skip plugin name from --use-load-order list. This option would only be effective combined with --use-load-order.
     ///
     /// It's made specifically for combination of -O and -T presets to allow skipping -CONTENT plugin made with another plugin list. May probably be used for similar tasks. Similar to --append-to-use-load-order, though requires plugin name instead of path to plugin.
@@ -564,7 +564,7 @@ pub(crate) struct Options {
         value_name = "NAME",
         help = "Skip plugin name from --use-load-order list"
     )]
-    pub(crate) skip_from_use_load_order: Option<String>,
+    pub(super) skip_from_use_load_order: Option<String>,
     /// Show more information. May be provided multiple times for extra effect:
     ///
     ///   -v: Show list options, total stats per list, list of new grass meshes written, count of new static records, list of records excluded(with exclude_deleted_records option), "references reindexed" and "master subrecords stripped" messages.
@@ -582,12 +582,12 @@ pub(crate) struct Options {
         help = "Show more information",
         verbatim_doc_comment,
     )]
-    pub(crate) verbose: u8,
+    pub(super) verbose: u8,
     /// Do not show anything.
     ///
     /// This flag takes precedence over --verbose.
     #[arg(help_heading = "Display output", short, long, help = "Do not show anything")]
-    pub(crate) quiet: bool,
+    pub(super) quiet: bool,
 }
 
 fn arg_get_help(arg: &Arg) -> Result<StyledStr> {
@@ -633,7 +633,7 @@ fn check_short_arg_names_and_aliases(string: &str, command: &clap::Command) -> R
     if string.len() == 1 {
         let character = string.chars().next().expect("string is empty");
         match character {
-            'h' => return Err(anyhow!("Print help (see a summary with '-h')")),
+            'h' => return Err(anyhow!("Print help (see more with '--help')")),
             'V' => return Err(anyhow!("Print version")),
             _ => {
                 for arg in command.get_arguments() {
@@ -670,7 +670,7 @@ fn check_show_help_for_option(options: &Options) -> Result<()> {
     }
 }
 
-pub(crate) fn get_options() -> Result<Options> {
+pub(super) fn get_options() -> Result<Options> {
     let options = Options::try_parse()?;
     check_show_help_for_option(&options)?;
     Ok(options)

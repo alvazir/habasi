@@ -3,16 +3,26 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.2.10 (2023-11-19)
+
+Miscellaneous
+
+* Change license from dual MIT and UNLICENSE to GNU GPLv3.
+* Rename program from "Habasi - TES3 plugin merging tool" to "Habasi - TES3 plugin merging and utility tool".
+* Improve filesystem-related error messages.
+* Add system requirements to description.
+* Fix typos in several places.
+
 ## 0.2.9 (2023-11-13)
 
 Fixes
 
-* Remove error when encountering omwscripts plugin, auto-skip processing of omwscripts plugins(or any other type of plugins via setting guts.plugin_extensions_to_ignore)
+* Remove error when encountering omwscripts plugin, auto-skip processing of omwscripts plugins(or any other type of plugins via setting guts.plugin_extensions_to_ignore).
 
 Miscellaneous
 
-* Slightly improve default display output by moving "Skipped plugin processing ..." messages to verbose mode
-* Update versions of rust and all dependencies, notably tes3 library to latest commit(2fae07a0)
+* Slightly improve default display output by moving "Skipped plugin processing ..." messages to verbose mode.
+* Update versions of rust and all dependencies, notably tes3 library to latest commit(2fae07a0).
 
 ## 0.2.8 (2023-08-21)
 

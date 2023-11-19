@@ -3,7 +3,7 @@
 
 # Habasi
 
-TES3 Plugin Merging Tool.  
+TES3 plugin merging and utility tool.  
 
 ## Description
 
@@ -23,14 +23,14 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
 
 * Type command `habasi -h` for brief help
 * Type command `habasi --help` for extended help
-* Type command `habasi --help-option <OPTION>` to get extended help for a specific option
+* Type command `habasi -? <OPTION>` to get extended help for a specific option
 * Example outputs:  
   <details>
   
   <summary>Brief help</summary>
 
   ```text
-  Habasi - TES3 Plugin Merging Tool
+  Habasi - TES3 plugin merging and utility tool
   
   Usage: habasi [OPTIONS]
   
@@ -108,11 +108,45 @@ Please see the [CHANGELOG](CHANGELOG.md) for a release history.
 
 [Binary downloads](https://www.nexusmods.com/morrowind/mods/53002) are available for GNU/Linux(x86-64), Android(AArch64), Windows(x86-64(MSVC, GNU)), macOS(x86-64, AArch64).
 
+## System requirements
+
+
+<details>
+
+<summary>OS: non-ancient(10-15 years old or younger)</summary>
+
+Linux kernel 3.2+, Android 4.4+, Windows 7+, macOS 10.12+, anything else supported by Rust.  
+
+</details>
+<details>
+
+<summary>Memory: depends. Typical usage requires negligible amounts of memory. You should have enough memory for extreme merges if you can run Morrowind :-) Consider using "-P" option if you encounter out of memory errors.</summary>
+
+Estimated peak memory usage: x8(x14 for grass plugins) the combined size of merged plugins. Consider using "-P" option to drop it to x5(x8 for grass). Grass plugins have higher ratio because memory usage mainly depends on the amount of cell references(and size of the plugins in turn).
+
+Most plugins are small, so the memory usage is negligible in most cases. Examples:  
+1. 266 plugins merged with combined size of 18MB = 126MB(72MB with "-P") RAM usage,  
+2. 70 plugins merged with combined size of 20MB = 162MB(90MB with "-P") RAM usage,  
+3. 277 plugins merged with combined size of 110MB = 896MB(536MB with "-P") RAM usage.  
+
+Large plugins are rare. Morrowind.esm is one of the largest(77MB), TR_Mainland.esm is the largest(167MB). Few examples of merging large plugins:  
+4. Base game master plugins: 91MB in total, 665MB(447MB with "-P") RAM usage:  
+  ./habasi -m "out.esp, Morrowind.esm, Tribunal.esm, Bloodmoon.esm",  
+5. Most popular ESMs: 340MB in total, 2880MB(1918MB with "-P") RAM usage.  
+  ./habasi -m "out.esp, Morrowind.esm, Tribunal.esm, Bloodmoon.esm, Patch for Purists.esm, Tamriel_Data.esm, TR_Mainland.esm, OAAB_Data.esm, Sky_Main.esm, Cyr_Main.esm",  
+6. Merging grass for most landmass mods: 255MB in total, 3658MB(2039MB with "-P") RAM usage:  
+  Grass for Morrowind, STotSP, TR, SHotN, Cyrodiil, Havish, Lokken, Wyrmhaven, Chemua etc.  
+
+The most extreme cases of merging everything:  
+7. Heavy modded setup of ~650 plugins: 750MB in total(with grass), 5770MB(2673MB with "-P") RAM usage.  
+
+</details>
+
 ## Building
 
 <details>
 
-<summary>Habasi is written in Rust, so you'll need to grab a [Rust installation](https://www.rust-lang.org) in order to compile it. Habasi compiles with Rust 1.73.0(stable) or newer</summary>
+<summary>Habasi is written in Rust, so you'll need to grab a [Rust installation](https://www.rust-lang.org) in order to compile it. Habasi compiles with Rust 1.74.0(stable) or newer</summary>
 
 ```shell
 git clone https://github.com/alvazir/habasi
@@ -133,7 +167,7 @@ cargo build --release
 
 ## License
 
-[Dual-licensed](COPYING) under the [MIT License](LICENSE-MIT) or the [Unlicense](UNLICENSE).  
+Licensed under the [GNU GPLv3](LICENSE).  
 
 ## Acknowledgments
 

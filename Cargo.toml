@@ -1,14 +1,14 @@
 [package]
 name = "habasi"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
-rust-version = "1.73.0"
-description = "Habasi - TES3 Plugin Merging Tool"
+rust-version = "1.74.0"
+description = "Habasi - TES3 plugin merging and utility tool"
 readme = "README.md"
 homepage = "https://www.nexusmods.com/morrowind/mods/53002"
 repository = "https://github.com/alvazir/habasi"
-license = "Unlicense OR MIT"
+license = "GPL-3.0-or-later"
 keywords = ["cli", "tes3", "morrowind", "openmw"]
 categories = ["command-line-utilities", "game development"]
 publish = false
@@ -19,22 +19,23 @@ maintenance = { status = "actively-developed" }
 [dependencies.tes3]
 # path = "../tes3"
 git = "https://github.com/Greatness7/tes3"
-# rev = "6b6a0ff"
 rev = "2fae07a0"
 # branch = "dev"
 default-features = false
 features = ["esp"]
 
 [dependencies]
-clap = { version = "~4.4.8", features = ["derive", "suggestions", "wrap_help"] }  # CLI
-confique = { version = "~0.2.4", default-features = false, features = ["toml"] }  # settings file
-serde = "~1.0.192"                                                                # required by confique
-anyhow = "~1.0.75"    																													  # error management
-hashbrown = { version = "~0.14.2", features = ["rayon"] }                         # references
-dirs = "~5.0.1"                                                                   # find openmw.cfg
-walkdir = "~2.4.0"                                                                # find files
-rayon = "~1.8.0"                                                                  # find files in parallel
-crc = "~3.0.1"                                                                    # create id for sscr with empty id
+clap = { version = "~4.4.8", features = ["derive", "suggestions", "wrap_help"] } # CLI
+confique = { version = "~0.2.4", default-features = false, features = ["toml"] } # settings file
+serde = "~1.0.192"                                                               # required by confique
+anyhow = "~1.0.75"                                                               # error management
+hashbrown = { version = "~0.14.2", features = ["rayon"] }                        # references
+dirs = "~5.0.1"                                                                  # find openmw.cfg
+rayon = "~1.8.0"                                                                 # find files in parallel
+fs-err = "~2.10.0"                                                               # better fs errors
+walkdir = "~2.4.0"                                                               # find files
+crc = "~3.0.1"                                                                   # create id for sscr with empty id
+# peak_alloc = "~0.2.0"                                                          # memory usage, disable due to slowing down the program
 
 [profile.release-lto]
 inherits = "release"

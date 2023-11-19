@@ -1,11 +1,9 @@
 use crate::{err_or_ignore, err_or_ignore_thread_safe, msg, read_lines, Cfg, Helper, LoadOrder, Log};
 use anyhow::{anyhow, Context, Result};
+use fs_err::read_dir;
 use hashbrown::{hash_map::Entry, HashMap};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use std::{
-    fs::read_dir,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 #[derive(Default)]
 struct GetPluginsHelper {

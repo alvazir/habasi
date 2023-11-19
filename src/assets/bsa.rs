@@ -1,9 +1,7 @@
 // COMMENT: https://en.uesp.net/wiki/Morrowind_Mod:BSA_File_Format and linked ghostwheel's site
 use anyhow::{anyhow, Context, Result};
-use std::{
-    fs::File,
-    io::{Read, Seek, SeekFrom},
-};
+use fs_err::File;
+use std::io::{Read, Seek, SeekFrom};
 
 pub(crate) struct Bsa {
     pub(crate) path: String,

@@ -1,3 +1,22 @@
+/*
+ *  Habasi - TES3 plugin merging and utility tool
+ *
+ *  Copyright (C) 2023 alvazir
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 use anyhow::{Context, Result};
 use std::{process::exit, time::Instant};
 use tes3::esp::Plugin;
@@ -14,6 +33,7 @@ use config::{get_self_config, Cfg};
 use input::process_records;
 use load_order::{get_game_config, get_load_order};
 use output::{make_output_plugin, make_turn_normal_grass, transform_output, write_output_plugin};
+// use peak_alloc::PeakAlloc; // slows down the program too much
 use stats::{Stats, StatsUpdateKind};
 use structs::{
     Assets, CellExtGrid, CellMeta, Dial, DialMeta, FallbackStatics, FileInBsa, GlobalMaster, GlobalVtexId, HeaderText, Helper,
@@ -30,9 +50,15 @@ use util::{
     show_settings_written, truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG,
 };
 
+// #[global_allocator]
+// static PEAK_ALLOC: PeakAlloc = PeakAlloc; // slows down the program too much
+
 fn main() {
     match run() {
-        Ok(()) => exit(0),
+        Ok(()) => {
+            // println!("PEAK MEMORY USAGE: {:.0}MB", PEAK_ALLOC.peak_usage_as_mb()); // slows down the program too much
+            exit(0)
+        }
         Err(error) => {
             eprintln!("{error:?}");
             exit(1);
