@@ -17,8 +17,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use anyhow::{Context, Result};
-use std::{process::exit, time::Instant};
+use anyhow::{anyhow, Context, Result};
+use std::{
+    io::{Error as IOError, ErrorKind},
+    process::exit,
+    time::Instant,
+};
 use tes3::esp::Plugin;
 mod assets;
 mod config;
@@ -150,6 +154,22 @@ fn process_list(
         } else {
             if let Err(err) = process_plugin(plugin_name, &mut out, name, h, cfg, log) {
                 {
+                    if let Some(inner) = err.downcast_ref::<IOError>() {
+                        if matches!(inner.kind(), ErrorKind::InvalidData) {
+                            if let Some(tag) = inner.to_string().strip_prefix("Unexpected Tag: ") {
+                                if cfg.guts.unexpected_tags_to_ignore.contains(&tag.to_lowercase()) {
+                                    text = format!(
+                                        "  Skipped processing plugin \"{plugin_name}\" because it contains unexpected record type to ignore: \"{tag}\""
+                                    );
+                                    msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
+                                    h.total_add_skipped_processing_plugin(text);
+                                    continue;
+                                } else {
+                                    return Err(anyhow!("Failed to process plugin\n{err}: {inner}\nUse --ignore-important-errors to ignore\nConsider reporting the error to add this tag to the list of unexpected tags to skip by default"));
+                                }
+                            }
+                        };
+                    };
                     err_or_ignore(format!("{:#}", err), h.g.list_options.ignore_important_errors, cfg, log)
                         .with_context(|| "Failed to process plugin")?;
                     continue;

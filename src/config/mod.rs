@@ -58,6 +58,7 @@ pub(crate) struct Guts {
     pub(crate) omw_line_beginning_groundcover: String,
     pub(crate) omw_plugin_extensions: Vec<OsString>,
     pub(crate) plugin_extensions_to_ignore: Vec<String>,
+    pub(crate) unexpected_tags_to_ignore: Vec<String>,
     pub(crate) skipped_processing_plugins_msg_verbosity: u8,
     // [Section: Turn normal grass]
     pub(crate) turn_normal_grass_new_name_retries: u8,
@@ -222,6 +223,7 @@ impl Cfg {
                 omw_line_beginning_groundcover: set.guts.omw_line_beginning_groundcover,
                 omw_plugin_extensions: set_ext_vec!(set.guts.omw_plugin_extensions),
                 plugin_extensions_to_ignore: prepare_plugin_extensions_to_ignore(set.guts.plugin_extensions_to_ignore),
+                unexpected_tags_to_ignore: set.guts.unexpected_tags_to_ignore.iter().map(|tag| tag.to_lowercase()).collect(),
                 skipped_processing_plugins_msg_verbosity: set.guts.skipped_processing_plugins_msg_verbosity,
                 // [Section: Turn normal grass]
                 turn_normal_grass_new_name_retries: set_new_name_retries(set.guts.turn_normal_grass_mesh_new_name_retries)?,

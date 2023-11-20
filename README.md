@@ -125,20 +125,23 @@ Linux kernel 3.2+, Android 4.4+, Windows 7+, macOS 10.12+, anything else support
 Estimated peak memory usage: x8(x14 for grass plugins) the combined size of merged plugins. Consider using "-P" option to drop it to x5(x8 for grass). Grass plugins have higher ratio because memory usage mainly depends on the amount of cell references(and size of the plugins in turn).
 
 Most plugins are small, so the memory usage is negligible in most cases. Examples:  
-1. 266 plugins merged with combined size of 18MB = 126MB(72MB with "-P") RAM usage,  
-2. 70 plugins merged with combined size of 20MB = 162MB(90MB with "-P") RAM usage,  
-3. 277 plugins merged with combined size of 110MB = 896MB(536MB with "-P") RAM usage.  
+
+* 266 plugins merged with combined size of 18MB = 126MB(72MB with "-P") RAM usage,  
+* 70 plugins merged with combined size of 20MB = 162MB(90MB with "-P") RAM usage,  
+* 277 plugins merged with combined size of 110MB = 896MB(536MB with "-P") RAM usage.  
 
 Large plugins are rare. Morrowind.esm is one of the largest(77MB), TR_Mainland.esm is the largest(167MB). Few examples of merging large plugins:  
-4. Base game master plugins: 91MB in total, 665MB(447MB with "-P") RAM usage:  
+
+* Base game master plugins: 91MB in total, 665MB(447MB with "-P") RAM usage:  
   ./habasi -m "out.esp, Morrowind.esm, Tribunal.esm, Bloodmoon.esm",  
-5. Most popular ESMs: 340MB in total, 2880MB(1918MB with "-P") RAM usage.  
+* Most popular ESMs: 340MB in total, 2880MB(1918MB with "-P") RAM usage.  
   ./habasi -m "out.esp, Morrowind.esm, Tribunal.esm, Bloodmoon.esm, Patch for Purists.esm, Tamriel_Data.esm, TR_Mainland.esm, OAAB_Data.esm, Sky_Main.esm, Cyr_Main.esm",  
-6. Merging grass for most landmass mods: 255MB in total, 3658MB(2039MB with "-P") RAM usage:  
+* Merging grass for most landmass mods: 255MB in total, 3658MB(2039MB with "-P") RAM usage:  
   Grass for Morrowind, STotSP, TR, SHotN, Cyrodiil, Havish, Lokken, Wyrmhaven, Chemua etc.  
 
 The most extreme cases of merging everything:  
-7. Heavy modded setup of ~650 plugins: 750MB in total(with grass), 5770MB(2673MB with "-P") RAM usage.  
+
+* Heavy modded setup of ~650 plugins: 750MB in total(with grass), 5770MB(2673MB with "-P") RAM usage.  
 
 </details>
 
