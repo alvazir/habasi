@@ -260,7 +260,7 @@ pub(super) struct Guts {
     #[config(default = ["omwscripts"])]
     pub(super) plugin_extensions_to_ignore: Vec<String>,
     /// Plugins with the following record types not be processed. It's made to ignore plugins with non-TES3 record types newly appeared types.
-    #[config(default = ["LUAL"])]
+    #[config(default = ["LUAL", "CELL::XSCL"])]
     pub(super) unexpected_tags_to_ignore: Vec<String>,
     #[config(default = 1)]
     pub(super) skipped_processing_plugins_msg_verbosity: u8,
