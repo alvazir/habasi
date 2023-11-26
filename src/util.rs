@@ -347,32 +347,17 @@ pub(crate) fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
         if cfg.presets.turn_normal_grass {
             let mut preset_config_turn_normal_grass = cfg.guts.preset_config_turn_normal_grass.clone();
             if cfg.presets.check_references {
-                preset_config_turn_normal_grass.extend(
-                    cfg.guts
-                        .preset_config_turn_normal_grass_add_with_check_references
-                        .clone()
-                        .into_iter(),
-                );
+                preset_config_turn_normal_grass.extend(cfg.guts.preset_config_turn_normal_grass_add_with_check_references.clone());
             }
             merge_override = vec![preset_config_turn_normal_grass];
         };
         if cfg.presets.merge_load_order {
             let mut preset_config_merge_load_order = cfg.guts.preset_config_merge_load_order.clone();
             if cfg.presets.check_references {
-                preset_config_merge_load_order.extend(
-                    cfg.guts
-                        .preset_config_merge_load_order_add_with_check_references
-                        .clone()
-                        .into_iter(),
-                );
+                preset_config_merge_load_order.extend(cfg.guts.preset_config_merge_load_order_add_with_check_references.clone());
             }
             if cfg.presets.turn_normal_grass {
-                preset_config_merge_load_order.extend(
-                    cfg.guts
-                        .preset_config_merge_load_order_add_with_turn_normal_grass
-                        .clone()
-                        .into_iter(),
-                );
+                preset_config_merge_load_order.extend(cfg.guts.preset_config_merge_load_order_add_with_turn_normal_grass.clone());
             }
             merge_override = vec![preset_config_merge_load_order];
             scan_load_order(h, cfg, log)?;
@@ -426,13 +411,13 @@ pub(crate) fn get_expanded_plugin_list(
             plugin_list[..index]
                 .iter()
                 .cloned()
-                .chain(h.t.game_configs[h.g.config_index].load_order.groundcovers.clone().into_iter())
+                .chain(h.t.game_configs[h.g.config_index].load_order.groundcovers.clone())
                 .collect::<Vec<_>>()
         } else {
             plugin_list[..index]
                 .iter()
                 .cloned()
-                .chain(h.t.game_configs[h.g.config_index].load_order.contents.clone().into_iter())
+                .chain(h.t.game_configs[h.g.config_index].load_order.contents.clone())
                 .collect::<Vec<_>>()
         };
         if !list_options.append_to_use_load_order.is_empty() {
