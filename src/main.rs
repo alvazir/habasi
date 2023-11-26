@@ -17,7 +17,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use std::{
     io::{Error as IOError, ErrorKind},
     process::exit,
@@ -163,14 +163,15 @@ fn process_list(
                                     );
                                     msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
                                     h.total_add_skipped_processing_plugin(text);
-                                    continue;
                                 } else {
-                                    return Err(anyhow!("Failed to process plugin\n{err}: {inner}\nUse --ignore-important-errors to ignore\nConsider reporting the error to add this tag to the list of unexpected tags to skip by default"));
+                                    err_or_ignore(format!("{:#}", err), h.g.list_options.ignore_important_errors, true, cfg, log)
+                                        .with_context(|| "Failed to process plugin")?;
                                 }
+                                continue;
                             }
                         };
-                    };
-                    err_or_ignore(format!("{:#}", err), h.g.list_options.ignore_important_errors, cfg, log)
+                    }
+                    err_or_ignore(format!("{:#}", err), h.g.list_options.ignore_important_errors, false, cfg, log)
                         .with_context(|| "Failed to process plugin")?;
                     continue;
                 };

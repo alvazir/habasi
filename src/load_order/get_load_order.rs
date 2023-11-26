@@ -179,11 +179,11 @@ fn mor_get_plugin(
                 name,
                 helper.mor_data_files_dir.join(name).display()
             );
-            err_or_ignore(text, ignore_important_errors, cfg, log)?;
+            err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
         }
     } else {
         let text = format!("Failed to parse line \"{line}\"");
-        err_or_ignore(text, ignore_important_errors, cfg, log)?;
+        err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
     }
     if !helper.mor_found {
         helper.mor_found = true;
@@ -236,11 +236,11 @@ fn mor_get_archive(
                 name,
                 helper.mor_data_files_dir.join(name).display()
             );
-            err_or_ignore(text, ignore_important_errors, cfg, log)?;
+            err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
         }
     } else {
         let text = format!("Failed to parse line \"{line}\"");
-        err_or_ignore(text, ignore_important_errors, cfg, log)?;
+        err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
     }
     if !helper.mor_found {
         helper.mor_found = true;
@@ -266,7 +266,7 @@ fn omw_get_data_dir(
         helper.omw_data_counter += 1;
     } else {
         let text = format!("Failed to parse line \"{line}\"");
-        err_or_ignore(text, ignore_important_errors, cfg, log)?;
+        err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
     }
     if !helper.omw_found {
         helper.omw_found = true;
@@ -302,7 +302,7 @@ fn omw_get_plugin(
         }
     } else {
         let text = format!("Failed to find {kind} \"{name}\"");
-        err_or_ignore(text, ignore_important_errors, cfg, log)?;
+        err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
     }
     Ok(())
 }

@@ -89,6 +89,7 @@ pub(crate) struct Guts {
     pub(crate) prefix_combined_stats: String,
     pub(crate) prefix_list_stats: String,
     pub(crate) prefix_ignored_important_error_message: String,
+    pub(crate) infix_add_unexpected_tag_suggestion: String,
     pub(crate) suffix_add_ignore_important_errors_suggestion: String,
 }
 
@@ -254,6 +255,7 @@ impl Cfg {
                 prefix_combined_stats: set.guts.prefix_combined_stats,
                 prefix_list_stats: set.guts.prefix_list_stats,
                 prefix_ignored_important_error_message: set.guts.prefix_ignored_important_error_message,
+                infix_add_unexpected_tag_suggestion: set.guts.infix_add_unexpected_tag_suggestion,
                 suffix_add_ignore_important_errors_suggestion: set.guts.suffix_add_ignore_important_errors_suggestion,
             },
         })

@@ -37,7 +37,7 @@ pub(crate) fn msg_no_log<S: AsRef<str>>(text: S, verbose: u8, cfg: &Cfg) {
     msg!(text, verbose, cfg);
 }
 
-pub(crate) fn err_or_ignore<S: AsRef<str>>(text: S, ignore: bool, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub(crate) fn err_or_ignore<S: AsRef<str>>(text: S, ignore: bool, unexpected_tag: bool, cfg: &Cfg, log: &mut Log) -> Result<()> {
     if ignore {
         msg(
             format!("{}{}", cfg.guts.prefix_ignored_important_error_message, text.as_ref()),
@@ -47,8 +47,13 @@ pub(crate) fn err_or_ignore<S: AsRef<str>>(text: S, ignore: bool, cfg: &Cfg, log
         )
     } else {
         Err(anyhow!(format!(
-            "{}{}",
+            "{}{}{}",
             text.as_ref(),
+            if unexpected_tag {
+                &cfg.guts.infix_add_unexpected_tag_suggestion
+            } else {
+                ""
+            },
             cfg.guts.suffix_add_ignore_important_errors_suggestion
         )))
     }

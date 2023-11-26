@@ -7,7 +7,8 @@
 
 Fixes
 
-* Skip list if all plugins were skipped
+* Skip list if all it's plugins were skipped
+* Allow --ignore-important-errors to ignore unexpected tag errors(regression, resolves [Issue-2](https://github.com/alvazir/habasi/issues/2))
 
 ## 0.2.11 (2023-11-20)
 
