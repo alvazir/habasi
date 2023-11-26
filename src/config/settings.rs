@@ -264,6 +264,16 @@ pub(super) struct Guts {
     pub(super) unexpected_tags_to_ignore: Vec<String>,
     #[config(default = 1)]
     pub(super) skipped_processing_plugins_msg_verbosity: u8,
+    /// [Section: "Hidden" OpenMW-CS data directory]
+    ///
+    /// Path that is appended to the "data_dir": "$HOME/.local/share|$HOME/Library/Application Support" + omw_cs_data_path_suffix_linux_macos
+    #[config(default = "openmw/data")]
+    pub(super) omw_cs_data_path_suffix_linux_macos: String,
+    /// Path that is appended to the "document_dir": "C:\Users\Username\Documents" + omw_cs_data_path_suffix_windows
+    #[config(default = "My Games/OpenMW/data")]
+    pub(super) omw_cs_data_path_suffix_windows: String,
+    #[config(default = [])]
+    pub(super) omw_cs_data_paths_list: Vec<String>,
     /// [Section: Turn normal grass]
     #[config(default = ":")]
     pub(super) turn_normal_grass_stat_ids_separator: String,

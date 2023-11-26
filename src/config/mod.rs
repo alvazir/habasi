@@ -60,6 +60,10 @@ pub(crate) struct Guts {
     pub(crate) plugin_extensions_to_ignore: Vec<String>,
     pub(crate) unexpected_tags_to_ignore: Vec<String>,
     pub(crate) skipped_processing_plugins_msg_verbosity: u8,
+    // [Section: "Hidden" OpenMW-CS data directory]
+    pub(crate) omw_cs_data_path_suffix_linux_macos: String,
+    pub(crate) omw_cs_data_path_suffix_windows: String,
+    pub(crate) omw_cs_data_paths_list: Vec<String>,
     // [Section: Turn normal grass]
     pub(crate) turn_normal_grass_new_name_retries: u8,
     pub(crate) turn_normal_grass_plugin_name_suffix_deleted_content: String,
@@ -226,6 +230,10 @@ impl Cfg {
                 plugin_extensions_to_ignore: prepare_plugin_extensions_to_ignore(set.guts.plugin_extensions_to_ignore),
                 unexpected_tags_to_ignore: set.guts.unexpected_tags_to_ignore.iter().map(|tag| tag.to_lowercase()).collect(),
                 skipped_processing_plugins_msg_verbosity: set.guts.skipped_processing_plugins_msg_verbosity,
+                // [Section: "Hidden" OpenMW-CS data directory]
+                omw_cs_data_path_suffix_linux_macos: set.guts.omw_cs_data_path_suffix_linux_macos,
+                omw_cs_data_path_suffix_windows: set.guts.omw_cs_data_path_suffix_windows,
+                omw_cs_data_paths_list: set.guts.omw_cs_data_paths_list,
                 // [Section: Turn normal grass]
                 turn_normal_grass_new_name_retries: set_new_name_retries(set.guts.turn_normal_grass_mesh_new_name_retries)?,
                 turn_normal_grass_plugin_name_suffix_deleted_content: set.guts.turn_normal_grass_plugin_name_suffix_deleted_content,

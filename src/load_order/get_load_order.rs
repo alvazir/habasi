@@ -1,5 +1,6 @@
 use crate::{err_or_ignore, err_or_ignore_thread_safe, msg, read_lines, Cfg, Helper, LoadOrder, Log};
 use anyhow::{anyhow, Context, Result};
+use dirs::{data_dir, document_dir};
 use fs_err::read_dir;
 use hashbrown::{hash_map::Entry, HashMap};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
@@ -61,6 +62,8 @@ pub(crate) fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result
     }
     if helper.omw_found {
         if !helper.omw_all_plugins_found {
+            omw_get_cs_data_dir(&mut omw_data_dirs, &mut helper, cfg, log)
+                .with_context(|| "Failed to find \"hidden\" OpenMW-CS data directory path")?;
             omw_all_plugins =
                 get_all_plugins(&omw_data_dirs, &mut helper, ignore, cfg).with_context(|| "Failed to find all OpenMW's plugins")?;
         };
@@ -305,4 +308,56 @@ fn omw_get_plugin(
         err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
     }
     Ok(())
+}
+
+fn omw_get_cs_data_dir(
+    omw_data_dirs: &mut Vec<(usize, PathBuf)>,
+    helper: &mut GetPluginsHelper,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
+    let mut checked_paths: Vec<PathBuf> = Vec::new();
+    macro_rules! check_omw_cs_data_path {
+        ($omw_cs_data_path:expr) => {
+            if $omw_cs_data_path.exists() {
+                omw_data_dirs.push((helper.omw_data_counter, $omw_cs_data_path));
+                helper.omw_data_counter += 1;
+                let text = format!(
+                    "Added \"hidden\" OpenMW-CS data path \"{}\" to the list of directories",
+                    $omw_cs_data_path.display()
+                );
+                return msg(text, 0, cfg, log);
+            } else {
+                checked_paths.push($omw_cs_data_path);
+            }
+        };
+    }
+    if let Some(dir) = data_dir() {
+        check_omw_cs_data_path!(dir.join(&cfg.guts.omw_cs_data_path_suffix_linux_macos));
+    } else {
+        checked_paths.push(PathBuf::from(format!(
+            "Failed to get __data_dir__ to check \"__data_dir__/{}\"",
+            &cfg.guts.omw_cs_data_path_suffix_linux_macos
+        )));
+    };
+    if let Some(dir) = document_dir() {
+        check_omw_cs_data_path!(dir.join(&cfg.guts.omw_cs_data_path_suffix_windows));
+    } else {
+        checked_paths.push(PathBuf::from(format!(
+            "Failed to get __document_dir__ to check \"__document_dir__/{}\"",
+            &cfg.guts.omw_cs_data_path_suffix_windows
+        )));
+    };
+    for path in &cfg.guts.omw_cs_data_paths_list {
+        check_omw_cs_data_path!(PathBuf::from(path));
+    }
+    let text = format!(
+        "Failed to find \"hidden\" OpenMW-CS data path. Probably none exists. Checked following paths:\n{}",
+        checked_paths
+            .iter()
+            .map(|path| format!("\t{}", path.display()))
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
+    msg(text, 1, cfg, log)
 }

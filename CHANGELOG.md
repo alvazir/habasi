@@ -5,12 +5,16 @@
 
 ## 0.2.12 (2023-11-26)
 
+New features
+
+* Add "hidden" OpenMW-CS data directory to the list of plugin directories(resolve [Issue-3](https://github.com/alvazir/habasi/issues/3)).
+
 Fixes
 
 * Skip list if all it's plugins were skipped.
-* Allow --ignore-important-errors to ignore unexpected tag errors thanks to magicaldave's report(regression, resolves [Issue-2](https://github.com/alvazir/habasi/issues/2)).
-* Ignore plugins that contain non-TES3 record types(CELL::XSCL) automatically thanks to magicaldave's report(resolves [Issue-2](https://github.com/alvazir/habasi/issues/2)).
-* Ignore plugins that contain non-TES3 record types(TES3::FORM) automatically thanks to magicaldave's report(resolves [Issue-4](https://github.com/alvazir/habasi/issues/4)).
+* Allow --ignore-important-errors to ignore unexpected tag errors thanks to magicaldave's report(regression, resolve [Issue-2](https://github.com/alvazir/habasi/issues/2)).
+* Ignore plugins that contain non-TES3 record types(CELL::XSCL) automatically thanks to magicaldave's report(resolve [Issue-2](https://github.com/alvazir/habasi/issues/2)).
+* Ignore plugins that contain non-TES3 record types(TES3::FORM) automatically thanks to magicaldave's report(resolve [Issue-4](https://github.com/alvazir/habasi/issues/4)).
 
 ## 0.2.11 (2023-11-20)
 
