@@ -3,6 +3,12 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.2.12 (2023-11-26)
+
+Fixes
+
+* Skip list if all plugins were skipped
+
 ## 0.2.11 (2023-11-20)
 
 Fixes

@@ -149,6 +149,10 @@ macro_rules! make_stats {
                 self.$total.self_check() $(&& self.$n.self_check())+ && self.total.merged_plugins == self.tes3.processed
             }
 
+            pub(crate) fn all_plugins_ignored(&self) -> bool {
+                self.total.merged_plugins == 0
+            }
+
             pub(crate) fn add(&mut self, other: &$name) {
                 self.$total.add(&other.$total);
                 $(self.$n.add(&other.$n);)+

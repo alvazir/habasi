@@ -178,6 +178,10 @@ fn process_list(
             h.local_commit(cfg, log)?;
         }
     }
+    if h.g.stats.all_plugins_ignored() {
+        msg("Skipping list because all plugins were skipped", 0, cfg, log)?;
+        return Ok(());
+    }
     process_moved_instances(&mut out, h)?;
     out = transform_output(name, out, h, cfg, log)?;
     process_turn_normal_grass(name, &mut out, old_output_plugin, h, cfg, log)?;
