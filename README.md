@@ -21,21 +21,22 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
 
 ## Usage
 
-<!-- markdownlint-disable MD032 -->
 * Most basic usage: `habasi -m out.esp plugin1.esp plugin2.esp` to merge plugin1 and plugin2 into "out.esp"
-<details><summary>The program is flexible and allows complicated scenarios, though basic usage is simple</summary>
-  * To merge all plugins in current directory:  
-    * `habasi -m out.esp *.esp`  
-  * If you know what you do(after reading `habasi -? --mode`):  
-    * `habasi --mode complete_replace -m out.esp plugin1.esp plugin2.esp`  
-  * Only one input plugin is needed actually, though it makes sense in rare situations like:  
-    * `habasi --mode grass -m out.esp Rem_WG_TR.esp`  
-  * Profiles are a easy to use too. Merging your whole load order:  
-    * `habasi -O`  
-  * Almost everything may be done with command-line arguments, though settings file is the better way for advanced usage:  
-    * `habasi --settings-write` to create settings file  
-    * `habasi` afterwards to use it  
-</details>
+  <details>
+
+  <summary>The program is flexible and allows complicated scenarios, though basic usage is simple</summary>
+    * To merge all plugins in current directory:  
+      * `habasi -m out.esp *.esp`  
+    * If you know what you do(after reading `habasi -? --mode`):  
+      * `habasi --mode complete_replace -m out.esp plugin1.esp plugin2.esp`  
+    * Only one input plugin is needed actually, though it makes sense in rare situations like:  
+      * `habasi --mode grass -m out.esp Rem_WG_TR.esp`  
+    * Profiles are a easy to use too. Merging your whole load order:  
+      * `habasi -O`  
+    * Almost everything may be done with command-line arguments, though settings file is the better way for advanced usage:  
+      * `habasi --settings-write` to create settings file  
+      * `habasi` afterwards to use it  
+  </details>
 * Type command `habasi -h` for brief help
 * Type command `habasi --help` for extended help
 * Type command `habasi -? <OPTION>` to get extended help for a specific option
