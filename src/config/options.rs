@@ -18,19 +18,38 @@ use clap::{builder::StyledStr, Arg, CommandFactory, Parser};
 /// GitHub: https://github.com/alvazir/habasi
 /// Nexus Mods: https://www.nexusmods.com/morrowind/mods/53002
 pub(super) struct Options {
-    /// List(s) of plugins to merge. This option is handy for one-shot merges. Settings file should be more convenient for "permanent" or longer lists , see --settings.
+    /// List(s) of plugins to merge. This option is handy for one-shot merges. Settings file should be more convenient for "permanent" or longer lists , see --settings. There are 2 variants of --merge argument, primary(1) and secondary(2).
     ///
-    /// Each list is a double-quoted(*) string that consists of output plugin name, optional list options("replace" in second example) and comma-separated list of plugins to merge. Ouput plugin's name should come first. Examples:
+    /// (1) Each list is a double-quoted(4) string that consists of output plugin name, optional list options("replace" in second example) and comma-separated list of plugins or plugin name patterns(3) to merge. Ouput plugin's name should come first. Examples:
     ///   "MergedGhostRevenge.esp, GhostRevenge.ESP, GhostRevenge_TR1912.esp"
     ///   "MergedPlugin01.esp, replace, Frozen in Time.esp, The Minotaurs Ring.esp, Cure all the Kwama Queens.ESP"
     ///
-    /// May be repeated. May take either one or multiple comma-separated lists(no space after comma). Following examples are identical:
-    ///   -m "MergedGhostRevenge.esp, GhostRevenge.ESP, GhostRevenge_TR1912.esp" -m "MergedPlugin01.esp, replace, Frozen in Time.esp, The Minotaurs Ring.esp, Cure all the Kwama Queens.ESP"
-    ///   --merge "MergedGhostRevenge.esp, GhostRevenge.ESP, GhostRevenge_TR1912.esp","MergedPlugin01.esp, replace, Frozen in Time.esp, The Minotaurs Ring.esp, Cure all the Kwama Queens.ESP"
+    ///   May be repeated. May take either one or multiple comma-separated lists(no space after comma). Following examples are identical:
+    ///     -m "MergedGhostRevenge.esp, GhostRevenge.ESP, GhostRevenge_TR1912.esp" -m "MergedPlugin01.esp, replace, Frozen in Time.esp, The Minotaurs Ring.esp, Cure all the Kwama Queens.ESP"
+    ///     --merge "MergedGhostRevenge.esp, GhostRevenge.ESP, GhostRevenge_TR1912.esp","MergedPlugin01.esp, replace, Frozen in Time.esp, The Minotaurs Ring.esp, Cure all the Kwama Queens.ESP"
     ///
-    /// List options may be set globally and per each list. List specific options override global options. See each of the list options details in corresponding help sections.
+    ///   List options may be set globally and per each list. List specific options override global options. See each of the list options details in corresponding help sections.
     ///
-    /// (*) Windows-style paths with backslash symbol '\' require special care. You may:
+    /// (2) There is an alternative variant of --merge option. It allows to use shell's file name completion and wildcards(3). It may only be used once per command and should be placed last. Almost identical to main form, but doesn't require quoting the whole list and placing commas between items:
+    ///     -m MergedGhostRevenge.esp GhostRevenge.ESP GhostRevenge_TR1912.esp
+    ///
+    /// (3) There are 3 types of plugin name patterns available:
+    ///     
+    ///   Wildcard: Usually provided by shell used(*nix), otherwise by the program(Windows). It's handy despite many limitations. Case-sensitivity depends on shell, results are unsorted, no file extension filtering. This option doesn't work correctly with --base-dir option, it may only be used with alternative variant of --merge. Example:
+    ///     -m MergedGhostRevenge.esp GhostR*
+    ///
+    ///   Glob: Improved version of wildcard, independent of shell. Defined by prepending pattern with "glob:". Allows using "**" to get plugins from multiple subdirectories("glob:mods/**/*.esp"). Case-insensitive by default, sorted by modification time by default. Examples(produce the same result):
+    ///     -m "MergedGhostRevenge.esp, glob:ghostr*"
+    ///
+    ///   Regex: The most powerful pattern type, though lacks glob's multi-directory access. Defined by prepending pattern with "regex:". Case-insensitive by default, sorted by modification time by default. Examples(produce the same result):
+    ///     -m "MergedGhostRevenge.esp, glob:^ghostr.*"
+    ///
+    ///   All of these patterns may be mixed with plugin names and list options. Example:
+    ///     -m "out.esp, replace, glob:**/*.omwaddon, regex:^repopulated.*es[mp], Animated_Morrowind - merged.esp" OAAB*Ship*TR* PB_AStrangePlant.esp
+    ///
+    ///   See --show-plugins, --regex_case_sensitive, --regex_sort_by_name if you use patterns a lot.
+    ///
+    /// (4) Windows-style paths with backslash symbol '\' require special care. You may:
     ///   - Replace backslash with slash, e.g. '\' => '/'
     ///   - Prepend backslash with another backslash(so-called escaping), e.g. '\' => '\\'
     ///   - Enclose string into single quotes instead of double quotes. If path contains single quote itself, then enclose string into triple single quotes
@@ -43,10 +62,12 @@ pub(super) struct Options {
         long,
         help = "List(s) of plugins to merge",
         value_name = "OUTPUT[, OPTIONS], LIST",
-        num_args = 1..,
-        verbatim_doc_comment,
+        verbatim_doc_comment
     )]
     pub(super) merge: Option<Vec<String>>,
+    /// A dummy command that accepts any arguments. List of arguments is then appended to the last --merge list.
+    #[arg(trailing_var_arg = true, hide = true)]
+    pub(super) arguments_tail: Vec<String>,
     /// Name of the log file. May be provided as a path. Non-existent directories will be created.
     ///
     /// Log contains display output of the program as if it was run with maximum verboseness. It is enabled by default, use --no-log to disable. Previous log will be saved with ".previous" extension.
@@ -507,6 +528,32 @@ pub(super) struct Options {
         help = "Dismiss stats with --dry-run"
     )]
     pub(super) dry_run_dismiss_stats: bool,
+    /// Turn glob/regex patterns to case-sensitive mode.
+    ///
+    /// By default glob/regex patterns are case-insensitive.
+    ///
+    /// Corresponding per list options: "regex_case_sensitive", "no_regex_case_sensitive".
+    #[arg(
+        help_heading = "List options",
+        conflicts_with = "settings_write",
+        long,
+        alias = "regex_case_sensitive",
+        help = "Turn glob/regex patterns to case-sensitive mode"
+    )]
+    pub(super) regex_case_sensitive: bool,
+    /// Sort plugins from glob/regex patterns by name.
+    ///
+    /// By default plugins from glob/regex patterns are sorted by modification time. Sorting by name is used by default when modification time is unavailable.
+    ///
+    /// Corresponding per list options: "regex_sort_by_name", "no_regex_sort_by_name".
+    #[arg(
+        help_heading = "List options",
+        conflicts_with = "settings_write",
+        long,
+        alias = "regex_sort_by_name",
+        help = "Sort plugins from glob/regex patterns by name"
+    )]
+    pub(super) regex_sort_by_name: bool,
     /// Ignore non-critical errors, e.g. missing or broken plugins.
     ///
     /// It may be useful, though it's better to fix underlying problems. May rarely lead to unexpected behaviour.
@@ -588,6 +635,14 @@ pub(super) struct Options {
     /// This flag takes precedence over --verbose.
     #[arg(help_heading = "Display output", short, long, help = "Do not show anything")]
     pub(super) quiet: bool,
+    /// Show list of plugins to merge(handy when using wildcard/glob/regex patterns).
+    #[arg(
+        help_heading = "Display output",
+        short = 'w',
+        long,
+        help = "Show list of plugins to merge(handy when using wildcard/glob/regex patterns)"
+    )]
+    pub(super) show_plugins: bool,
 }
 
 fn arg_get_help(arg: &Arg) -> Result<StyledStr> {
@@ -671,7 +726,7 @@ fn check_show_help_for_option(options: &Options) -> Result<()> {
 }
 
 pub(super) fn get_options() -> Result<Options> {
-    let options = Options::try_parse()?;
+    let options = Options::try_parse_from(wild::args_os())?;
     check_show_help_for_option(&options)?;
     Ok(options)
 }

@@ -59,6 +59,8 @@ pub(super) struct Options {
     ///   - [dry_run_secondary] "no_dry_run_secondary", "dry_run_secondary".
     ///   - [dry_run_dismiss_stats] "no_dry_run_dismiss_stats", "dry_run_dismiss_stats".
     ///   - [ignore_important_errors] "no_ignore_important_errors", "ignore_important_errors".
+    ///   - [regex_case_sensitive] "no_regex_case_sensitive", "regex_case_sensitive".
+    ///   - [regex_sort_by_name] "no_regex_sort_by_name", "regex_sort_by_name".
     ///   - [insufficient_merge] "no_insufficient_merge", "insufficient_merge".
     ///   - [append_to_use_load_order] "append_to_use_load_order:", "append_to_use_load_order:<PATH>"
     ///   - [skip_from_use_load_order] "skip_from_use_load_order:", "skip_from_use_load_order:<NAME>"
@@ -75,6 +77,8 @@ pub(super) struct Options {
     pub(super) verbose: u8,
     #[config(default = false)]
     pub(super) quiet: bool,
+    #[config(default = false)]
+    pub(super) show_plugins: bool,
     /// [Presets] Enabled preset ignores --merge options provided via command line or settings file. Do not enable(set to true) presets unless that's the only thing you need from the program.
     #[config(default = false)]
     pub(super) preset_check_references: bool,
@@ -121,6 +125,10 @@ pub(super) struct Options {
     pub(super) dry_run_dismiss_stats: bool,
     #[config(default = false)]
     pub(super) ignore_important_errors: bool,
+    #[config(default = false)]
+    pub(super) regex_case_sensitive: bool,
+    #[config(default = false)]
+    pub(super) regex_sort_by_name: bool,
     #[config(default = false)]
     pub(super) insufficient_merge: bool,
     #[config(default = "")]
@@ -205,7 +213,7 @@ pub(super) struct Guts {
     /// Guts of the program. Use at your own risk ;-)
     ///
     /// # Following line is used to determine version of used settings to warn about outdated version:
-    /// # Settings version: 0.2.5
+    /// # Settings version: 0.3.0
     ///
     /// [Section: Presets]
     #[config(default = ["CheckReferences.esp", "dry_run", "use_load_order", "show_missing_refs", "complete_replace", "no_compare", "ignore_errors", "insufficient_merge", "dry_run_dismiss_stats"])]

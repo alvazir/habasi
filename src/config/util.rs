@@ -94,13 +94,18 @@ pub(crate) fn get_log_file(no_log: bool, name: String, exe: Option<String>, dir:
     Ok(Some(log))
 }
 
-pub(crate) fn get_lists(opt: Option<Vec<String>>, set: Vec<Vec<String>>) -> Vec<Vec<String>> {
+pub(crate) fn get_lists(opt: Option<Vec<String>>, set: Vec<Vec<String>>, arguments_tail: Vec<String>) -> Vec<Vec<String>> {
     match opt {
         None => set,
         Some(list_strings) => {
             let mut lists = Vec::new();
             for string in list_strings {
                 lists.push(string.split(',').map(|element| element.trim().to_owned()).collect::<Vec<String>>());
+            }
+            if !arguments_tail.is_empty() {
+                if let Some(list) = lists.last_mut() {
+                    list.extend(arguments_tail);
+                }
             }
             lists
         }
@@ -177,7 +182,7 @@ pub(crate) fn check_settings_version(settings_file: &mut SettingsFile) -> Result
         let settings_toml_lines = read_lines(&settings_file.path)
             .with_context(|| format!("Failed to read program configuration file \"{}\"", &settings_file.path.display()))?;
         let settings_version_prefix = "# # Settings version: ";
-        let expected_settings_version = String::from("0.2.5");
+        let expected_settings_version = String::from("0.3.0");
         let mut detected_settings_version = String::from("0.1.0");
         for line in settings_toml_lines.flatten() {
             if line.starts_with(settings_version_prefix) {

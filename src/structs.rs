@@ -88,6 +88,8 @@ pub(crate) struct ListOptions {
     pub(crate) dry_run_secondary: bool,
     pub(crate) dry_run_dismiss_stats: bool,
     pub(crate) ignore_important_errors: bool,
+    pub(crate) regex_case_sensitive: bool,
+    pub(crate) regex_sort_by_name: bool,
     pub(crate) insufficient_merge: bool,
     pub(crate) append_to_use_load_order: String,
     pub(crate) skip_from_use_load_order: String,
@@ -133,6 +135,8 @@ impl ListOptions {
             dry_run_secondary,
             dry_run_dismiss_stats,
             ignore_important_errors,
+            regex_case_sensitive,
+            regex_sort_by_name,
             insufficient_merge
         );
         text
@@ -200,6 +204,10 @@ impl ListOptions {
                     "no_dry_run_dismiss_stats" => list_options.dry_run_dismiss_stats = false,
                     "ignore_important_errors" => list_options.ignore_important_errors = true,
                     "no_ignore_important_errors" => list_options.ignore_important_errors = false,
+                    "regex_case_sensitive" => list_options.regex_case_sensitive = true,
+                    "no_regex_case_sensitive" => list_options.regex_case_sensitive = false,
+                    "regex_sort_by_name" => list_options.regex_sort_by_name = true,
+                    "no_regex_sort_by_name" => list_options.regex_sort_by_name = false,
                     "insufficient_merge" => list_options.insufficient_merge = true,
                     "no_insufficient_merge" => list_options.insufficient_merge = false,
                     _ => break,
@@ -210,6 +218,12 @@ impl ListOptions {
         mutate_list_options(&mut list_options, cfg, log)?;
         Ok((index, list_options))
     }
+}
+
+pub(super) struct RegexPluginInfo {
+    pub(super) path: PathBuf,
+    pub(super) name_low: String,
+    pub(super) time: SystemTime,
 }
 
 #[derive(Clone, Default)]

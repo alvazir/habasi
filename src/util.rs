@@ -1,13 +1,17 @@
 use crate::{
     get_game_config, get_load_order, make_turn_normal_grass, process_records, write_output_plugin, Cfg, Helper, IgnoredRefError,
-    ListOptions, Mode, Out, Plugin, PluginName,
+    ListOptions, Mode, Out, Plugin, PluginName, RegexPluginInfo,
 };
 use anyhow::{anyhow, Context, Result};
 use crc::{Crc, CRC_64_ECMA_182};
-use fs_err::{copy, create_dir_all, File};
+use fs_err::{copy, create_dir_all, metadata, read_dir, File};
+use glob::{glob_with, MatchOptions};
+use regex::RegexBuilder;
 use std::{
+    fmt::Write as _,
     io::{self, BufRead, BufWriter, Write},
-    path::{Path, PathBuf},
+    path::{Path, PathBuf, MAIN_SEPARATOR},
+    time::SystemTime,
 };
 use tes3::esp::{Cell, CellFlags, Reference};
 
@@ -364,7 +368,6 @@ pub(crate) fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
             let groundcovers_len = h.t.game_configs[h.g.config_index].load_order.groundcovers.len();
             if groundcovers_len > 0 {
                 let mut preset_config_merge_load_order_grass = cfg.guts.preset_config_merge_load_order_grass.clone();
-                //
                 if cfg.presets.turn_normal_grass {
                     let (_, _, plugin_grass_name) = get_tng_dir_and_plugin_names(&cfg.guts.preset_config_merge_load_order[0], cfg)
                         .with_context(|| "Failed to get turn normal grass directory or plugin names")?;
@@ -669,4 +672,240 @@ pub(crate) fn get_skip_plugin_name_low(h: &Helper) -> String {
     } else {
         String::new()
     }
+}
+
+pub(super) fn get_regex_plugin_list(
+    plugin_list: &[String],
+    index: usize,
+    list_options: &ListOptions,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<Vec<String>> {
+    let mut regex_plugin_list = Vec::new();
+    let regex_sublists = get_regex_sublists(plugin_list, index, list_options, cfg, log)?;
+    if !regex_sublists.is_empty() {
+        regex_plugin_list = plugin_list[..index].iter().map(|x| x.to_owned()).collect::<Vec<_>>();
+        let mut new_index = index;
+        for (subindex, sublist) in regex_sublists.into_iter() {
+            if subindex + index > new_index {
+                regex_plugin_list.extend(plugin_list[new_index..subindex + index].iter().map(|x| x.to_owned()));
+                new_index = subindex + index;
+            }
+            if !sublist.is_empty() {
+                regex_plugin_list.extend(sublist.into_iter());
+            }
+            new_index += 1;
+        }
+        if new_index < plugin_list.len() {
+            regex_plugin_list.extend(plugin_list[new_index..].iter().map(|x| x.to_owned()));
+        }
+    }
+    Ok(regex_plugin_list)
+}
+
+fn get_regex_sublists(
+    plugin_list: &[String],
+    index: usize,
+    list_options: &ListOptions,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<Vec<(usize, Vec<String>)>> {
+    let mut regex_sublists = Vec::new();
+    let mut split: Vec<&str>;
+    for (subindex, item) in plugin_list[index..].iter().enumerate() {
+        split = item.splitn(2, ':').collect();
+        if split.len() != 2 {
+            continue;
+        }
+        let (pattern, is_regex) = if split[0].to_lowercase() == "regex" {
+            (split[1], true)
+        } else if split[0].to_lowercase() == "glob" {
+            (split[1], false)
+        } else {
+            continue;
+        };
+        if pattern.is_empty() {
+            let text = format!("Pattern is empty in argument: {item:?}");
+            err_or_ignore(text, list_options.ignore_important_errors, false, cfg, log)?;
+            regex_sublists.push((subindex, Vec::new()));
+            continue;
+        }
+        let mut sort_by_name = list_options.regex_sort_by_name;
+        let mut sublist: Vec<RegexPluginInfo> = Vec::new();
+        let mut plugin_pathbuf = list_options.base_dir.clone();
+        plugin_pathbuf.push(pattern);
+        let mut dot = false;
+        if let Err(error) = if is_regex {
+            get_regex_plugins(&mut sublist, &plugin_pathbuf, &mut sort_by_name, &mut dot, list_options, cfg, log)
+        } else {
+            get_glob_plugins(&mut sublist, &plugin_pathbuf, &mut sort_by_name, list_options, cfg, log)
+        } {
+            err_or_ignore(format!("{error:?}"), list_options.ignore_important_errors, false, cfg, log).with_context(|| {
+                format!(
+                    "Failed to get plugins from {} pattern: {pattern:?}",
+                    if is_regex { "regex" } else { "glob" }
+                )
+            })?;
+            regex_sublists.push((subindex, Vec::new()));
+            continue;
+        };
+        if sort_by_name {
+            sublist.sort_by(|a, b| a.name_low.cmp(&b.name_low).then(a.path.cmp(&b.path)));
+        } else {
+            sublist.sort_by(|a, b| a.time.cmp(&b.time).then(a.path.cmp(&b.path)));
+        }
+        let mut regex_sublist = sublist
+            .into_iter()
+            .map(|regex_plugin_info| regex_plugin_info.path.to_string_lossy().into_owned())
+            .collect::<Vec<String>>();
+        if list_options.base_dir != PathBuf::new() || dot {
+            let prefix = if dot {
+                format!(".{MAIN_SEPARATOR}")
+            } else {
+                format!("{}{MAIN_SEPARATOR}", list_options.base_dir.to_string_lossy())
+            };
+            for name in regex_sublist.iter_mut() {
+                if let Some(stripped) = name.strip_prefix(&prefix) {
+                    *name = stripped.to_owned();
+                }
+            }
+        };
+        if regex_sublist.is_empty() {
+            let text = format!("Nothing found for pattern: {pattern:?}");
+            err_or_ignore(text, list_options.ignore_important_errors, false, cfg, log)?;
+        } else {
+            let mut text = format!("Pattern {item:?} expanded to:");
+            for plugin in &regex_sublist {
+                if plugin.contains(' ') {
+                    write!(text, " {plugin:?}")?;
+                } else {
+                    write!(text, " {plugin}")?;
+                };
+            }
+            msg(&text, 0, cfg, log)?;
+        }
+        regex_sublists.push((subindex, regex_sublist));
+    }
+    Ok(regex_sublists)
+}
+
+fn get_plugin_time(
+    path: &Path,
+    sort_by_name: &mut bool,
+    pattern: &Path,
+    pattern_kind: &str,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<SystemTime> {
+    let time = if *sort_by_name {
+        SystemTime::now()
+    } else {
+        match metadata(path) {
+            Ok(meta) => match meta.modified() {
+                Ok(time) => time,
+                Err(error) => {
+                    let text = format!(
+                    "Falling back to \"--sort-by-name\" for the {pattern_kind} {pattern:?} because failed to get file modification time for {path:?} with error: {error:?}"
+                );
+                    msg(&text, 0, cfg, log)?;
+                    *sort_by_name = false;
+                    SystemTime::now()
+                }
+            },
+            Err(error) => {
+                let text = format!(
+                    "Falling back to \"--sort-by-name\" for the {pattern_kind} {pattern:?} because failed to get file metadata for {path:?} with error: {error:?}"
+                );
+                msg(&text, 0, cfg, log)?;
+                *sort_by_name = false;
+                SystemTime::now()
+            }
+        }
+    };
+    Ok(time)
+}
+
+fn get_regex_plugins(
+    list: &mut Vec<RegexPluginInfo>,
+    pattern: &Path,
+    sort_by_name: &mut bool,
+    remove_leading_dot: &mut bool,
+    list_options: &ListOptions,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
+    let mut dir = Path::new(&pattern);
+    loop {
+        match dir.parent() {
+            None => break,
+            Some(parent) => {
+                dir = parent;
+                if parent.is_dir() {
+                    break;
+                }
+            }
+        }
+    }
+    let regex_pattern = match pattern
+        .to_string_lossy()
+        .strip_prefix(&format!("{}{}", dir.to_string_lossy(), MAIN_SEPARATOR))
+    {
+        Some(stripped) => stripped.to_owned(),
+        None => pattern.to_string_lossy().into_owned(),
+    };
+    let regex_expression = RegexBuilder::new(&regex_pattern)
+        .case_insensitive(!list_options.regex_case_sensitive)
+        .build()?;
+    if dir == Path::new("") {
+        *remove_leading_dot = true;
+        dir = Path::new(".");
+    };
+    for entry in read_dir(dir)?.flatten() {
+        if match entry.file_type() {
+            Ok(file_type) => !file_type.is_dir(),
+            Err(_) => true,
+        } {
+            let path = entry.path();
+            if let Some(plugin_extension) = path.extension() {
+                if cfg.guts.omw_plugin_extensions.contains(&plugin_extension.to_ascii_lowercase())
+                    && regex_expression.is_match(&entry.file_name().to_string_lossy())
+                {
+                    let time = get_plugin_time(&path, sort_by_name, pattern, "regex", cfg, log)
+                        .with_context(|| format!("Failed to get modification time for: {path:?}"))?;
+                    let name_low = entry.file_name().to_string_lossy().to_lowercase();
+                    list.push(RegexPluginInfo { path, name_low, time });
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn get_glob_plugins(
+    list: &mut Vec<RegexPluginInfo>,
+    pattern: &Path,
+    sort_by_name: &mut bool,
+    list_options: &ListOptions,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
+    let glob_options = MatchOptions {
+        case_sensitive: list_options.regex_case_sensitive,
+        require_literal_separator: false,
+        require_literal_leading_dot: false,
+    };
+    for path in glob_with(&pattern.to_string_lossy(), glob_options)?.flatten() {
+        let name_low = match path.file_name() {
+            Some(osstr) => osstr.to_string_lossy().to_lowercase(),
+            None => continue,
+        };
+        if let Some(plugin_extension) = path.extension() {
+            if cfg.guts.omw_plugin_extensions.contains(&plugin_extension.to_ascii_lowercase()) {
+                let time = get_plugin_time(&path, sort_by_name, pattern, "glob", cfg, log)
+                    .with_context(|| format!("Failed to get modification time for: {path:?}"))?;
+                list.push(RegexPluginInfo { path, name_low, time });
+            }
+        };
+    }
+    Ok(())
 }

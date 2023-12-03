@@ -3,6 +3,23 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.3.0 (2023-12-03)
+
+New features
+
+* Add alternative form of `--merge` option to allow use of shell's file name completion and wildcards.
+  * `habasi -m out.esp plugin1.esp plugin2.esp`
+* Add different types of plugin name patterns:
+  * [Wildcard](https://gitlab.com/kornelski/wild). Usually provided by shell, otherwise by the program(Windows). It's handy for one-shot merges despite several limitations.
+    * `habasi -m out.esp plugin*`
+  * [Glob](https://github.com/rust-lang/glob). Improved version of wildcard. Defined by prepending pattern with "glob:". Allows using "**" to get plugins from multiple subdirectories("glob:**/*.esp").
+    * `habasi -m "out.esp, glob:plugin*"`
+  * [Regex](https://github.com/rust-lang/regex). The most powerful pattern type, though lacks glob's multi-directory access. Defined by prepending pattern with "regex:".
+    * `habasi -m out.esp "regex:^plugin.*"`
+* Add `--show-plugins` option to display resulting list of plugins to merge(handy when using wildcard/glob/regex patterns).
+* Add `--regex-case-sensitive` option to turn glob/regex patterns to case-sensitive mode(case-insensitive by default).
+* Add `--regex-sort-by-name` option to sort plugins from glob/regex patterns by name(sorted by modification time by default).
+
 ## 0.2.12 (2023-11-26)
 
 New features

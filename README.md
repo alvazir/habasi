@@ -21,6 +21,21 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
 
 ## Usage
 
+<!-- markdownlint-disable MD032 -->
+* Most basic usage: `habasi -m out.esp plugin1.esp plugin2.esp` to merge plugin1 and plugin2 into "out.esp"
+<details><summary>The program is flexible and allows complicated scenarios, though basic usage is simple</summary>
+  * To merge all plugins in current directory:  
+    * `habasi -m out.esp *.esp`  
+  * If you know what you do(after reading `habasi -? --mode`):  
+    * `habasi --mode complete_replace -m out.esp plugin1.esp plugin2.esp`  
+  * Only one input plugin is needed actually, though it makes sense in rare situations like:  
+    * `habasi --mode grass -m out.esp Rem_WG_TR.esp`  
+  * Profiles are a easy to use too. Merging your whole load order:  
+    * `habasi -O`  
+  * Almost everything may be done with command-line arguments, though settings file is the better way for advanced usage:  
+    * `habasi --settings-write` to create settings file  
+    * `habasi` afterwards to use it  
+</details>
 * Type command `habasi -h` for brief help
 * Type command `habasi --help` for extended help
 * Type command `habasi -? <OPTION>` to get extended help for a specific option
@@ -35,15 +50,15 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
   Usage: habasi [OPTIONS]
   
   Options:
-    -m, --merge <OUTPUT[, OPTIONS], LIST>...  List(s) of plugins to merge
-    -l, --log <PATH>                          Name of the log file
-    -L, --no-log                              Do not write log
-    -s, --settings <PATH>                     Name of the program settings file
-        --settings-write                      Write default program settings file and exit
-    -g, --grass                               Process grass lists(enabled by default)
-    -?, --help-option <OPTION>                Print help for specific option
-    -h, --help                                Print help (see more with '--help')
-    -V, --version                             Print version
+    -m, --merge <OUTPUT[, OPTIONS], LIST>  List(s) of plugins to merge
+    -l, --log <PATH>                       Name of the log file
+    -L, --no-log                           Do not write log
+    -s, --settings <PATH>                  Name of the program settings file
+        --settings-write                   Write default program settings file and exit
+    -g, --grass                            Process grass lists(enabled by default)
+    -?, --help-option <OPTION>             Print help for specific option
+    -h, --help                             Print help (see more with '--help')
+    -V, --version                          Print version
   
   Presets:
     -C, --preset-check-references   Check for missing references in the whole load order [aliases: check]
@@ -69,14 +84,17 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
         --no-compare-secondary             Do not compare output secondary plugin with previous version
         --dry-run-secondary                Do not write secondary output plugin
         --dry-run-dismiss-stats            Dismiss stats with --dry-run
+        --regex-case-sensitive             Turn glob/regex patterns to case-sensitive mode
+        --regex-sort-by-name               Sort plugins from glob/regex patterns by name
         --ignore-important-errors          Ignore non-critical errors
         --insufficient-merge               Process only cell references(and statics with '-M grass' or '-t')
         --append-to-use-load-order <PATH>  Append plugin path to --use-load-order list
         --skip-from-use-load-order <NAME>  Skip plugin name from --use-load-order list
   
   Display output:
-    -v, --verbose...  Show more information
-    -q, --quiet       Do not show anything
+    -v, --verbose...    Show more information
+    -q, --quiet         Do not show anything
+    -w, --show-plugins  Show list of plugins to merge(handy when using wildcard/glob/regex patterns)
     
   ```
 
@@ -109,7 +127,6 @@ Please see the [CHANGELOG](CHANGELOG.md) for a release history.
 [Binary downloads](https://www.nexusmods.com/morrowind/mods/53002) are available for GNU/Linux(x86-64), Android(AArch64), Windows(x86-64(MSVC, GNU)), macOS(x86-64, AArch64).
 
 ## System requirements
-
 
 <details>
 

@@ -23,6 +23,7 @@ pub(crate) struct Cfg {
     pub(crate) grass: bool,
     pub(crate) verbose: u8,
     pub(crate) quiet: bool,
+    pub(crate) show_plugins: bool,
     pub(crate) list_options: ListOptions,
     pub(crate) presets: Presets,
     pub(crate) advanced: Advanced,
@@ -154,7 +155,7 @@ impl Cfg {
         let preset_merge_load_order = opt_or_set_bool!(preset_merge_load_order);
         let preset_turn_normal_grass = opt_or_set_bool!(preset_turn_normal_grass);
         Ok(Cfg {
-            merge: get_lists(opt.merge, set.options.merge),
+            merge: get_lists(opt.merge, set.options.merge, opt.arguments_tail),
             grass: opt_or_set_bool!(grass),
             no_log,
             log: get_log_file(no_log, opt_or_set_some!(log), exe, dir)?,
@@ -178,6 +179,8 @@ impl Cfg {
                 use_load_order: opt_or_set_bool!(use_load_order),
                 turn_normal_grass: opt_or_set_bool!(turn_normal_grass),
                 prefer_loose_over_bsa: opt_or_set_bool!(prefer_loose_over_bsa),
+                regex_case_sensitive: opt_or_set_bool!(regex_case_sensitive),
+                regex_sort_by_name: opt_or_set_bool!(regex_sort_by_name),
                 insufficient_merge: opt_or_set_bool!(insufficient_merge),
                 dry_run_dismiss_stats: opt_or_set_bool!(dry_run_dismiss_stats),
                 append_to_use_load_order: opt_or_set_some!(append_to_use_load_order),
@@ -185,6 +188,7 @@ impl Cfg {
             },
             verbose: if opt.verbose == 0 { set.options.verbose } else { opt.verbose },
             quiet: opt_or_set_bool!(quiet),
+            show_plugins: opt_or_set_bool!(show_plugins),
             presets: Presets {
                 present: preset_check_references || preset_merge_load_order || preset_turn_normal_grass,
                 check_references: preset_check_references,

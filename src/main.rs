@@ -43,15 +43,16 @@ use structs::{
     Assets, CellExtGrid, CellMeta, Dial, DialMeta, FallbackStatics, FileInBsa, GlobalMaster, GlobalVtexId, HeaderText, Helper,
     IgnoredRefError, ListOptions, LoadOrder, LocalMaster, LocalMergedMaster, LocalVtexId, MastId, MasterNameLow, MergedPluginMeta,
     MergedPluginRefr, Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, PluginInfo, PluginName, RefSources, RefrId,
-    TurnNormalGrass,
+    RegexPluginInfo, TurnNormalGrass,
 };
 use util::{
     check_presets, create_dir_early, err_or_ignore, err_or_ignore_thread_safe, get_append_to_use_load_order_string, get_base_dir_path,
-    get_cell_name, get_expanded_plugin_list, get_game_config_string, get_skip_from_use_load_order_string, get_skip_plugin_name_low,
-    get_tng_content_name_low, get_tng_dir_and_plugin_names, msg, msg_no_log, process_moved_instances, process_plugin,
-    process_turn_normal_grass, read_lines, references_sorted, scan_load_order, select_header_description, should_skip_list,
-    show_global_list_options, show_ignored_ref_errors, show_log_path, show_removed_record_ids, show_settings_version_message,
-    show_settings_written, truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG,
+    get_cell_name, get_expanded_plugin_list, get_game_config_string, get_regex_plugin_list, get_skip_from_use_load_order_string,
+    get_skip_plugin_name_low, get_tng_content_name_low, get_tng_dir_and_plugin_names, msg, msg_no_log, process_moved_instances,
+    process_plugin, process_turn_normal_grass, read_lines, references_sorted, scan_load_order, select_header_description,
+    should_skip_list, show_global_list_options, show_ignored_ref_errors, show_log_path, show_removed_record_ids,
+    show_settings_version_message, show_settings_written, truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN,
+    SNDG_MAX_SOUND_FLAG,
 };
 
 // #[global_allocator]
@@ -85,7 +86,8 @@ fn run() -> Result<()> {
     let merge_override = check_presets(&mut h, &cfg, &mut log)?;
     let merge = if merge_override.is_empty() { &cfg.merge } else { &merge_override };
     if merge.is_empty() {
-        msg("Nothing to proceed", 0, &cfg, &mut log)?;
+        let text = "Nothing to proceed: at least one --merge or --preset-* option is required";
+        msg(text, 0, &cfg, &mut log)?;
         return Ok(());
     }
     let mut output_plugin = Plugin::new();
@@ -122,10 +124,27 @@ fn process_list(
     } else {
         &expanded_plugin_list[..]
     };
+    let regex_plugin_list = get_regex_plugin_list(plugin_list, index, &list_options, cfg, log)
+        .with_context(|| "Failed to expand plugin list with regex/glob patterns")?;
+    let plugin_list = if regex_plugin_list.is_empty() {
+        plugin_list
+    } else {
+        &regex_plugin_list[..]
+    };
     if should_skip_list(name, plugin_list, index, &list_options, cfg, log)? {
         return Ok(());
     };
-    let mut text = format!("Processing list \"{}\" with options: {}", &name, list_options.show());
+    let mut text: String;
+    if cfg.show_plugins {
+        text = format!(
+            "List \"{}\" contains {} files(list is ready to be copied into settings file):\n\"{}\"",
+            &name,
+            &plugin_list[index..].len(),
+            &plugin_list[index..].join("\",\n\"")
+        );
+        msg(&text, 0, cfg, log)?;
+    }
+    text = format!("Processing list \"{}\" with options: {}", &name, list_options.show());
     msg(&text, 1, cfg, log)?;
     h.global_init(list_options);
     let tng_content_name_low = get_tng_content_name_low(name, h, cfg)?;
