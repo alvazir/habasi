@@ -25,6 +25,7 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
   <details>
 
   <summary>The program is flexible and allows complicated scenarios, though basic usage is simple</summary>
+
     * To merge all plugins in current directory:  
       * `habasi -m out.esp *.esp`  
     * If you know what you do(after reading `habasi -? --mode`):  
@@ -36,6 +37,7 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
     * Almost everything may be done with command-line arguments, though settings file is the better way for advanced usage:  
       * `habasi --settings-write` to create settings file  
       * `habasi` afterwards to use it  
+
   </details>
 * Type command `habasi -h` for brief help
 * Type command `habasi --help` for extended help
