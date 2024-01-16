@@ -21,6 +21,7 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
 
 ## Usage
 
+<!-- markdownlint-disable MD007 -->
 * Most basic usage: `habasi -m out.esp plugin1.esp plugin2.esp` to merge plugin1 and plugin2 into "out.esp"
   <details>
 
@@ -169,7 +170,7 @@ The most extreme cases of merging everything:
 
 <details>
 
-<summary>Habasi is written in Rust, so you'll need to grab a [Rust installation](https://www.rust-lang.org) in order to compile it. Habasi compiles with Rust 1.74.0(stable) or newer</summary>
+<summary>Habasi is written in Rust, so you'll need to grab a https://www.rust-lang.org in order to compile it. Habasi compiles with Rust 1.75.0(stable) or newer</summary>
 
 ```shell
 git clone https://github.com/alvazir/habasi

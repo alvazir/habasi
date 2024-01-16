@@ -4,6 +4,7 @@ release_zip="Habasi.zip"
 
 build() {
 cargo build --profile release-lto --target x86_64-unknown-linux-gnu || return 1
+cargo build --profile release-lto --target x86_64-unknown-linux-musl || return 1
 cargo ndk -t arm64-v8a build --profile release-lto || return 1
 cargo xwin build --profile release-lto --target x86_64-pc-windows-msvc || return 1
 cargo build --profile release-lto --target x86_64-pc-windows-gnu || return 1
@@ -12,17 +13,20 @@ PATH="$HOME/projects/osxcross/target/bin:$PATH" cargo build --profile release-lt
 }
 
 zip() (
-  
-  if [ -d "${release_folder}" ]; then 
+
+  if [ -d "${release_folder}" ]; then
     echo "${release_folder} exists"
     return 1
   fi
   if [ -f "${release_zip}" ]; then
     rm -v "${release_zip}" || return 1
   fi
-  mkdir -pv "${release_folder}/linux_x86-64" || return 1 
+  mkdir -pv "${release_folder}/linux_x86-64" || return 1
   cp    -vt "${release_folder}/linux_x86-64"\
     "target/x86_64-unknown-linux-gnu/release-lto/habasi" || return 1
+  mkdir -pv "${release_folder}/linux_x86-64_musl" || return 1
+  cp    -vt "${release_folder}/linux_x86-64_musl"\
+    "target/x86_64-unknown-linux-musl/release-lto/habasi" || return 1
   mkdir -pv "${release_folder}/android_aarch64" || return 1
   cp    -vt "${release_folder}/android_aarch64"\
     "target/aarch64-linux-android/release-lto/habasi" || return 1
@@ -50,7 +54,7 @@ zip() (
 
 main() {
 build || return 1
-if [ "${1}" == "zip" ]; then 
+if [ "${1}" == "zip" ]; then
   zip || return 1
 fi
 }
@@ -61,7 +65,7 @@ main "$@" || echo "error"
 # RUSTFLAGS="-C target-cpu=native" cargo build --profile release-lto
 
 # [Preparations on arch-linux to build for other platforms]
-# rustup target add x86_64-unknown-linux-gnu x86_64-pc-windows-gnu x86_64-pc-windows-gnu x86_64-apple-darwin aarch64-apple-darwin
+# rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl x86_64-pc-windows-gnu x86_64-pc-windows-gnu x86_64-apple-darwin aarch64-apple-darwin
 # [Preparations:android]
 # yay -S android-ndk cargo-ndk
 # [Preparations:windows_GNU]

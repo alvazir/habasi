@@ -1,7 +1,7 @@
 use super::{Options, SettingsFile, StringOsPath, TngStatIds};
 use crate::{read_lines, Mode};
 use anyhow::{anyhow, Context, Result};
-use fs_err::copy;
+use fs_err::rename;
 use hashbrown::{hash_map::Entry, HashMap, HashSet};
 use std::{
     env::current_exe,
@@ -202,22 +202,22 @@ pub(crate) fn check_settings_version(settings_file: &mut SettingsFile) -> Result
     Ok(())
 }
 
-pub(crate) fn backup_settings_file(settings_file: &mut SettingsFile, backup_suffix: &str) -> Result<u64> {
+pub(crate) fn backup_settings_file(settings_file: &mut SettingsFile, backup_suffix: &str) -> Result<()> {
     if settings_file.path.exists() {
         let mut backup_path = settings_file.path.clone().into_os_string();
         backup_path.push(backup_suffix);
         settings_file.backup_path = backup_path.into();
         settings_file.backup_overwritten = settings_file.backup_path.exists();
         settings_file.backup_written = true;
-        copy(&settings_file.path, &settings_file.backup_path).with_context(|| {
+        rename(&settings_file.path, &settings_file.backup_path).with_context(|| {
             format!(
-                "Failed to backup program settings \"{}\" to \"{}\"",
+                "Failed to rename previous program settings \"{}\" to \"{}\"",
                 &settings_file.path.display(),
                 &settings_file.backup_path.display()
             )
         })
     } else {
-        Ok(0)
+        Ok(())
     }
 }
 

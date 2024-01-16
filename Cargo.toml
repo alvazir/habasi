@@ -3,7 +3,7 @@ name = "habasi"
 version = "0.3.0"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
-rust-version = "1.74.0"
+rust-version = "1.75.0"
 description = "Habasi - TES3 plugin merging and utility tool"
 readme = "README.md"
 homepage = "https://www.nexusmods.com/morrowind/mods/53002"
@@ -26,21 +26,21 @@ features = ["esp"]
 
 [dependencies]
 # CLI
-clap = { version = "~4.4.10", features = ["derive", "suggestions", "wrap_help"] }
+clap = { version = "~4.4.17", features = ["derive", "suggestions", "wrap_help"] }
 # settings file
-confique = { version = "~0.2.4", default-features = false, features = ["toml"] }
+confique = { version = "~0.2.5", default-features = false, features = ["toml"] }
 # required by confique
-serde = "~1.0.193"
+serde = "~1.0.195"
 # error management
-anyhow = "~1.0.75"
-# references processing
-hashbrown = { version = "~0.14.3", features = ["rayon"] }
+anyhow = "~1.0.79"
 # find openmw.cfg
 dirs = "~5.0.1"
 # find files in parallel
 rayon = "~1.8.0"
 # better fs errors
 fs-err = "~2.11.0"
+# references processing
+hashbrown = { version = "~0.14.3", features = ["rayon"] }
 # find files
 walkdir = "~2.4.0"
 # create id for sscr with empty id

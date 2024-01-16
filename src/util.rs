@@ -4,7 +4,7 @@ use crate::{
 };
 use anyhow::{anyhow, Context, Result};
 use crc::{Crc, CRC_64_ECMA_182};
-use fs_err::{copy, create_dir_all, metadata, read_dir, File};
+use fs_err::{create_dir_all, metadata, read_dir, rename, File};
 use glob::{glob_with, MatchOptions};
 use regex::RegexBuilder;
 use std::{
@@ -124,7 +124,7 @@ pub(crate) fn show_log_path(cfg: &Cfg, log: &mut Log) -> Result<()> {
             None => return Err(anyhow!("Failed to show log path because it's empty")),
             Some(log_path) => log_path,
         };
-        msg(format!("Log is being written into \"{}\"", log_path.display()), 0, cfg, log)
+        msg(format!("Log is written to \"{}\"", log_path.display()), 0, cfg, log)
     }
 }
 
@@ -132,7 +132,7 @@ pub(crate) fn show_settings_written(cfg: &Cfg, log: &mut Log) -> Result<()> {
     let mut text = String::new();
     if cfg.settings_file.backup_written {
         text.push_str(&format!(
-            "Settings file backup was written to \"{}\"{}",
+            "Previous settings file was renamed to \"{}\"{}",
             cfg.settings_file.backup_path.display(),
             if cfg.settings_file.backup_overwritten {
                 ", previous backup was overwritten\n"
@@ -554,8 +554,8 @@ fn backup_log_file(log_file: &PathBuf, backup_suffix: &str) -> String {
     let mut backup_path = log_file.clone().into_os_string();
     backup_path.push(backup_suffix);
     let backup_file: PathBuf = backup_path.into();
-    match copy(log_file, &backup_file) {
-        Ok(_) => format!("Previous log file was saved to \"{}\"", backup_file.display()),
+    match rename(log_file, &backup_file) {
+        Ok(_) => format!("Previous log file was renamed to \"{}\"", backup_file.display()),
         Err(_) => String::new(),
     }
 }

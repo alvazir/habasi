@@ -3,6 +3,15 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.3.1 (2024-01-16)
+
+Miscellaneous
+
+* Add `musl` Linux build to be used when glibc shipped with OS is old.
+* Rename instead of copy for backups to preserve timestamps.
+* All backups now have `.backup` file extension.
+* Reword several messages.
+
 ## 0.3.0 (2023-12-03)
 
 New features

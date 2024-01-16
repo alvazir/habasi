@@ -327,7 +327,7 @@ pub(super) struct Guts {
     /// [Section: Backup file suffixes]
     #[config(default = ".backup")]
     pub(super) settings_backup_suffix: String,
-    #[config(default = ".previous")]
+    #[config(default = ".backup")]
     pub(super) log_backup_suffix: String,
     /// [Section: Prefixes of per list options that take paths]
     #[config(default = "base_dir:")]
