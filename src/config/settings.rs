@@ -12,6 +12,7 @@ pub(super) struct Settings {
     pub(super) guts: Guts,
 }
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Config)]
 pub(super) struct Options {
     /// Description of all the options is provided with --help-option <OPTION> or --help. There are two lines per each option: default value and set value. Uncomment second line for the needed option and set the value.
@@ -73,7 +74,7 @@ pub(super) struct Options {
     #[config(default = true)]
     pub(super) grass: bool,
     /// [--verbosity] Number corresponds to the number of verbose flags passed, e.g. -v = 1, -vv = 2, -vvv = 3
-    #[config(default = 0)]
+    #[config(default = 0_u8)]
     pub(super) verbose: u8,
     #[config(default = false)]
     pub(super) quiet: bool,
@@ -264,13 +265,13 @@ pub(super) struct Guts {
     pub(super) omw_line_beginning_groundcover: String,
     #[config(default = ["esm", "esp", "omwaddon", "bsa", "omwscripts"])]
     pub(super) omw_plugin_extensions: Vec<String>,
-    /// Plugins with following extensions will not be processed. It's made to ignore .omwscripts, though may be used for anything else.
+    /// Plugins with the following extensions will not be processed. It's made to ignore .omwscripts, though may be used for anything else.
     #[config(default = ["omwscripts"])]
     pub(super) plugin_extensions_to_ignore: Vec<String>,
     /// Plugins with the following record types not be processed. It's made to ignore plugins with non-TES3 record types newly appeared types.
     #[config(default = ["LUAL", "CELL::XSCL", "TES3::FORM"])]
     pub(super) unexpected_tags_to_ignore: Vec<String>,
-    #[config(default = 1)]
+    #[config(default = 1_u8)]
     pub(super) skipped_processing_plugins_msg_verbosity: u8,
     /// [Section: "Hidden" OpenMW-CS data directory]
     ///
@@ -285,7 +286,7 @@ pub(super) struct Guts {
     /// [Section: Turn normal grass]
     #[config(default = ":")]
     pub(super) turn_normal_grass_stat_ids_separator: String,
-    #[config(default = 100)]
+    #[config(default = 100_u8)]
     pub(super) turn_normal_grass_mesh_new_name_retries: u8,
     #[config(default = "-CONTENT.esp")]
     pub(super) turn_normal_grass_plugin_name_suffix_deleted_content: String,
@@ -310,7 +311,7 @@ pub(super) struct Guts {
     #[config(default = "grass")]
     pub(super) grass_subdir: String,
     /// [Section: Header] Output plugin will have these values placed into header.
-    #[config(default = 1.3)]
+    #[config(default = 1.3_f32)]
     pub(super) header_version: f32,
     #[config(default = "Habasi")]
     pub(super) header_author: String,
@@ -351,7 +352,7 @@ pub(super) struct Guts {
     pub(super) suffix_add_ignore_important_errors_suggestion: String,
 }
 
-pub(super) fn get_settings(settings_file: &mut SettingsFile) -> Result<Settings> {
+pub(in crate::config) fn get_settings(settings_file: &mut SettingsFile) -> Result<Settings> {
     let settings = Settings::builder()
         .file(&settings_file.path)
         .load()

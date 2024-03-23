@@ -3,6 +3,7 @@ release_folder="Habasi"
 release_zip="Habasi.zip"
 
 build() {
+set -x
 cargo build --profile release-lto --target x86_64-unknown-linux-gnu || return 1
 cargo build --profile release-lto --target x86_64-unknown-linux-musl || return 1
 cargo ndk -t arm64-v8a build --profile release-lto || return 1
@@ -10,6 +11,7 @@ cargo xwin build --profile release-lto --target x86_64-pc-windows-msvc || return
 cargo build --profile release-lto --target x86_64-pc-windows-gnu || return 1
 PATH="$HOME/projects/osxcross/target/bin:$PATH" cargo build --profile release-lto-darwin --target x86_64-apple-darwin --config target.x86_64-apple-darwin.linker=\"x86_64-apple-darwin21.4-clang\" --config target.x86_64-apple-darwin.ar=\"x86_64-apple-darwin21.4-ar\" || return 1
 PATH="$HOME/projects/osxcross/target/bin:$PATH" cargo build --profile release-lto-darwin --target aarch64-apple-darwin --config target.aarch64-apple-darwin.linker=\"aarch64-apple-darwin21.4-clang\" --config target.aarch64-apple-darwin.ar=\"aarch64-apple-darwin21.4-ar\" || return 1
+set +x
 }
 
 zip() (
@@ -53,6 +55,7 @@ zip() (
 )
 
 main() {
+# TODO cargo clippy --all -- -D clippy::all -D clippy::pedantic -D warnings || return 1
 build || return 1
 if [ "${1}" == "zip" ]; then
   zip || return 1

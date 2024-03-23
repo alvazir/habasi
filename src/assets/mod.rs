@@ -1,6 +1,4 @@
-mod bsa;
+pub mod bsa;
 mod get_meshes;
-mod make_tng_meshes;
-pub(crate) use bsa::Bsa;
+pub mod make_tng_meshes;
 use get_meshes::{get_bsa_meshes, get_loose_meshes};
-pub(crate) use make_tng_meshes::make_tng_meshes;

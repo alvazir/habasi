@@ -15,7 +15,8 @@ use util::{
     set_new_name_retries,
 };
 
-pub(crate) struct Cfg {
+#[allow(clippy::struct_excessive_bools)]
+pub struct Cfg {
     pub(crate) merge: Vec<Vec<String>>,
     pub(crate) log: Option<PathBuf>,
     pub(crate) no_log: bool,
@@ -30,13 +31,13 @@ pub(crate) struct Cfg {
     pub(crate) guts: Guts,
 }
 
-pub(crate) struct Advanced {
+pub struct Advanced {
     pub(crate) grass_filter: Vec<String>,
     pub(crate) turn_normal_grass_stat_ids: TngStatIds,
     pub(crate) keep_only_last_info_ids: HashMap<String, HashMap<String, String>>,
 }
 
-pub(crate) struct Guts {
+pub struct Guts {
     // [Section: Presets]
     pub(crate) preset_config_turn_normal_grass: Vec<String>,
     pub(crate) preset_config_turn_normal_grass_add_with_check_references: Vec<String>,
@@ -98,7 +99,7 @@ pub(crate) struct Guts {
     pub(crate) suffix_add_ignore_important_errors_suggestion: String,
 }
 
-pub(crate) struct SettingsFile {
+pub struct SettingsFile {
     pub(crate) path: PathBuf,
     pub(crate) version_message: Option<String>,
     pub(crate) write: bool,
@@ -107,26 +108,28 @@ pub(crate) struct SettingsFile {
     pub(crate) backup_overwritten: bool,
 }
 
-pub(crate) struct Presets {
+#[allow(clippy::struct_excessive_bools)]
+pub struct Presets {
     pub(crate) present: bool,
     pub(crate) check_references: bool,
     pub(crate) merge_load_order: bool,
     pub(crate) turn_normal_grass: bool,
 }
 
-pub(crate) struct StringOsPath {
+pub struct StringOsPath {
     pub(crate) string: String,
     pub(crate) os_string: OsString,
     pub(crate) path_buf: PathBuf,
 }
 
-pub(crate) struct TngStatIds {
+pub struct TngStatIds {
     pub(crate) set: HashSet<String>,
     pub(crate) source_map: HashMap<String, String>,
 }
 
 impl Cfg {
-    fn new(opt: Options, set: Settings, settings_file: SettingsFile, exe: Option<String>, dir: Option<PathBuf>) -> Result<Cfg> {
+    #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
+    fn new(opt: Options, set: Settings, settings_file: SettingsFile, exe: Option<String>, dir: Option<PathBuf>) -> Result<Self> {
         macro_rules! opt_or_set_bool {
             ($name:ident) => {
                 match opt.$name {
@@ -154,11 +157,11 @@ impl Cfg {
         let preset_check_references = opt_or_set_bool!(preset_check_references);
         let preset_merge_load_order = opt_or_set_bool!(preset_merge_load_order);
         let preset_turn_normal_grass = opt_or_set_bool!(preset_turn_normal_grass);
-        Ok(Cfg {
+        Ok(Self {
             merge: get_lists(opt.merge, set.options.merge, opt.arguments_tail),
             grass: opt_or_set_bool!(grass),
             no_log,
-            log: get_log_file(no_log, opt_or_set_some!(log), exe, dir)?,
+            log: get_log_file(no_log, &opt_or_set_some!(log), exe, dir)?,
             settings_file,
             list_options: ListOptions {
                 no_compare: opt_or_set_bool!(no_compare),
@@ -231,7 +234,7 @@ impl Cfg {
                 omw_line_beginning_fallback_archive: set.guts.omw_line_beginning_fallback_archive,
                 omw_line_beginning_groundcover: set.guts.omw_line_beginning_groundcover,
                 omw_plugin_extensions: set_ext_vec!(set.guts.omw_plugin_extensions),
-                plugin_extensions_to_ignore: prepare_plugin_extensions_to_ignore(set.guts.plugin_extensions_to_ignore),
+                plugin_extensions_to_ignore: prepare_plugin_extensions_to_ignore(&set.guts.plugin_extensions_to_ignore),
                 unexpected_tags_to_ignore: set.guts.unexpected_tags_to_ignore.iter().map(|tag| tag.to_lowercase()).collect(),
                 skipped_processing_plugins_msg_verbosity: set.guts.skipped_processing_plugins_msg_verbosity,
                 // [Section: "Hidden" OpenMW-CS data directory]
@@ -246,9 +249,9 @@ impl Cfg {
                 turn_normal_grass_header_description_content: set.guts.turn_normal_grass_header_description_content,
                 turn_normal_grass_header_description_groundcover: set.guts.turn_normal_grass_header_description_groundcover,
                 // [Section: Meshes]
-                mesh_extension: set_low_string_osstring(set.guts.mesh_extension),
-                meshes_dir: set_low_string_osstring(set.guts.meshes_dir),
-                grass_subdir: set_low_string_osstring(set.guts.grass_subdir),
+                mesh_extension: set_low_string_osstring(&set.guts.mesh_extension),
+                meshes_dir: set_low_string_osstring(&set.guts.meshes_dir),
+                grass_subdir: set_low_string_osstring(&set.guts.grass_subdir),
                 // [Section: Header]
                 header_version: set.guts.header_version,
                 header_author: set.guts.header_author,
@@ -274,14 +277,14 @@ impl Cfg {
     }
 }
 
-pub(crate) fn get_self_config() -> Result<Cfg> {
+pub fn get_self_config() -> Result<Cfg> {
     let options = get_options()?;
     let (exe, dir) = get_exe_name_and_dir();
     let mut settings_file = get_settings_file(&exe, &dir, &options).with_context(|| "Failed to get program settings file path")?;
     let settings = get_settings(&mut settings_file).with_context(|| "Failed to get default or provided settings")?;
     if options.settings_write {
         let toml = template::<Settings>(FormatOptions::default());
-        create_dir_early(&settings_file.path, "settings")?;
+        create_dir_early(&settings_file.path, "Settings")?;
         backup_settings_file(&mut settings_file, &settings.guts.settings_backup_suffix)?;
         write(&settings_file.path, toml)
             .with_context(|| format!("Failed to write default program settings into \"{}\"", settings_file.path.display()))?;

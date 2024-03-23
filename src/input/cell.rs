@@ -7,11 +7,18 @@ use anyhow::{anyhow, Context, Result};
 use hashbrown::{hash_map::Entry, HashMap};
 use tes3::esp::{Cell, CellFlags, Reference};
 
-pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    let plugin_num = h.g.plugins_processed.len() as MastId;
+#[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
+pub fn process(cell: Cell, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    let plugin_num = MastId::try_from(h.g.plugins_processed.len()).with_context(|| {
+        format!(
+            "Bug: failed to cast {:?}(plugins_processed.len(), usize) to u32(MastId)",
+            h.g.plugins_processed.len()
+        )
+    })?;
     let mut missing_cell_in_merged_master_shown = false;
     let mut missing_ref_in_merged_master_shown = false;
     let mut plugin_refrs: Vec<MergedPluginRefr> = Vec::new();
+    #[allow(clippy::wildcard_enum_match_arm)]
     let mut local_references: Vec<&Reference> = match h.g.list_options.mode {
         Mode::Grass => cell
             .references
@@ -21,9 +28,16 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
 
         _ => cell.references.values().collect(),
     };
-    h.l.stats.instances_processed_add_count(cell.references.len());
-    if let Mode::Grass = h.g.list_options.mode {
-        h.l.stats.grass_filtered(cell.references.len() - local_references.len());
+    h.l.stats.instances_processed_add_count(cell.references.len())?;
+    if matches!(h.g.list_options.mode, Mode::Grass) {
+        h.l.stats
+            .grass_filtered(cell.references.len().checked_sub(local_references.len()).with_context(|| {
+                format!(
+                    "Bug: overflow subtracting local_references.len() = \"{}\" from cell.references.len() = \"{}\"",
+                    local_references.len(),
+                    cell.references.len()
+                )
+            })?)?;
     }
     references_sorted(&mut local_references);
     macro_rules! int_or_ext_cell {
@@ -35,7 +49,8 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                     for local_reference in local_references {
                         if local_reference.mast_index == 0 {
                             if h.g.refr < u32::MAX {
-                                h.g.refr += 1;
+                                h.g.refr = h.g.refr.checked_add(1)
+                                    .with_context(|| format!("Bug: overflow incrementing h.g.refr = \"{}\"", h.g.refr))?;
                             } else {
                                 return Err(anyhow!("Error: limit of {} references per plugin reached. Split the list into smaller parts.", u32::MAX));
                             }
@@ -49,10 +64,9 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                                     let text = missing_ref_text(&cell, &merged_master.name_low, 0);
                                     if h.g.list_options.no_ignore_errors {
                                         return Err(anyhow!("Merged {}", text));
-                                    } else {
-                                        missing_ref_append(text, &mut h.l.ignored_cell_errors, &merged_master, &mut missing_cell_in_merged_master_shown, &h.g.list_options, cfg, log)?;
-                                        continue;
                                     }
+                                    missing_ref_append(&text, &mut h.l.ignored_cell_errors, &merged_master, &mut missing_cell_in_merged_master_shown, &h.g.list_options, cfg, log)?;
+                                    continue;
                                 }
                                 None => {
                                     if h.g.list_options.strip_masters {
@@ -89,7 +103,8 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                     h.l.stats.cell(StatsUpdateKind::Processed);
                 }
                 Entry::Occupied(o) => {
-                    let o_cell = &mut out.cell[o.get().global_cell_id];
+                    let o_cell = out.cell.get_mut(o.get().global_cell_id)
+                        .with_context(|| format!("Bug: indexing slicing out.cell[{}]", o.get().global_cell_id))?;
                     let mut dummy_source = (HashMap::new(), HashMap::new());
                     let mut ref_sources = match h.g.list_options.turn_normal_grass {
                         false => &mut dummy_source,
@@ -151,12 +166,14 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                             references: HashMap::new(),
                             ..cell.clone()
                         });
+                    } else { //
                     }
 
                     for local_reference in local_references {
                         if local_reference.mast_index == 0 {
                             if h.g.refr < u32::MAX {
-                                h.g.refr += 1;
+                                h.g.refr = h.g.refr.checked_add(1)
+                                    .with_context(|| format!("Bug: overflow incrementing h.g.refr = \"{}\"", h.g.refr))?;
                             } else {
                                 return Err(anyhow!("Error: limit of {} references per plugin reached. Split the list into smaller parts.", u32::MAX));
                             }
@@ -180,10 +197,9 @@ pub(crate) fn process_cell(cell: Cell, out: &mut Out, name: &str, h: &mut Helper
                                             let text = missing_ref_text(&o_cell.0, &local_merged_master.name_low, local_reference.refr_index);
                                             if h.g.list_options.no_ignore_errors {
                                                 return Err(anyhow!("Merged {}\n{:#}", text, err));
-                                            } else {
-                                                missing_ref_append(text, &mut h.l.ignored_ref_errors, &local_merged_master, &mut missing_ref_in_merged_master_shown, &h.g.list_options, cfg, log)?;
-                                                continue;
                                             }
+                                            missing_ref_append(&text, &mut h.l.ignored_ref_errors, &local_merged_master, &mut missing_ref_in_merged_master_shown, &h.g.list_options, cfg, log)?;
+                                            continue;
                                         }
                                     };
                                 }
@@ -365,10 +381,7 @@ fn modify_global_reference(
                         Entry::Vacant(v) => {
                             v.insert(MovedInstanceGrids { old_grid, new_grid });
                         }
-                        Entry::Occupied(mut o) => {
-                            let moved_instance_value = o.get_mut();
-                            *moved_instance_value = MovedInstanceGrids { old_grid, new_grid };
-                        }
+                        Entry::Occupied(mut moved) => *moved.get_mut() = MovedInstanceGrids { old_grid, new_grid },
                     }
                 }
             }
@@ -409,14 +422,14 @@ fn missing_ref_text(cell: &Cell, master_name_low: &String, refr_index: u32) -> S
         if refr_index == 0 {
             String::new()
         } else {
-            format!("reference \"{}\" in ", refr_index)
+            format!("reference \"{refr_index}\" in ")
         },
         cell_name
     )
 }
 
 fn missing_ref_append(
-    text: String,
+    text1: &str,
     ignored_ref_errors: &mut Vec<IgnoredRefError>,
     merged_master: &LocalMergedMaster,
     flag: &mut bool,
@@ -424,32 +437,40 @@ fn missing_ref_append(
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<()> {
-    let text = format!("    Ignored error: merged {}", text);
-    match ignored_ref_errors.iter_mut().find(|x| x.master == merged_master.name_low) {
-        Some(ignored_ref_error) => {
-            if !*flag {
-                ignored_ref_error.cell_counter += 1;
-                if !list_options.no_show_missing_refs {
-                    msg(&text, 2, cfg, log)?;
-                }
-                *flag = true;
-            } else if !list_options.no_show_missing_refs && list_options.show_all_missing_refs {
-                msg(&text, 2, cfg, log)?;
-            }
-            ignored_ref_error.ref_counter += 1;
-        }
-        None => {
+    let text = format!("    Ignored error: merged {text1}");
+    if let Some(ignored_ref_error) = ignored_ref_errors.iter_mut().find(|x| x.master == merged_master.name_low) {
+        if !*flag {
+            ignored_ref_error.cell_counter = ignored_ref_error.cell_counter.checked_add(1).with_context(|| {
+                format!(
+                    "Bug: overflow incrementing ignored_ref_error.cell_counter = \"{}\"",
+                    ignored_ref_error.cell_counter
+                )
+            })?;
             if !list_options.no_show_missing_refs {
                 msg(&text, 2, cfg, log)?;
             }
             *flag = true;
-            ignored_ref_errors.push(IgnoredRefError {
-                master: merged_master.name_low.clone(),
-                first_encounter: text,
-                cell_counter: 1,
-                ref_counter: 1,
-            });
+        } else if !list_options.no_show_missing_refs && list_options.show_all_missing_refs {
+            msg(&text, 2, cfg, log)?;
+        } else { //
         }
-    };
+        ignored_ref_error.ref_counter = ignored_ref_error.ref_counter.checked_add(1).with_context(|| {
+            format!(
+                "Bug: overflow incrementing ignored_ref_error.ref_counter = \"{}\"",
+                ignored_ref_error.ref_counter
+            )
+        })?;
+    } else {
+        if !list_options.no_show_missing_refs {
+            msg(&text, 2, cfg, log)?;
+        }
+        *flag = true;
+        ignored_ref_errors.push(IgnoredRefError {
+            master: merged_master.name_low.clone(),
+            first_encounter: text,
+            cell_counter: 1,
+            ref_counter: 1,
+        });
+    }
     Ok(())
 }

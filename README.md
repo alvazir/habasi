@@ -31,9 +31,9 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
       * `habasi -m out.esp *.esp`  
     * If you know what you do(after reading `habasi -? --mode`):  
       * `habasi --mode complete_replace -m out.esp plugin1.esp plugin2.esp`  
-    * Only one input plugin is needed actually, though it makes sense in rare situations like:  
+    * Only one input plugin is needed actually, though it rarely makes sense:  
       * `habasi --mode grass -m out.esp Rem_WG_TR.esp`  
-    * Profiles are a easy to use too. Merging your whole load order:  
+    * Profiles are easy to use too. Merging your whole load order:  
       * `habasi -O`  
     * Almost everything may be done with command-line arguments, though settings file is the better way for advanced usage:  
       * `habasi --settings-write` to create settings file  
@@ -170,7 +170,7 @@ The most extreme cases of merging everything:
 
 <details>
 
-<summary>Habasi is written in Rust, so you'll need to grab a https://www.rust-lang.org in order to compile it. Habasi compiles with Rust 1.75.0(stable) or newer</summary>
+<summary>Habasi is written in Rust, so you'll need to grab a https://www.rust-lang.org in order to compile it. Habasi compiles with Rust 1.77.0(stable) or newer</summary>
 
 ```shell
 git clone https://github.com/alvazir/habasi

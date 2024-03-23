@@ -1,6 +1,7 @@
 use crate::{msg, Cfg, Helper, Log, Mode, Out, StatsUpdateKind, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use hashbrown::hash_map::Entry;
+use std::fmt::Write as _;
 use tes3::esp::{Plugin, SoundGen, StartScript, TES3Object};
 mod cell;
 mod dial;
@@ -8,14 +9,9 @@ mod header;
 mod info;
 mod land;
 mod ltex;
-use cell::process_cell;
-use dial::process_dial;
-use header::process_header;
-use info::process_info;
-use land::process_land;
-use ltex::process_ltex;
 
-pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+#[allow(clippy::too_many_lines, clippy::cognitive_complexity, clippy::wildcard_enum_match_arm)]
+pub fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     macro_rules! process {
         ($type:ident, $value:expr, $key:expr, $simple:expr) => {
             match h.g.r.$type.entry($key) {
@@ -27,7 +23,10 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
                 }
                 Entry::Occupied(o) => {
                     let global_id = *o.get();
-                    let out_v = &mut out.$type[global_id];
+                    let out_v = out
+                        .$type
+                        .get_mut(global_id)
+                        .with_context(|| format!("Bug: indexing slicing out.{}[{global_id}]", stringify!($type)))?;
                     if out_v.0 != $value {
                         if !$simple || h.g.list_options.debug {
                             keep_previous!(out_v, $value);
@@ -47,14 +46,14 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
     if h.g.list_options.insufficient_merge {
         for (count, record) in plugin.objects.into_iter().enumerate() {
             match count {
-                0 => process_header(record, out, h)?,
+                0 => header::process(record, out, h)?,
                 _ => match record {
                     TES3Object::Static(v) => {
                         if matches!(h.g.list_options.mode, Mode::Grass) || h.g.list_options.turn_normal_grass {
                             process!(stat, v, v.id.to_lowercase(), false);
                         }
                     }
-                    TES3Object::Cell(cell) => process_cell(cell, out, name, h, cfg, log)?,
+                    TES3Object::Cell(cell) => cell::process(cell, out, name, h, cfg, log)?,
                     TES3Object::Header(_) => return Err(anyhow!("Plugin is invalid due to many header records")),
                     _ => continue,
                 },
@@ -64,13 +63,13 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
         let mut land_found = false;
         for (count, record) in plugin.objects.into_iter().enumerate() {
             match count {
-                0 => process_header(record, out, h)?,
+                0 => header::process(record, out, h)?,
                 _ => match record {
-                    TES3Object::Dialogue(dial) => process_dial(dial, out, h),
-                    TES3Object::DialogueInfo(info) => process_info(info, out, h, cfg)?,
+                    TES3Object::Dialogue(dial) => dial::process(dial, out, h)?,
+                    TES3Object::DialogueInfo(info) => info::process(info, out, h, cfg)?,
                     _ => {
                         if h.l.active_dial_id.is_some() {
-                            h.l.active_dial_id = None
+                            h.l.active_dial_id = None;
                         };
                         match record {
                             TES3Object::GameSetting(v) => process!(gmst, v, v.id.to_lowercase(), true),
@@ -81,7 +80,7 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
                             TES3Object::Sound(v) => process!(soun, v, v.id.to_lowercase(), false),
                             TES3Object::SoundGen(mut v) => {
                                 assign_id_to_sndg_with_empty_id(&mut v, cfg, log)?;
-                                process!(sndg, v, v.id.to_lowercase(), false)
+                                process!(sndg, v, v.id.to_lowercase(), false);
                             }
                             TES3Object::Skill(v) => process!(skil, v, v.skill_id, false),
                             TES3Object::MagicEffect(v) => process!(mgef, v, v.effect_id, false),
@@ -90,9 +89,9 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
                             TES3Object::Birthsign(v) => process!(bsgn, v, v.id.to_lowercase(), false),
                             TES3Object::StartScript(mut v) => {
                                 assign_id_to_sscr_with_empty_id(&mut v, cfg, log)?;
-                                process!(sscr, v, v.id.to_lowercase(), true)
+                                process!(sscr, v, v.id.to_lowercase(), true);
                             }
-                            TES3Object::LandscapeTexture(ltex) => process_ltex(ltex, &land_found, out, h)?,
+                            TES3Object::LandscapeTexture(ltex) => ltex::process(ltex, land_found, out, h)?,
                             TES3Object::Spell(v) => process!(spel, v, v.id.to_lowercase(), false),
                             TES3Object::Static(v) => process!(stat, v, v.id.to_lowercase(), false),
                             TES3Object::Door(v) => process!(door, v, v.id.to_lowercase(), false),
@@ -116,8 +115,8 @@ pub(crate) fn process_records(plugin: Plugin, out: &mut Out, name: &str, h: &mut
                             TES3Object::Alchemy(v) => process!(alch, v, v.id.to_lowercase(), false),
                             TES3Object::LeveledItem(v) => process!(levi, v, v.id.to_lowercase(), false),
                             TES3Object::LeveledCreature(v) => process!(levc, v, v.id.to_lowercase(), false),
-                            TES3Object::Cell(cell) => process_cell(cell, out, name, h, cfg, log)?,
-                            TES3Object::Landscape(land) => process_land(land, &mut land_found, out, h)?,
+                            TES3Object::Cell(cell) => cell::process(cell, out, name, h, cfg, log)?,
+                            TES3Object::Landscape(land) => land::process(land, &mut land_found, out, h)?,
                             TES3Object::PathGrid(v) => process!(pgrd, v, v.cell.to_lowercase(), true),
                             TES3Object::Header(_) => return Err(anyhow!("Plugin is invalid due to many header records")),
                             _ => continue,
@@ -139,9 +138,9 @@ macro_rules! keep_previous {
     };
 }
 
-pub(crate) use keep_previous;
+pub(in crate::input) use keep_previous;
 
-pub(crate) fn assign_id_to_sscr_with_empty_id(sscr: &mut StartScript, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn assign_id_to_sscr_with_empty_id(sscr: &mut StartScript, cfg: &Cfg, log: &mut Log) -> Result<()> {
     if sscr.id.is_empty() {
         sscr.id = CRC64.checksum(sscr.script.as_bytes()).to_string();
         let text = format!("    SSCR with empty id(Script:\"{}\") was assigned id \"{}\"", sscr.script, sscr.id);
@@ -150,25 +149,29 @@ pub(crate) fn assign_id_to_sscr_with_empty_id(sscr: &mut StartScript, cfg: &Cfg,
     Ok(())
 }
 
-pub(crate) fn assign_id_to_sndg_with_empty_id(sndg: &mut SoundGen, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn assign_id_to_sndg_with_empty_id(sndg: &mut SoundGen, cfg: &Cfg, log: &mut Log) -> Result<()> {
     if sndg.id.is_empty() {
         let mut text = format!(
             "    SNDG with empty id(Creature_ID:\"{}\", Sound_ID:\"{}\") was ",
             sndg.creature, sndg.sound
         );
-        if sndg.sound_gen_type as u32 > SNDG_MAX_SOUND_FLAG {
-            text.push_str(&format!(
-                "NOT assigned id due to unknown Type(sound_flags \"{}\" > \"{}\")",
-                sndg.sound_gen_type as u32, SNDG_MAX_SOUND_FLAG
-            ));
+        #[allow(clippy::as_conversions)]
+        let sndg_type = sndg.sound_gen_type as u32;
+        if sndg_type > SNDG_MAX_SOUND_FLAG {
+            write!(
+                text,
+                "NOT assigned id due to unknown Type(sound_flags \"{sndg_type}\" > \"{SNDG_MAX_SOUND_FLAG}\")"
+            )?;
         } else {
             let sndg_creature_truncated = if sndg.creature.len() > (SNDG_ID_MAX_LEN - SNDG_ID_SUFFIX_LEN) {
-                &sndg.creature[..SNDG_ID_MAX_LEN - SNDG_ID_SUFFIX_LEN]
+                sndg.creature
+                    .get(..SNDG_ID_MAX_LEN - SNDG_ID_SUFFIX_LEN)
+                    .with_context(|| format!("Bug: indexing slicing sndg.creature[..{}]", SNDG_ID_MAX_LEN - SNDG_ID_SUFFIX_LEN))?
             } else {
-                &sndg.creature[..]
+                &*sndg.creature
             };
-            sndg.id = format!("{}{:>0SNDG_ID_SUFFIX_LEN$}", sndg_creature_truncated, sndg.sound_gen_type as u32);
-            text.push_str(&format!("assigned id \"{}\"", sndg.id));
+            sndg.id = format!("{sndg_creature_truncated}{sndg_type:>0SNDG_ID_SUFFIX_LEN$}");
+            write!(text, "assigned id \"{}\"", sndg.id)?;
         }
         msg(text, 2, cfg, log)?;
     }

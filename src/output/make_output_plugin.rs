@@ -5,16 +5,10 @@ use crate::{
 use anyhow::Result;
 use tes3::esp::{DialogueType2, FixedString, Header, ObjectFlags, Plugin, TES3Object};
 
-pub(crate) fn make_output_plugin(
-    name: &str,
-    out: Out,
-    out_plugin: &mut Plugin,
-    h: &mut Helper,
-    cfg: &Cfg,
-    log: &mut Log,
-) -> Result<()> {
+#[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
+pub fn make_output_plugin(name: &str, out: Out, out_plugin: &mut Plugin, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     let mut objects = Vec::new();
-    let lev_mode = if let Mode::CompleteReplace = h.g.list_options.mode {
+    let lev_mode = if matches!(h.g.list_options.mode, Mode::CompleteReplace) {
         Mode::CompleteReplace
     } else {
         Mode::Keep
@@ -48,6 +42,7 @@ pub(crate) fn make_output_plugin(
                                         _ => {
                                             h.g.stats.$type(StatsUpdateKind::ResultMergeableUnique);
                                             for (count, prev) in prevs.into_iter().enumerate() {
+                                                #[allow(clippy::arithmetic_side_effects)]
                                                 if count < prevs_len - 1 {
                                                     objects.push(TES3Object::$obj(prev));
                                                     h.g.stats.$type(StatsUpdateKind::ResultMergeableTotal);
@@ -108,32 +103,29 @@ pub(crate) fn make_output_plugin(
     move_out_dial(out.dial, &mut objects, h);
     if h.g.list_options.exclude_deleted_records && !removed_record_ids.is_empty() {
         let reason = "\"exclude_deleted_records\" and DELETED record flag";
-        show_removed_record_ids(removed_record_ids, reason, name, 1, cfg, log)?;
+        show_removed_record_ids(&removed_record_ids, reason, name, 1, cfg, log)?;
     }
     let header_text = HeaderText::new(&cfg.guts.header_author, &select_header_description(h, cfg), cfg, log)?;
     let strip_masters = h.g.list_options.strip_masters;
-    let header = make_header(name, out.masters, h.g.stats.total(), strip_masters, header_text, cfg, log)?;
+    let header = make_header(name, out.masters, h.g.stats.total()?, strip_masters, header_text, cfg, log)?;
     out_plugin.objects.push(TES3Object::Header(header));
     out_plugin.objects.extend(objects);
     Ok(())
 }
 
-pub(crate) fn make_header(
+pub fn make_header(
     name: &str,
-    masters: Vec<(String, u64)>,
+    mut masters: Vec<(String, u64)>,
     num_objects: u32,
     strip_masters: bool,
     header_text: HeaderText,
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<Header> {
-    let masters = match strip_masters {
-        true => {
-            let text = format!("Output plugin \"{}\": master subrecords stripped from header", name);
-            msg(text, 1, cfg, log)?;
-            Vec::new()
-        }
-        false => masters,
+    if strip_masters {
+        let text = format!("Output plugin {name:?}: master subrecords stripped from header");
+        msg(text, 1, cfg, log)?;
+        masters.clear();
     };
     Ok(Header {
         version: cfg.guts.header_version,
@@ -197,7 +189,7 @@ fn move_out_dial(out_dial: Vec<(Dial, Vec<Dial>)>, objects: &mut Vec<TES3Object>
     let mut is_journal: bool;
     let mut journal = Vec::new();
     let mut non_journal = Vec::new();
-    for dial in out_dial.into_iter() {
+    for dial in out_dial {
         if dial.0.dialogue.dialogue_type == DialogueType2::Journal {
             is_journal = true;
             journal.push(TES3Object::Dialogue(dial.0.dialogue));

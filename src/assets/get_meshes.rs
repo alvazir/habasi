@@ -5,19 +5,21 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::path::{Path, PathBuf};
 use walkdir::{DirEntry, WalkDir};
 
-pub(crate) fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, ignore_important_errors: bool, cfg: &Cfg) -> Result<()> {
+#[allow(clippy::too_many_lines)]
+pub fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, ignore_important_errors: bool, cfg: &Cfg) -> Result<()> {
+    #[allow(clippy::pattern_type_mismatch)]
     let mut found_files: Vec<(usize, String, PathBuf)> = load_order
         .datas
         .par_iter()
         .map(|(id, dir_path)| -> Result<Vec<(usize, String, PathBuf)>, _> {
             let mut res: Vec<(usize, String, PathBuf)> = Vec::new();
             let mut broken_symlinks = Vec::new();
-            for entry in WalkDir::new(dir_path)
+            for dir_entry in WalkDir::new(dir_path)
                 .follow_links(true)
                 .into_iter()
                 .filter_entry(|e| !is_not_meshes_dir(e, &cfg.guts.meshes_dir.string))
             {
-                match entry {
+                match dir_entry {
                     Ok(entry) => {
                         if !entry.file_type().is_dir() {
                             let path = entry.into_path();
@@ -27,15 +29,14 @@ pub(crate) fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, igno
                                     let mut path_components = Vec::new();
                                     for component in path.iter().rev() {
                                         let component_low = component.to_ascii_lowercase();
-                                        if component_low != cfg.guts.meshes_dir.os_string {
-                                            path_components.push(component_low)
-                                        } else {
+                                        if component_low == cfg.guts.meshes_dir.os_string {
                                             for i in path_components.iter().rev() {
                                                 relative_path.push(i);
                                             }
                                             res.push((*id, relative_path.to_string_lossy().into_owned(), path));
                                             break;
                                         }
+                                        path_components.push(component_low);
                                     }
                                 }
                             }
@@ -56,7 +57,9 @@ pub(crate) fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, igno
                                     err_or_ignore_thread_safe(text, ignore_important_errors, cfg)?;
                                 }
                                 Some(path) => {
-                                    if !path.is_symlink() {
+                                    if path.is_symlink() {
+                                        broken_symlinks.push(path.to_string_lossy().into_owned());
+                                    } else {
                                         let text = format!(
                                             "Failed to read \"{}\" in directory \"{}\" with error: \"{:#}\"",
                                             path.display(),
@@ -64,8 +67,6 @@ pub(crate) fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, igno
                                             error
                                         );
                                         err_or_ignore_thread_safe(text, ignore_important_errors, cfg)?;
-                                    } else {
-                                        broken_symlinks.push(path.to_string_lossy().into_owned());
                                     }
                                 }
                             }
@@ -76,7 +77,11 @@ pub(crate) fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, igno
             if !broken_symlinks.is_empty() {
                 if broken_symlinks.len() == 1 {
                     msg_no_log(
-                        format!("Warning: ignored {} broken symlink: {}", broken_symlinks.len(), broken_symlinks[0],),
+                        format!(
+                            "Warning: ignored {} broken symlink: {}",
+                            broken_symlinks.len(),
+                            broken_symlinks.first().with_context(|| "Bug: broken_symlinks is empty")?,
+                        ),
                         0,
                         cfg,
                     );
@@ -86,7 +91,7 @@ pub(crate) fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, igno
                         broken_symlinks.len()
                     );
                     msg_no_log(&text, 0, cfg);
-                    text = "  Broken symlink: ".to_string();
+                    text = "  Broken symlink: ".to_owned();
                     text.push_str(&broken_symlinks.join("\n  Broken symlink: "));
                     msg_no_log(text, 1, cfg);
                 }
@@ -111,26 +116,33 @@ pub(crate) fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, igno
     Ok(())
 }
 
-pub(crate) fn get_bsa_meshes(load_order: &LoadOrder, assets: &mut Assets, cfg: &Cfg) -> Result<()> {
+pub fn get_bsa_meshes(load_order: &LoadOrder, assets: &mut Assets, cfg: &Cfg) -> Result<()> {
     read_bsas(load_order, assets).with_context(|| "Failed to read BSA archives")?;
+    #[allow(clippy::pattern_type_mismatch)]
     let mut found_files: Vec<(usize, String, FileInBsa)> = load_order
         .fallback_archives
         .par_iter()
         .map(|(bsa_index, _, _)| -> Result<Vec<(usize, String, FileInBsa)>, _> {
             let mut res: Vec<(usize, String, FileInBsa)> = Vec::new();
-            for (file_index, name) in assets.bsa[*bsa_index].names.iter().enumerate() {
+            for (file_index, name) in assets
+                .bsa
+                .get(*bsa_index)
+                .with_context(|| format!("Bug: indexing slicing assets.bsa[{bsa_index}]"))?
+                .names
+                .iter()
+                .enumerate()
+            {
                 if name.ends_with(&cfg.guts.mesh_extension.string) {
                     let mut relative_path = PathBuf::new();
                     let mut path_components = Vec::new();
                     for component in Path::new(&name.replace('\\', "/")).iter().rev() {
-                        if component != cfg.guts.meshes_dir.os_string {
-                            path_components.push(component)
-                        } else {
+                        if component == cfg.guts.meshes_dir.os_string {
                             for i in path_components.iter().rev() {
                                 relative_path.push(i);
                             }
                             break;
                         }
+                        path_components.push(component);
                     }
                     res.push((
                         *bsa_index,
@@ -163,21 +175,16 @@ pub(crate) fn get_bsa_meshes(load_order: &LoadOrder, assets: &mut Assets, cfg: &
 }
 
 fn is_not_meshes_dir(entry: &DirEntry, meshes_dir: &str) -> bool {
-    entry.depth() == 1
-        && entry.file_type().is_dir()
-        && entry
-            .file_name()
-            .to_str()
-            .map(|s| !s.eq_ignore_ascii_case(meshes_dir))
-            .unwrap_or(false)
+    entry.depth() == 1 && entry.file_type().is_dir() && entry.file_name().to_str().is_some_and(|s| !s.eq_ignore_ascii_case(meshes_dir))
 }
 
 fn read_bsas(load_order: &LoadOrder, assets: &mut Assets) -> Result<()> {
+    #[allow(clippy::pattern_type_mismatch)]
     let mut res: Vec<(usize, Bsa)> = load_order
         .fallback_archives
         .par_iter()
         .map(|(index, path, _)| -> Result<(usize, Bsa), _> {
-            let bsa = Bsa::new(path).with_context(|| format!("Failed to read BSA file \"{}\"", path))?;
+            let bsa = Bsa::new(path).with_context(|| format!("Failed to read BSA file {path:?}"))?;
             Ok((*index, bsa))
         })
         .collect::<Result<_>>()?;

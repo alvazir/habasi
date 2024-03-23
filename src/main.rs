@@ -32,11 +32,14 @@ mod output;
 mod stats;
 mod structs;
 mod util;
-use assets::{make_tng_meshes, Bsa};
+use assets::{bsa::Bsa, make_tng_meshes::make_tng_meshes};
 use config::{get_self_config, Cfg};
 use input::process_records;
-use load_order::{get_game_config, get_load_order};
-use output::{make_output_plugin, make_turn_normal_grass, transform_output, write_output_plugin};
+use load_order::{get_game_config::get_game_config, get_load_order::get_load_order};
+use output::{
+    make_output_plugin::make_output_plugin, make_turn_normal_grass::make_turn_normal_grass, transform_output::transform,
+    write_output_plugin::write_output_plugin,
+};
 // use peak_alloc::PeakAlloc; // slows down the program too much
 use stats::{Stats, StatsUpdateKind};
 use structs::{
@@ -59,6 +62,7 @@ use util::{
 // static PEAK_ALLOC: PeakAlloc = PeakAlloc; // slows down the program too much
 
 fn main() {
+    #[allow(clippy::use_debug, clippy::print_stderr)]
     match run() {
         Ok(()) => {
             // println!("PEAK MEMORY USAGE: {:.0}MB", PEAK_ALLOC.peak_usage_as_mb()); // slows down the program too much
@@ -100,8 +104,9 @@ fn run() -> Result<()> {
     Ok(())
 }
 
+#[allow(clippy::too_many_lines)]
 fn process_list(
-    plugin_list: &[String],
+    list: &[String],
     output_plugin: &mut Plugin,
     old_output_plugin: &mut Plugin,
     h: &mut Helper,
@@ -110,46 +115,51 @@ fn process_list(
 ) -> Result<()> {
     let timer_global = Instant::now();
     let mut out = Out::default();
-    let name = if !plugin_list.is_empty() {
-        &plugin_list[0]
-    } else {
+    let name = if list.is_empty() {
         msg("Skipping empty list", 0, cfg, log)?;
         return Ok(());
+    } else {
+        list.first().with_context(|| "Bug: failed to get name from list")?
     };
-    let (index, list_options) = cfg.list_options.get_list_options(plugin_list, cfg, log)?;
-    let expanded_plugin_list = get_expanded_plugin_list(plugin_list, index, &list_options, h, cfg, log)
+    let (index, list_options) = cfg.list_options.get_list_options(list, cfg, log)?;
+    let expanded_plugin_list = get_expanded_plugin_list(list, index, &list_options, h, cfg, log)
         .with_context(|| "Failed to expand plugin list by scanning load order")?;
-    let plugin_list = if expanded_plugin_list.is_empty() {
-        plugin_list
-    } else {
-        &expanded_plugin_list[..]
+    #[allow(clippy::shadow_same)]
+    let mut list = list;
+    if !expanded_plugin_list.is_empty() {
+        list = expanded_plugin_list
+            .get(..)
+            .with_context(|| "Bug: indexing slicing expanded_plugin_list[..]")?;
     };
-    let regex_plugin_list = get_regex_plugin_list(plugin_list, index, &list_options, cfg, log)
+    let regex_plugin_list = get_regex_plugin_list(list, index, &list_options, cfg, log)
         .with_context(|| "Failed to expand plugin list with regex/glob patterns")?;
-    let plugin_list = if regex_plugin_list.is_empty() {
-        plugin_list
-    } else {
-        &regex_plugin_list[..]
+    if !regex_plugin_list.is_empty() {
+        list = regex_plugin_list
+            .get(..)
+            .with_context(|| "Bug: indexing slicing regex_plugin_list[..]")?;
     };
-    if should_skip_list(name, plugin_list, index, &list_options, cfg, log)? {
+    if should_skip_list(name, list, index, &list_options, cfg, log)? {
         return Ok(());
     };
+    let plugin_list = list
+        .get(index..)
+        .with_context(|| format!("Bug: indexing slicing list[{index}..]"))?;
     let mut text: String;
     if cfg.show_plugins {
         text = format!(
             "List \"{}\" contains {} files(list is ready to be copied into settings file):\n\"{}\"",
             &name,
-            &plugin_list[index..].len(),
-            &plugin_list[index..].join("\",\n\"")
+            plugin_list.len(),
+            plugin_list.join("\",\n\"")
         );
         msg(&text, 0, cfg, log)?;
     }
-    text = format!("Processing list \"{}\" with options: {}", &name, list_options.show());
+    text = format!("Processing list \"{}\" with options: {}", &name, list_options.show()?);
     msg(&text, 1, cfg, log)?;
     h.global_init(list_options);
     let tng_content_name_low = get_tng_content_name_low(name, h, cfg)?;
     let skip_plugin_name_low = get_skip_plugin_name_low(h);
-    for plugin_name in &plugin_list[index..] {
+    for plugin_name in plugin_list {
         let plugin_name_low = plugin_name.to_lowercase();
         if cfg
             .guts
@@ -183,14 +193,14 @@ fn process_list(
                                     msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
                                     h.total_add_skipped_processing_plugin(text);
                                 } else {
-                                    err_or_ignore(format!("{:#}", err), h.g.list_options.ignore_important_errors, true, cfg, log)
+                                    err_or_ignore(format!("{err:#}"), h.g.list_options.ignore_important_errors, true, cfg, log)
                                         .with_context(|| "Failed to process plugin")?;
                                 }
                                 continue;
                             }
                         };
                     }
-                    err_or_ignore(format!("{:#}", err), h.g.list_options.ignore_important_errors, false, cfg, log)
+                    err_or_ignore(format!("{err:#}"), h.g.list_options.ignore_important_errors, false, cfg, log)
                         .with_context(|| "Failed to process plugin")?;
                     continue;
                 };
@@ -203,11 +213,11 @@ fn process_list(
         return Ok(());
     }
     process_moved_instances(&mut out, h)?;
-    out = transform_output(name, out, h, cfg, log)?;
+    out = transform(name, out, h, cfg, log)?;
     process_turn_normal_grass(name, &mut out, old_output_plugin, h, cfg, log)?;
-    make_output_plugin(name, out, output_plugin, h, cfg, log).with_context(|| format!("Failed to make output plugin \"{}\"", name))?;
+    make_output_plugin(name, out, output_plugin, h, cfg, log).with_context(|| format!("Failed to make output plugin {name:?}"))?;
     write_output_plugin(name, output_plugin, old_output_plugin, 1, h, cfg, log)
-        .with_context(|| format!("Failed to write output plugin \"{}\"", name))?;
+        .with_context(|| format!("Failed to write output plugin {name:?}"))?;
     h.global_commit(timer_global, output_plugin, cfg, log)?;
     Ok(())
 }

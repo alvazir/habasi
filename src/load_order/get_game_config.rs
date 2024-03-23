@@ -3,10 +3,11 @@ use anyhow::{anyhow, Context, Result};
 use dirs::{document_dir, preference_dir};
 use std::path::PathBuf;
 
-pub(crate) fn get_game_config(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    let config_path = match h.g.list_options.config.is_empty() {
-        true => find_config(h, cfg, log).with_context(|| "Failed to find game configuration file")?,
-        false => check_config(&h.g.list_options.config).with_context(|| "Failed to read game configuration file")?,
+pub fn get_game_config(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    let config_path = if h.g.list_options.config.is_empty() {
+        find_config(h, cfg, log).with_context(|| "Failed to find game configuration file")?
+    } else {
+        check_config(&h.g.list_options.config).with_context(|| "Failed to read game configuration file")?
     };
     let config_path_canonical = config_path
         .canonicalize()
@@ -38,9 +39,8 @@ fn find_config(h: &Helper, cfg: &Cfg, log: &mut Log) -> Result<PathBuf> {
                 };
                 msg(text, verbosity, cfg, log)?;
                 return Ok($config_path);
-            } else {
-                checked_paths.push($config_path);
             }
+            checked_paths.push($config_path);
         };
     }
     if let Some(dir) = preference_dir() {
@@ -74,8 +74,9 @@ fn find_config(h: &Helper, cfg: &Cfg, log: &mut Log) -> Result<PathBuf> {
 
 fn check_config(config: &str) -> Result<PathBuf> {
     let config_path = PathBuf::from(&config);
-    match config_path != PathBuf::new() && config_path.exists() {
-        true => Ok(config_path),
-        false => Err(anyhow!("Failed to find game configuration file at path \"{}\"", config)),
+    if config_path != PathBuf::new() && config_path.exists() {
+        Ok(config_path)
+    } else {
+        Err(anyhow!("Failed to find game configuration file at path \"{config}\""))
     }
 }

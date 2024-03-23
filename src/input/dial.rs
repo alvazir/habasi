@@ -1,8 +1,9 @@
 use crate::{Dial, DialMeta, Helper, Out, StatsUpdateKind};
+use anyhow::{Context, Result};
 use hashbrown::{hash_map::Entry, HashMap};
 use tes3::esp::Dialogue;
 
-pub(crate) fn process_dial(dial: Dialogue, out: &mut Out, h: &mut Helper) {
+pub fn process(dial: Dialogue, out: &mut Out, h: &mut Helper) -> Result<()> {
     let dial_id_low = dial.id.to_lowercase();
     match h.g.r.dials.entry(dial_id_low.clone()) {
         Entry::Vacant(v) => {
@@ -25,14 +26,22 @@ pub(crate) fn process_dial(dial: Dialogue, out: &mut Out, h: &mut Helper) {
         Entry::Occupied(o) => {
             let active_dial_id = o.get().global_dial_id;
             h.l.active_dial_id = Some(active_dial_id);
-            if out.dial[active_dial_id].0.dialogue != dial {
-                out.dial[active_dial_id].0.dialogue = dial;
-                h.l.stats.dial(StatsUpdateKind::Replaced);
-            } else {
+
+            let out_dialogue = &mut out
+                .dial
+                .get_mut(active_dial_id)
+                .with_context(|| format!("Bug: out.dial doesn't contain active_dial_id = \"{active_dial_id}\""))?
+                .0
+                .dialogue;
+            if *out_dialogue == dial {
                 h.l.stats.dial(StatsUpdateKind::Duplicate);
+            } else {
+                *out_dialogue = dial;
+                h.l.stats.dial(StatsUpdateKind::Replaced);
             }
             h.l.active_dial_id = Some(o.get().global_dial_id);
         }
     };
     h.l.active_dial_name_low = dial_id_low;
+    Ok(())
 }

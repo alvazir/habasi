@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use fs_err::read;
 use hashbrown::{HashMap, HashSet};
 use std::{
-    fmt,
+    fmt::{self, Write as _},
     path::PathBuf,
     time::{Instant, SystemTime},
 };
@@ -18,7 +18,7 @@ use tes3::esp::{
 };
 
 #[derive(Clone, Default)]
-pub(crate) enum Mode {
+pub enum Mode {
     #[default]
     Keep,
     KeepWithoutLands,
@@ -34,41 +34,42 @@ impl fmt::Display for Mode {
         write!(
             f,
             "{}",
-            match self {
-                Mode::Keep => "keep",
-                Mode::KeepWithoutLands => "keep_without_lands",
-                Mode::Jobasha => "jobasha",
-                Mode::JobashaWithoutLands => "jobasha_without_lands",
-                Mode::Grass => "grass",
-                Mode::Replace => "replace",
-                Mode::CompleteReplace => "complete_replace",
+            match *self {
+                Self::Keep => "keep",
+                Self::KeepWithoutLands => "keep_without_lands",
+                Self::Jobasha => "jobasha",
+                Self::JobashaWithoutLands => "jobasha_without_lands",
+                Self::Grass => "grass",
+                Self::Replace => "replace",
+                Self::CompleteReplace => "complete_replace",
             }
         )?;
         write!(f, "")
     }
 }
 
-pub(crate) type CellExtGrid = (i32, i32);
-pub(crate) type CellIntNameLow = String;
-pub(crate) type GlobalRecordId = usize;
-pub(crate) type InfoId = usize;
-pub(crate) type InfoName = String;
-pub(crate) type MastId = u32;
-pub(crate) type LocalVtexId = u16;
-pub(crate) type GlobalVtexId = u16;
-pub(crate) type PluginName = String;
-pub(crate) type MasterNameLow = String;
-pub(crate) type PluginNameLow = String;
-pub(crate) type RecordNameLow = String;
-pub(crate) type RefrId = u32;
-pub(crate) type IsExternalRefId = bool;
-pub(crate) type IsMovedRefId = bool;
-pub(crate) type RefSources = HashMap<(MastId, RefrId), ((MastId, RefrId), IsExternalRefId, IsMovedRefId)>;
-pub(crate) type OldRefSources = HashMap<(MastId, RefrId), ((MastId, RefrId), Reference)>;
-pub(crate) type FallbackStatics = HashMap<String, (HashMap<RecordNameLow, GlobalRecordId>, Vec<Static>)>;
+pub type CellExtGrid = (i32, i32);
+pub type CellIntNameLow = String;
+pub type GlobalRecordId = usize;
+pub type InfoId = usize;
+pub type InfoName = String;
+pub type MastId = u32;
+pub type LocalVtexId = u16;
+pub type GlobalVtexId = u16;
+pub type PluginName = String;
+pub type MasterNameLow = String;
+pub type PluginNameLow = String;
+pub type RecordNameLow = String;
+pub type RefrId = u32;
+pub type IsExternalRefId = bool;
+pub type IsMovedRefId = bool;
+pub type RefSources = HashMap<(MastId, RefrId), ((MastId, RefrId), IsExternalRefId, IsMovedRefId)>;
+pub type OldRefSources = HashMap<(MastId, RefrId), ((MastId, RefrId), Reference)>;
+pub type FallbackStatics = HashMap<String, (HashMap<RecordNameLow, GlobalRecordId>, Vec<Static>)>;
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Default)]
-pub(crate) struct ListOptions {
+pub struct ListOptions {
     pub(crate) mode: Mode,
     pub(crate) base_dir: PathBuf,
     pub(crate) dry_run: bool,
@@ -96,25 +97,24 @@ pub(crate) struct ListOptions {
 }
 
 impl ListOptions {
-    pub(crate) fn show(&self) -> String {
+    pub(crate) fn show(&self) -> Result<String> {
         let mut text = format!("mode = {}", self.mode);
         if self.base_dir != PathBuf::new() {
-            text.push_str(&format!(", base_dir = {}", self.base_dir.display()));
+            write!(text, ", base_dir = {}", self.base_dir.display())?;
         };
         if self.config != String::new() {
-            text.push_str(&format!(", config = {}", self.config));
+            write!(text, ", config = {}", self.config)?;
         };
         if self.append_to_use_load_order != String::new() {
-            text.push_str(&format!(", append_to_use_load_order = {}", self.append_to_use_load_order));
+            write!(text, ", append_to_use_load_order = {}", self.append_to_use_load_order)?;
         };
         if self.skip_from_use_load_order != String::new() {
-            text.push_str(&format!(", skip_from_use_load_order = {}", self.skip_from_use_load_order));
+            write!(text, ", skip_from_use_load_order = {}", self.skip_from_use_load_order)?;
         };
         macro_rules! push_str_if {
             ($($var:ident),+) => {
                 $(if self.$var {
-                    text.push_str(", ");
-                    text.push_str(stringify!($var));
+                    write!(text, ", {}", stringify!($var))?;
                 })+
             };
         }
@@ -139,30 +139,36 @@ impl ListOptions {
             regex_sort_by_name,
             insufficient_merge
         );
-        text
+        Ok(text)
     }
 
-    pub(crate) fn get_list_options(&self, plugin_list: &[String], cfg: &Cfg, log: &mut Log) -> Result<(usize, ListOptions)> {
-        let mut index = 1;
+    pub(crate) fn get_list_options(&self, plugin_list: &[String], cfg: &Cfg, log: &mut Log) -> Result<(usize, Self)> {
+        let mut index: usize = 1;
         let mut list_options = self.clone();
-        while plugin_list.len() >= (index + 1) {
-            let arg = &plugin_list[index];
-            let mut arg_low = &arg.to_lowercase().replace('-', "_")[..];
+        while plugin_list.len()
+            >= index
+                .checked_add(1)
+                .with_context(|| format!("Bug: overflow incrementing index = \"{index}\""))?
+        {
+            let arg = &plugin_list
+                .get(index)
+                .with_context(|| format!("Bug: indexing slicing plugin_list[{index}]"))?;
+            let mut arg_low = &*arg.to_lowercase().replace('-', "_");
             if let Some(stripped) = arg_low.strip_prefix("__") {
                 arg_low = stripped;
             }
             if arg_low.starts_with(&cfg.guts.list_options_prefix_base_dir) {
                 list_options.base_dir =
-                    get_base_dir_path(arg, cfg).with_context(|| format!("Failed to get list base_dir from \"{}\"", arg))?;
+                    get_base_dir_path(arg, cfg).with_context(|| format!("Failed to get list base_dir from {arg:?}"))?;
             } else if arg_low.starts_with(&cfg.guts.list_options_prefix_config) {
                 list_options.config =
-                    get_game_config_string(arg, cfg).with_context(|| format!("Failed to get game config from \"{}\"", arg))?;
+                    get_game_config_string(arg, cfg).with_context(|| format!("Failed to get game config from {arg:?}"))?;
             } else if arg_low.starts_with(&cfg.guts.list_options_prefix_append_to_use_load_order) {
                 list_options.append_to_use_load_order = get_append_to_use_load_order_string(arg, cfg)
-                    .with_context(|| format!("Failed to get plugin path to append to use_load_order from \"{}\"", arg))?;
+                    .with_context(|| format!("Failed to get plugin path to append to use_load_order from {arg:?}"))?;
             } else if arg_low.starts_with(&cfg.guts.list_options_prefix_skip_from_use_load_order) {
                 list_options.skip_from_use_load_order = get_skip_from_use_load_order_string(arg, cfg)
-                    .with_context(|| format!("Failed to get plugin name to skip from use_load_order from \"{}\"", arg))?;
+                    .with_context(|| format!("Failed to get plugin name to skip from use_load_order from {arg:?}"))?;
             } else {
                 match arg_low {
                     "keep" => list_options.mode = Mode::Keep,
@@ -213,21 +219,23 @@ impl ListOptions {
                     _ => break,
                 }
             }
-            index += 1;
+            index = index
+                .checked_add(1)
+                .with_context(|| format!("Bug: overflow incrementing index = \"{index}\""))?;
         }
         mutate_list_options(&mut list_options, cfg, log)?;
         Ok((index, list_options))
     }
 }
 
-pub(super) struct RegexPluginInfo {
+pub struct RegexPluginInfo {
     pub(super) path: PathBuf,
     pub(super) name_low: String,
     pub(super) time: SystemTime,
 }
 
 #[derive(Clone, Default)]
-pub(crate) struct PluginInfo {
+pub struct PluginInfo {
     #[allow(dead_code)]
     pub(crate) id: usize,
     pub(crate) name: PluginName,
@@ -235,70 +243,70 @@ pub(crate) struct PluginInfo {
     pub(crate) path: PathBuf,
 }
 
-pub(crate) struct GlobalMaster {
+pub struct GlobalMaster {
     pub(crate) global_id: MastId,
     pub(crate) name_low: MasterNameLow,
 }
 
-pub(crate) struct LocalMergedMaster {
+pub struct LocalMergedMaster {
     pub(crate) local_id: MastId,
     pub(crate) name_low: MasterNameLow,
 }
 
-pub(crate) struct LocalMaster {
+pub struct LocalMaster {
     pub(crate) local_id: MastId,
     pub(crate) global_id: MastId,
 }
 
-pub(crate) struct MergedPluginRefr {
+pub struct MergedPluginRefr {
     pub(crate) local_refr: RefrId,
     pub(crate) global_refr: RefrId,
 }
 
-pub(crate) struct DialMeta {
+pub struct DialMeta {
     pub(crate) global_dial_id: GlobalRecordId,
     pub(crate) info_metas: HashMap<InfoName, InfoId>,
 }
 
-pub(crate) struct CellMeta {
+pub struct CellMeta {
     pub(crate) global_cell_id: GlobalRecordId,
     pub(crate) plugin_metas: Vec<MergedPluginMeta>,
 }
 
-pub(crate) struct MergedPluginMeta {
+pub struct MergedPluginMeta {
     pub(crate) plugin_name_low: PluginNameLow,
     pub(crate) plugin_refrs: Vec<MergedPluginRefr>,
 }
 
-pub(crate) struct Dial {
+pub struct Dial {
     pub(crate) dialogue: Dialogue,
     pub(crate) info: Vec<DialogueInfo>,
     pub(crate) excluded_infos: Vec<usize>,
 }
 
-pub(crate) struct IgnoredRefError {
+pub struct IgnoredRefError {
     pub(crate) master: MasterNameLow,
     pub(crate) first_encounter: String,
     pub(crate) cell_counter: usize,
     pub(crate) ref_counter: usize,
 }
 
-pub(crate) type MovedInstanceId = (MastId, RefrId);
+pub type MovedInstanceId = (MastId, RefrId);
 
-pub(crate) struct MovedInstanceGrids {
+pub struct MovedInstanceGrids {
     pub(crate) old_grid: CellExtGrid,
     pub(crate) new_grid: CellExtGrid,
 }
 
 #[derive(Default)]
-pub(crate) struct Helper {
+pub struct Helper {
     pub(crate) t: HelperTotal,
     pub(crate) g: HelperGlobal,
     pub(crate) l: HelperLocal,
 }
 
 #[derive(Default)]
-pub(crate) struct HelperTotal {
+pub struct HelperTotal {
     pub(crate) stats: Stats,
     pub(crate) stats_substract_output: Stats,
     pub(crate) stats_tng: Stats,
@@ -309,45 +317,45 @@ pub(crate) struct HelperTotal {
 }
 
 #[derive(Default)]
-pub(crate) struct GameConfig {
+pub struct GameConfig {
     pub(crate) path: PathBuf,
     pub(crate) path_canonical: PathBuf,
     pub(crate) load_order: LoadOrder,
 }
 
 #[derive(Default)]
-pub(crate) struct Assets {
+pub struct Assets {
     pub(crate) meshes: AssetsType,
     pub(crate) bsa: Vec<Bsa>,
 }
 
 #[derive(Default)]
-pub(crate) struct AssetsType {
+pub struct AssetsType {
     pub(crate) loose: AssetsLoose,
     pub(crate) bsa: AssetsBsa,
 }
 
 #[derive(Default)]
-pub(crate) struct AssetsLoose {
+pub struct AssetsLoose {
     pub(crate) scanned: bool,
     pub(crate) files: HashMap<String, PathBuf>,
 }
 
 #[derive(Default, Clone)]
-pub(crate) struct FileInBsa {
+pub struct FileInBsa {
     pub(crate) path: String,
     pub(crate) bsa_index: usize,
     pub(crate) file_index: usize,
 }
 
 #[derive(Default)]
-pub(crate) struct AssetsBsa {
+pub struct AssetsBsa {
     pub(crate) scanned: bool,
     pub(crate) files: HashMap<String, FileInBsa>,
 }
 
 #[derive(Default)]
-pub(crate) struct LoadOrder {
+pub struct LoadOrder {
     pub(crate) scanned: bool,
     pub(crate) contents: Vec<String>,
     pub(crate) groundcovers: Vec<String>,
@@ -356,7 +364,7 @@ pub(crate) struct LoadOrder {
 }
 
 #[derive(Default)]
-pub(crate) struct HelperGlobal {
+pub struct HelperGlobal {
     pub(crate) list_options: ListOptions,
     pub(crate) plugins_processed: Vec<PluginInfo>,
     pub(crate) masters: Vec<GlobalMaster>,
@@ -372,7 +380,7 @@ pub(crate) struct HelperGlobal {
 }
 
 #[derive(Default)]
-pub(crate) struct TurnNormalGrass {
+pub struct TurnNormalGrass {
     pub(crate) stat_records: Vec<Static>,
     pub(crate) loose: Option<PathBuf>,
     pub(crate) bsa: Option<FileInBsa>,
@@ -384,29 +392,29 @@ pub(crate) struct TurnNormalGrass {
 
 impl TurnNormalGrass {
     pub(crate) fn read_from_bsa(&mut self, bsas: &[Bsa]) -> Result<()> {
-        self.file_contents = match &self.bsa {
+        self.file_contents = match self.bsa {
             None => return Err(anyhow!("Bug: trying to read from BSA, though there is no info about BSA")),
-            Some(bsa) => {
-                self.src_info = format!("mesh \"{}\" from BSA \"{}\"", bsa.path, bsas[bsa.bsa_index].path);
-                bsas[bsa.bsa_index].get_file_by_index(bsa.file_index).with_context(|| {
-                    format!(
-                        "Failed to get file \"{}\" by index from BSA \"{}\"",
-                        bsa.path, bsas[bsa.bsa_index].path
-                    )
-                })?
+            Some(ref bsa) => {
+                let bsas_bsa = &bsas
+                    .get(bsa.bsa_index)
+                    .with_context(|| format!("Bug: indexing slicing bsas[bsa.bsa_index = {}]", bsa.bsa_index))?;
+                self.src_info = format!("mesh \"{}\" from BSA \"{}\"", bsa.path, bsas_bsa.path);
+                bsas_bsa
+                    .get_file_by_index(bsa.file_index)
+                    .with_context(|| format!("Failed to get file \"{}\" by index from BSA \"{}\"", bsa.path, bsas_bsa.path))?
             }
         };
         Ok(())
     }
 
     pub(crate) fn read_from_loose(&mut self) -> Result<()> {
-        self.file_contents = match &self.loose {
+        self.file_contents = match self.loose {
             None => {
                 return Err(anyhow!(
                     "Bug: trying to read from loose file, though there is no info about loose file"
                 ))
             }
-            Some(path) => match read(path) {
+            Some(ref path) => match read(path) {
                 Ok(file) => {
                     self.src_info = format!("loose mesh \"{}\"", path.display());
                     file
@@ -418,53 +426,51 @@ impl TurnNormalGrass {
     }
 
     pub(crate) fn should_read_from_loose(&self, load_order: &LoadOrder) -> Result<bool> {
-        let loose_time = match &self.loose {
+        let loose_time = match self.loose {
             None => {
                 return Err(anyhow!(
                     "Bug: trying to get time from loose file, though there is no info about loose file"
                 ))
             }
-            Some(loose) => match loose.metadata() {
-                Err(_) => None,
-                Ok(meta) => match meta.modified() {
-                    Err(_) => None,
-                    Ok(time) => Some(time),
-                },
-            },
+            Some(ref loose) => loose.metadata().map_or(None, |meta| meta.modified().ok()),
         };
-        let bsa_time = match &self.bsa {
+        let bsa_time = match self.bsa {
             None => return Err(anyhow!("Bug: trying to read time from BSA, though there is no info about BSA")),
-            Some(bsa) => match load_order.fallback_archives.get(bsa.bsa_index) {
+            Some(ref bsa) => match load_order.fallback_archives.get(bsa.bsa_index) {
                 None => {
                     return Err(anyhow!(
                         "Bug: trying to get time from BSA, though there is no info about BSA with index \"{}\"",
                         bsa.bsa_index
                     ))
                 }
-                Some((_, _, time)) => time,
+                Some(&(_, _, time)) => time,
             },
         };
-        Ok(loose_time.is_none() || bsa_time.is_none() || loose_time.unwrap() >= bsa_time.unwrap())
+        let res = loose_time.is_none()
+            || bsa_time.is_none()
+            || loose_time.with_context(|| "Bug: loose_time is none despite the is_none() check")?
+                >= bsa_time.with_context(|| "Bug: bsa_time is none despite the is_none() check")?;
+        Ok(res)
     }
 }
 
-pub(crate) struct HeaderText {
+pub struct HeaderText {
     pub(crate) author: String,
     pub(crate) description: String,
 }
 
 impl HeaderText {
-    pub(crate) fn new(author: &str, description: &str, cfg: &Cfg, log: &mut Log) -> Result<HeaderText> {
-        let author = truncate_header_text("author", 32, author, cfg, log)?;
-        let description = truncate_header_text("description", 256, description, cfg, log)?;
-        Ok(HeaderText { author, description })
+    pub(crate) fn new(author_raw: &str, description_raw: &str, cfg: &Cfg, log: &mut Log) -> Result<Self> {
+        let author = truncate_header_text("author", 32, author_raw, cfg, log)?;
+        let description = truncate_header_text("description", 256, description_raw, cfg, log)?;
+        Ok(Self { author, description })
     }
 }
 
 macro_rules! make_helper_records {
     ($($type_simple:ident),+; $($type:ident),+) => {
 #[derive(Default)]
-pub(crate) struct HelperRecords {
+pub struct HelperRecords {
     $(pub(crate) $type_simple: HashMap<RecordNameLow, GlobalRecordId>,)+
     pub(crate) skil: HashMap<SkillId, GlobalRecordId>,
     pub(crate) mgef: HashMap<EffectId, GlobalRecordId>,
@@ -489,7 +495,7 @@ pub(crate) struct HelperRecords {
 make_helper_records!(gmst, glob, clas, fact, race, soun, sndg, scpt, regn, bsgn, sscr, ltex, spel, stat, door, misc, weap, cont, crea, body, ligh, ench, npc_, armo, clot, repa, acti, appa, lock, prob, ingr, book, alch, levi, levc; skil, mgef, int_cells, ext_cells, ext_ref_sources, moved_instances, land, pgrd, dials, infos);
 
 #[derive(Default)]
-pub(crate) struct HelperLocal {
+pub struct HelperLocal {
     pub(crate) masters: Vec<LocalMaster>,
     pub(crate) merged_masters: Vec<LocalMergedMaster>,
     pub(crate) plugin_info: PluginInfo,
@@ -502,8 +508,8 @@ pub(crate) struct HelperLocal {
 }
 
 impl Helper {
-    pub(crate) fn new() -> Helper {
-        let mut helper = Helper::default();
+    pub(crate) fn new() -> Self {
+        let mut helper = Self::default();
         helper.g.config_index = usize::MAX;
         helper
     }
@@ -536,8 +542,8 @@ impl Helper {
     }
 
     pub(crate) fn local_commit(&mut self, cfg: &Cfg, log: &mut Log) -> Result<()> {
-        self.g.stats.add_merged_plugin();
-        self.g.stats.add(&self.l.stats);
+        self.g.stats.add_merged_plugin()?;
+        self.g.stats.add(&self.l.stats)?;
         if !self.g.list_options.no_show_missing_refs {
             show_ignored_ref_errors(&self.l.ignored_cell_errors, &self.l.plugin_info.name, true, cfg, log)?;
             show_ignored_ref_errors(&self.l.ignored_ref_errors, &self.l.plugin_info.name, false, cfg, log)?;
@@ -547,22 +553,22 @@ impl Helper {
     }
 
     pub(crate) fn global_commit(&mut self, timer: Instant, new_plugin: &mut Plugin, cfg: &Cfg, log: &mut Log) -> Result<()> {
-        self.g.stats.add_result_plugin();
-        if !self.g.stats.self_check() {
+        self.g.stats.add_result_plugin()?;
+        if !self.g.stats.self_check()? {
             return Err(anyhow!("Error(possible bug): record counts self-check for the list failed"));
         }
-        if !self.g.stats_dismiss {
-            self.g.stats.tes3(StatsUpdateKind::ResultUnique);
-            self.g.stats.header_adjust();
+        if self.g.stats_dismiss {
+            self.t.stats_substract_output.add_output(&self.g.stats)?;
         } else {
-            self.t.stats_substract_output.add_output(&self.g.stats);
+            self.g.stats.tes3(StatsUpdateKind::ResultUnique);
+            self.g.stats.header_adjust()?;
         }
-        self.t.stats.add(&self.g.stats);
+        self.t.stats.add(&self.g.stats)?;
         if self.g.stats_dismiss {
             self.g.stats.reset_output();
         }
-        self.t.stats_tng.add(&self.g.stats_tng);
-        self.g.stats.add(&self.g.stats_tng);
+        self.t.stats_tng.add(&self.g.stats_tng)?;
+        self.g.stats.add(&self.g.stats_tng)?;
         let mut text = self.g.stats.total_string(timer);
         if cfg.verbose >= 1 && cfg.verbose < 3 {
             msg_no_log(&text, 1, cfg);
@@ -574,11 +580,11 @@ impl Helper {
     }
 
     pub(crate) fn total_commit(&mut self, timer: Instant, cfg: &Cfg, log: &mut Log) -> Result<()> {
-        if !self.t.stats.self_check() {
+        if !self.t.stats.self_check().with_context(|| "")? {
             return Err(anyhow!("Error(possible bug): total record counts self-check failed"));
         }
-        self.t.stats.substract(&self.t.stats_substract_output);
-        self.t.stats.add(&self.t.stats_tng);
+        self.t.stats.substract(&self.t.stats_substract_output)?;
+        self.t.stats.add(&self.t.stats_tng)?;
         let mut text = format!("{}\n{}", cfg.guts.prefix_combined_stats, self.t.stats.total_string(timer));
         if cfg.verbose < 2 {
             msg_no_log(&text, 0, cfg);
@@ -587,12 +593,12 @@ impl Helper {
         msg(text, 2, cfg, log)?;
         if !self.t.skipped_processing_plugins.is_empty() && cfg.verbose < cfg.guts.skipped_processing_plugins_msg_verbosity {
             let skipped_processing_plugins_len = self.t.skipped_processing_plugins.len();
-            let text = format!(
+            text = format!(
                 "Skipped processing {} plugin{}({}add -{} to get list)",
                 skipped_processing_plugins_len,
                 if skipped_processing_plugins_len == 1 { "" } else { "s" },
                 if cfg.no_log { "" } else { "check log or " },
-                "v".repeat(cfg.guts.skipped_processing_plugins_msg_verbosity as usize),
+                "v".repeat(usize::from(cfg.guts.skipped_processing_plugins_msg_verbosity)),
             );
             msg(text, 0, cfg, log)?;
         }
@@ -654,7 +660,7 @@ fn mutate_list_options(list_options: &mut ListOptions, cfg: &Cfg, log: &mut Log)
 macro_rules! make_out {
     ($($type:ident, $obj:ident);+) => {
         #[derive(Default)]
-        pub(crate) struct Out {
+        pub struct Out {
             pub(crate) masters: Vec<(String, u64)>,
             $(pub(crate) $type: Vec<($obj, Vec<$obj>)>,)+
         }

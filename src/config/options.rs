@@ -1,6 +1,7 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::{builder::StyledStr, Arg, CommandFactory, Parser};
 
+#[allow(clippy::doc_markdown, clippy::struct_excessive_bools)]
 #[derive(Parser)]
 #[command(
     author,
@@ -17,7 +18,7 @@ use clap::{builder::StyledStr, Arg, CommandFactory, Parser};
 /// License: GNU GPLv3
 /// GitHub: https://github.com/alvazir/habasi
 /// Nexus Mods: https://www.nexusmods.com/morrowind/mods/53002
-pub(super) struct Options {
+pub(in crate::config) struct Options {
     /// List(s) of plugins to merge. This option is handy for one-shot merges. Settings file should be more convenient for "permanent" or longer lists , see --settings. There are 2 variants of --merge argument, primary(1) and secondary(2).
     ///
     /// (1) Each list is a double-quoted(4) string that consists of output plugin name, optional list options("replace" in second example) and comma-separated list of plugins or plugin name patterns(3) to merge. Ouput plugin's name should come first. Examples:
@@ -646,17 +647,19 @@ pub(super) struct Options {
 }
 
 fn arg_get_help(arg: &Arg) -> Result<StyledStr> {
-    match arg.get_long_help() {
-        Some(help) => Ok(help.clone()),
-        None => match arg.get_help() {
-            Some(help) => Ok(help.clone()),
-            None => Err(anyhow!("Error: failed to find help for \"{}\" argument", arg.get_id())),
+    arg.get_long_help().map_or_else(
+        || {
+            arg.get_help().map_or_else(
+                || Err(anyhow!("Error: failed to find help for \"{}\" argument", arg.get_id())),
+                |help| Ok(help.clone()),
+            )
         },
-    }
+        |help| Ok(help.clone()),
+    )
 }
 
-fn check_long_arg_names_and_aliases(string: &str, command: &clap::Command) -> Result<()> {
-    let mut string = string.to_lowercase().replace('-', "_");
+fn check_long_arg_names_and_aliases(string_raw: &str, command: &clap::Command) -> Result<()> {
+    let mut string = string_raw.to_lowercase().replace('-', "_");
     if let Some(stripped) = string.strip_prefix("__") {
         string = stripped.to_owned();
     }
@@ -673,6 +676,7 @@ fn check_long_arg_names_and_aliases(string: &str, command: &clap::Command) -> Re
                             return Err(anyhow!(arg_get_help(arg)?));
                         }
                     }
+                } else { //
                 }
             }
         }
@@ -680,13 +684,12 @@ fn check_long_arg_names_and_aliases(string: &str, command: &clap::Command) -> Re
     Ok(())
 }
 
-fn check_short_arg_names_and_aliases(string: &str, command: &clap::Command) -> Result<()> {
-    let string = match string.strip_prefix('-') {
-        Some(stripped) => stripped.to_owned(),
-        None => string.to_owned(),
-    };
+fn check_short_arg_names_and_aliases(string_raw: &str, command: &clap::Command) -> Result<()> {
+    let string = string_raw
+        .strip_prefix('-')
+        .map_or_else(|| string_raw.to_owned(), ToOwned::to_owned);
     if string.len() == 1 {
-        let character = string.chars().next().expect("string is empty");
+        let character = string.chars().next().context("string is empty")?;
         match character {
             'h' => return Err(anyhow!("Print help (see more with '--help')")),
             'V' => return Err(anyhow!("Print version")),
@@ -712,7 +715,7 @@ fn check_short_arg_names_and_aliases(string: &str, command: &clap::Command) -> R
 }
 
 fn check_show_help_for_option(options: &Options) -> Result<()> {
-    if let Some(string) = &options.help_option {
+    if let Some(ref string) = options.help_option {
         let command = Options::command();
         check_long_arg_names_and_aliases(string, &command)?;
         check_short_arg_names_and_aliases(string, &command)?;
@@ -725,7 +728,7 @@ fn check_show_help_for_option(options: &Options) -> Result<()> {
     }
 }
 
-pub(super) fn get_options() -> Result<Options> {
+pub(in crate::config) fn get_options() -> Result<Options> {
     let options = Options::try_parse_from(wild::args_os())?;
     check_show_help_for_option(&options)?;
     Ok(options)

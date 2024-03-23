@@ -3,6 +3,12 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## TBD
+
+Miscellaneous
+
+* Massive code refactoring(mostly based on non-default clippy lints)
+
 ## 0.3.1 (2024-01-16)
 
 Miscellaneous

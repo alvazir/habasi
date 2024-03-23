@@ -3,7 +3,7 @@ name = "habasi"
 version = "0.3.1"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
-rust-version = "1.75.0"
+rust-version = "1.77.0"
 description = "Habasi - TES3 plugin merging and utility tool"
 readme = "README.md"
 homepage = "https://www.nexusmods.com/morrowind/mods/53002"
@@ -19,40 +19,43 @@ maintenance = { status = "actively-developed" }
 [dependencies.tes3]
 # path = "../tes3"
 git = "https://github.com/Greatness7/tes3"
-rev = "4a08175f"
+rev = "9c287ea"
 # branch = "dev"
 default-features = false
 features = ["esp"]
 
 [dependencies]
 # CLI
-clap = { version = "~4.4.17", features = ["derive", "suggestions", "wrap_help"] }
+clap = { version = "~4.5.3", features = ["derive", "suggestions", "wrap_help"] }
 # settings file
 confique = { version = "~0.2.5", default-features = false, features = ["toml"] }
 # required by confique
-serde = "~1.0.195"
+serde = "~1.0.197"
 # error management
-anyhow = "~1.0.79"
+anyhow = "~1.0.81"
 # find openmw.cfg
 dirs = "~5.0.1"
 # find files in parallel
-rayon = "~1.8.0"
+rayon = "~1.9.0"
 # better fs errors
 fs-err = "~2.11.0"
 # references processing
 hashbrown = { version = "~0.14.3", features = ["rayon"] }
 # find files
-walkdir = "~2.4.0"
+walkdir = "~2.5.0"
 # create id for sscr with empty id
 crc = "~3.0.1"
 # provide list of plugins via regex
-regex = { version = "~1.10.2", default-features = false, features = ["std", "unicode-case"] }
+regex = { version = "~1.10.4", default-features = false, features = ["std", "unicode-case"] }
 # provide list of plugins via glob
 glob = "~0.3.1"
 # provide list of plugins via wildcards
-wild = "~2.2.0"
+wild = "~2.2.1"
 # memory usage
 # peak_alloc = "~0.2.0" # disabled due to slowing down the program
+
+[profile.dev]
+debug = 0
 
 [profile.release-lto]
 inherits = "release"
@@ -67,3 +70,42 @@ inherits = "release"
 lto = true
 panic = "abort"
 codegen-units = 1
+
+[lints.rust]
+warnings = { level = "warn", priority = -2 }
+unsafe_code = "warn"
+future_incompatible = "warn"
+nonstandard_style = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unused = "warn"
+
+[lints.rustdoc]
+missing_crate_level_docs = "warn"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 } # Includes groups: correctness, suspicious, style, complexity, perf
+# 4 more groups: pedantic, restriction, nursery, cargo
+pedantic = "warn"
+
+# TODO should select either one in next iteration
+mod_module_files = { level = "allow", priority = 1 }
+self_named_module_files = { level = "allow", priority = 1 }
+# TODO deal with this next
+module_name_repetitions = "allow"
+
+nursery = "warn"
+cargo = "warn"
+multiple_crate_versions = { level = "allow", priority = 1 } # I have no idea how to overcome the underlying problem
+restriction = "warn"
+blanket_clippy_restriction_lints = { level = "allow", priority = 1 } # Disable warning about restriction group
+single_call_fn = { level = "allow", priority = 1 } # It's not bad
+question_mark_used = "allow" # It's not bad
+implicit_return = "allow" # More idiomatic
+missing_docs_in_private_items = "allow" # It's not that bad
+min_ident_chars = "allow" # One-letter variables are handy sometimes
+std_instead_of_core = { level = "allow", priority = 1 } # I don't need no_std in this project
+std_instead_of_alloc = { level = "allow", priority = 1 } # I don't need no_std in this project
+ref_patterns = { level = "allow", priority = 1 } # Matter of preference
+separated_literal_suffix = { level = "allow", priority = 1 } # I prefer separated
+pub_with_shorthand = { level = "allow", priority = 1 } # I prefer 'super' to 'in super'

@@ -15,10 +15,10 @@ use std::{
 };
 use tes3::esp::{Cell, CellFlags, Reference};
 
-pub(crate) const CRC64: Crc<u64> = Crc::<u64>::new(&CRC_64_ECMA_182);
-pub(crate) const SNDG_ID_MAX_LEN: usize = 32;
-pub(crate) const SNDG_ID_SUFFIX_LEN: usize = 4;
-pub(crate) const SNDG_MAX_SOUND_FLAG: u32 = 7;
+pub const CRC64: Crc<u64> = Crc::<u64>::new(&CRC_64_ECMA_182);
+pub const SNDG_ID_MAX_LEN: usize = 32;
+pub const SNDG_ID_SUFFIX_LEN: usize = 4;
+pub const SNDG_MAX_SOUND_FLAG: u32 = 7;
 
 macro_rules! msg {
     ($text:ident, $verbose:ident, $cfg:ident) => {
@@ -29,7 +29,7 @@ macro_rules! msg {
     };
 }
 
-pub(crate) fn msg<S: AsRef<str>>(text: S, verbose: u8, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn msg<S: AsRef<str>>(text: S, verbose: u8, cfg: &Cfg, log: &mut Log) -> Result<()> {
     if !cfg.no_log {
         log.write(&text).with_context(|| "Failed to write to log file buffer")?;
     }
@@ -37,11 +37,11 @@ pub(crate) fn msg<S: AsRef<str>>(text: S, verbose: u8, cfg: &Cfg, log: &mut Log)
     Ok(())
 }
 
-pub(crate) fn msg_no_log<S: AsRef<str>>(text: S, verbose: u8, cfg: &Cfg) {
+pub fn msg_no_log<S: AsRef<str>>(text: S, verbose: u8, cfg: &Cfg) {
     msg!(text, verbose, cfg);
 }
 
-pub(crate) fn err_or_ignore<S: AsRef<str>>(text: S, ignore: bool, unexpected_tag: bool, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn err_or_ignore<S: AsRef<str>>(text: S, ignore: bool, unexpected_tag: bool, cfg: &Cfg, log: &mut Log) -> Result<()> {
     if ignore {
         msg(
             format!("{}{}", cfg.guts.prefix_ignored_important_error_message, text.as_ref()),
@@ -63,7 +63,7 @@ pub(crate) fn err_or_ignore<S: AsRef<str>>(text: S, ignore: bool, unexpected_tag
     }
 }
 
-pub(crate) fn err_or_ignore_thread_safe<S: AsRef<str>>(text: S, ignore: bool, cfg: &Cfg) -> Result<()> {
+pub fn err_or_ignore_thread_safe<S: AsRef<str>>(text: S, ignore: bool, cfg: &Cfg) -> Result<()> {
     if ignore {
         msg_no_log(
             format!("{}{}", cfg.guts.prefix_ignored_important_error_message, text.as_ref()),
@@ -80,58 +80,56 @@ pub(crate) fn err_or_ignore_thread_safe<S: AsRef<str>>(text: S, ignore: bool, cf
     }
 }
 
-pub(crate) struct Log {
+pub struct Log {
     pub(crate) buffer: Option<BufWriter<File>>,
 }
 
 impl Log {
-    pub(crate) fn new(cfg: &Cfg) -> Result<Log> {
-        if !cfg.no_log {
-            let log = match &cfg.log {
+    pub(crate) fn new(cfg: &Cfg) -> Result<Self> {
+        if cfg.no_log {
+            Ok(Self { buffer: None })
+        } else {
+            let log = match cfg.log {
                 None => return Err(anyhow!("Failed to get log file name")),
-                Some(log) => log,
+                Some(ref log) => log,
             };
-            create_dir_early(log, "log")?;
+            create_dir_early(log, "Log")?;
             let log_backup_message = backup_log_file(log, &cfg.guts.log_backup_suffix);
             let buffer = Some(BufWriter::new(
                 File::create(log).with_context(|| format!("Failed to create/open log file \"{}\"", log.display()))?,
             ));
-            let mut result = Log { buffer };
+            let mut result = Self { buffer };
             if !log_backup_message.is_empty() {
                 msg(log_backup_message, 3, cfg, &mut result)?;
             }
             Ok(result)
-        } else {
-            Ok(Log { buffer: None })
         }
     }
 
     pub(crate) fn write<S: AsRef<str>>(&mut self, text: S) -> io::Result<()> {
-        match &mut self.buffer {
-            None => Ok(()),
-            Some(buffer) => {
-                writeln!(buffer, "{}", text.as_ref())
-            }
-        }
+        self.buffer
+            .as_mut()
+            .map_or_else(|| Ok(()), |buffer| writeln!(buffer, "{}", text.as_ref()))
     }
 }
 
-pub(crate) fn show_log_path(cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn show_log_path(cfg: &Cfg, log: &mut Log) -> Result<()> {
     if cfg.no_log {
         Ok(())
     } else {
-        let log_path = match &cfg.log {
+        let log_path = match cfg.log {
             None => return Err(anyhow!("Failed to show log path because it's empty")),
-            Some(log_path) => log_path,
+            Some(ref log_path) => log_path,
         };
         msg(format!("Log is written to \"{}\"", log_path.display()), 0, cfg, log)
     }
 }
 
-pub(crate) fn show_settings_written(cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn show_settings_written(cfg: &Cfg, log: &mut Log) -> Result<()> {
     let mut text = String::new();
     if cfg.settings_file.backup_written {
-        text.push_str(&format!(
+        write!(
+            text,
             "Previous settings file was renamed to \"{}\"{}",
             cfg.settings_file.backup_path.display(),
             if cfg.settings_file.backup_overwritten {
@@ -139,27 +137,24 @@ pub(crate) fn show_settings_written(cfg: &Cfg, log: &mut Log) -> Result<()> {
             } else {
                 "\n"
             },
-        ))
+        )?;
     }
-    text.push_str(&format!(
-        "Wrote default program settings into \"{}\"",
-        cfg.settings_file.path.display()
-    ));
+    write!(text, "Wrote default program settings into \"{}\"", cfg.settings_file.path.display())?;
     msg(text, 0, cfg, log)
 }
 
-pub(crate) fn create_dir_early(path: &Path, name: &str) -> Result<()> {
-    match path.parent() {
-        None => {}
-        Some(dir) => {
-            if dir != Path::new("") && !dir.exists() {
-                create_dir_all(dir).with_context(|| format!("Failed to create {} directory \"{}\"", dir.display(), name))?;
-                eprintln!(
-                    "{} directory \"{}\" was created",
-                    name[0..1].to_uppercase() + &name[1..],
-                    dir.display()
+pub fn create_dir_early(path: &Path, name_capitalized: &str) -> Result<()> {
+    if let Some(dir) = path.parent() {
+        #[allow(clippy::print_stderr)]
+        if dir != Path::new("") && !dir.exists() {
+            create_dir_all(dir).with_context(|| {
+                format!(
+                    "Failed to create {} directory \"{}\"",
+                    dir.display(),
+                    name_capitalized.to_lowercase()
                 )
-            }
+            })?;
+            eprintln!("{name_capitalized} directory \"{}\" was created", dir.display());
         }
     }
     Ok(())
@@ -167,19 +162,27 @@ pub(crate) fn create_dir_early(path: &Path, name: &str) -> Result<()> {
 
 fn prepare_complex_arg_string(string: &str, pattern: &str, arg_name: &str) -> Result<String> {
     let mut pattern_len = pattern.len();
-    let mut string_prepared = &string.to_lowercase().trim().replace('-', "_")[..];
-    if let Some(stripped) = string_prepared.strip_prefix("__") {
-        pattern_len += 2;
+    let mut string_prepared = &*string.to_lowercase().trim().replace('-', "_");
+    let long_prefix = "__";
+    if let Some(stripped) = string_prepared.strip_prefix(long_prefix) {
+        pattern_len = pattern_len
+            .checked_add(long_prefix.len())
+            .with_context(|| format!("Bug: overflow adding \"{}\" to \"{pattern_len}\"", long_prefix.len()))?;
         string_prepared = stripped;
     }
     if string_prepared.starts_with(pattern) {
-        Ok(string.trim()[pattern_len..].trim().to_owned())
+        Ok(string
+            .trim()
+            .get(pattern_len..)
+            .with_context(|| format!("Bug: argument \"{string}\" contains nothing after pattern \"{pattern}\""))?
+            .trim()
+            .to_owned())
     } else {
         Err(anyhow!("Error: \"{}\" argument should start with \"{}\"", arg_name, &pattern))
     }
 }
 
-pub(crate) fn get_base_dir_path(raw: &str, cfg: &Cfg) -> Result<PathBuf> {
+pub fn get_base_dir_path(raw: &str, cfg: &Cfg) -> Result<PathBuf> {
     let base_dir = PathBuf::from(prepare_complex_arg_string(raw, &cfg.guts.list_options_prefix_base_dir, "base_dir")?);
     if base_dir != PathBuf::new() && !base_dir.exists() {
         Err(anyhow!("Error: failed to find base_dir \"{}\"", base_dir.display()))
@@ -188,11 +191,11 @@ pub(crate) fn get_base_dir_path(raw: &str, cfg: &Cfg) -> Result<PathBuf> {
     }
 }
 
-pub(crate) fn get_game_config_string(raw: &str, cfg: &Cfg) -> Result<String> {
+pub fn get_game_config_string(raw: &str, cfg: &Cfg) -> Result<String> {
     prepare_complex_arg_string(raw, &cfg.guts.list_options_prefix_config, "config")
 }
 
-pub(crate) fn get_append_to_use_load_order_string(raw: &str, cfg: &Cfg) -> Result<String> {
+pub fn get_append_to_use_load_order_string(raw: &str, cfg: &Cfg) -> Result<String> {
     prepare_complex_arg_string(
         raw,
         &cfg.guts.list_options_prefix_append_to_use_load_order,
@@ -200,7 +203,7 @@ pub(crate) fn get_append_to_use_load_order_string(raw: &str, cfg: &Cfg) -> Resul
     )
 }
 
-pub(crate) fn get_skip_from_use_load_order_string(raw: &str, cfg: &Cfg) -> Result<String> {
+pub fn get_skip_from_use_load_order_string(raw: &str, cfg: &Cfg) -> Result<String> {
     prepare_complex_arg_string(
         raw,
         &cfg.guts.list_options_prefix_skip_from_use_load_order,
@@ -208,7 +211,7 @@ pub(crate) fn get_skip_from_use_load_order_string(raw: &str, cfg: &Cfg) -> Resul
     )
 }
 
-pub(crate) fn references_sorted(references: &mut [&Reference]) {
+pub fn references_sorted(references: &mut [&Reference]) {
     references.sort_by_key(|r| {
         (
             // COMMENT: r.moved_cell.is_none(), // openmw 0.47 bug that requires MVRF records to be on top
@@ -224,9 +227,9 @@ pub(crate) fn references_sorted(references: &mut [&Reference]) {
     });
 }
 
-pub(crate) fn process_moved_instances(out: &mut Out, h: &mut Helper) -> Result<()> {
+pub fn process_moved_instances(out: &mut Out, h: &mut Helper) -> Result<()> {
     if !h.g.r.moved_instances.is_empty() {
-        for (id, grids) in h.g.r.moved_instances.iter() {
+        for (id, grids) in &h.g.r.moved_instances {
             let old_cell_id = match h.g.r.ext_cells.get(&grids.old_grid) {
                 None => return Err(anyhow!("Error: failed to find old_cell_id for moved instance")),
                 Some(cell_meta) => cell_meta.global_cell_id,
@@ -235,12 +238,22 @@ pub(crate) fn process_moved_instances(out: &mut Out, h: &mut Helper) -> Result<(
                 None => return Err(anyhow!("Error: failed to find new_cell_id for moved instance")),
                 Some(cell_meta) => cell_meta.global_cell_id,
             };
-            let reference = match out.cell[old_cell_id].0.references.remove(id) {
+            let reference = match out
+                .cell
+                .get_mut(old_cell_id)
+                .with_context(|| format!("Bug: out.cell with old_cell_id = \"{old_cell_id}\" not found"))?
+                .0
+                .references
+                .remove(id)
+            {
                 None => return Err(anyhow!("Error: failed to find moved instance in old cell")),
                 Some(reference) => reference,
             };
             let reference_clone = reference.clone();
-            if out.cell[new_cell_id]
+            if out
+                .cell
+                .get_mut(new_cell_id)
+                .with_context(|| format!("Bug: out.cell with new_cell_id = \"{new_cell_id}\" not found"))?
                 .0
                 .references
                 .insert(
@@ -287,7 +300,7 @@ pub(crate) fn process_moved_instances(out: &mut Out, h: &mut Helper) -> Result<(
     Ok(())
 }
 
-pub(crate) fn show_ignored_ref_errors(
+pub fn show_ignored_ref_errors(
     ignored_ref_errors: &[IgnoredRefError],
     plugin_name: &PluginName,
     cell: bool,
@@ -299,54 +312,64 @@ pub(crate) fn show_ignored_ref_errors(
         let (mut master_suffix, mut cell_suffix, mut ref_suffix, mut encountered_prefix, mut encountered_suffix) =
             ("", "", "", "first ", "(check log for more)");
         if ignored_ref_errors_len > 1 {
-            (master_suffix, cell_suffix, ref_suffix) = ("s", "s", "s");
-        } else if ignored_ref_errors[0].cell_counter > 1 {
-            (cell_suffix, ref_suffix) = ("s", "s")
-        } else if ignored_ref_errors[0].ref_counter > 1 {
-            ref_suffix = "s"
+            master_suffix = "s";
+            cell_suffix = "s";
+            ref_suffix = "s";
         } else {
-            encountered_prefix = "";
-            encountered_suffix = ""
+            let ignored_ref_errors_first = ignored_ref_errors.first().with_context(|| "Bug: ignored_ref_errors is empty")?;
+            if ignored_ref_errors_first.cell_counter > 1 {
+                cell_suffix = "s";
+                ref_suffix = "s";
+            } else if ignored_ref_errors_first.ref_counter > 1 {
+                ref_suffix = "s";
+            } else {
+                encountered_prefix = "";
+                encountered_suffix = "";
+            }
         };
-        let cell_msg_part = match cell {
-            true => format!("for cell{cell_suffix} "),
-            false => String::new(),
-        };
+        let cell_msg_part = if cell { format!("for cell{cell_suffix} ") } else { String::new() };
         let mut text = format!(
             "Warning: probably outdated plugin \"{plugin_name}\" contains modified cell reference{ref_suffix} {cell_msg_part}missing from master{master_suffix}:"
         );
         for master in ignored_ref_errors {
-            text.push_str(&format!(
+            write!(text,
                 "\n  Master \"{}\"({} cell{cell_suffix}, {} ref{ref_suffix}), {encountered_prefix}error encountered was{encountered_suffix}:\n{}",
                 master.master, master.cell_counter, master.ref_counter, master.first_encounter,
-            ));
+            )?;
         }
         msg(text, 0, cfg, log)?;
     }
     Ok(())
 }
 
-pub(crate) fn show_global_list_options(cfg: &Cfg, log: &mut Log) -> Result<()> {
-    let text = format!("Global list options: {}", cfg.list_options.show());
+pub fn show_global_list_options(cfg: &Cfg, log: &mut Log) -> Result<()> {
+    let text = format!("Global list options: {}", cfg.list_options.show()?);
     msg(text, 1, cfg, log)
 }
 
-pub(crate) fn scan_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn scan_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     if h.g.config_index == usize::MAX {
         get_game_config(h, cfg, log).with_context(|| "Failed to get game configuration file")?;
     }
-    if !h.t.game_configs[h.g.config_index].load_order.scanned {
+    if !h
+        .t
+        .game_configs
+        .get(h.g.config_index)
+        .with_context(|| format!("Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"", h.g.config_index))?
+        .load_order
+        .scanned
+    {
         get_load_order(h, cfg, log).with_context(|| "Failed to get load order")?;
     }
     Ok(())
 }
 
-pub(crate) fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Vec<Vec<String>>> {
+pub fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Vec<Vec<String>>> {
     let mut merge_override: Vec<Vec<String>> = Vec::new();
     if cfg.presets.present {
-        h.g.list_options = cfg.list_options.get_list_options(&vec![String::new()][..], cfg, log)?.1;
+        h.g.list_options = cfg.list_options.get_list_options(&[String::new()], cfg, log)?.1;
         if cfg.presets.check_references {
-            merge_override = vec![cfg.guts.preset_config_check_references.clone()]
+            merge_override = vec![cfg.guts.preset_config_check_references.clone()];
         };
         if cfg.presets.turn_normal_grass {
             let mut preset_config_turn_normal_grass = cfg.guts.preset_config_turn_normal_grass.clone();
@@ -365,12 +388,24 @@ pub(crate) fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
             }
             merge_override = vec![preset_config_merge_load_order];
             scan_load_order(h, cfg, log)?;
-            let groundcovers_len = h.t.game_configs[h.g.config_index].load_order.groundcovers.len();
+            let groundcovers_len =
+                h.t.game_configs
+                    .get(h.g.config_index)
+                    .with_context(|| format!("Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"", h.g.config_index))?
+                    .load_order
+                    .groundcovers
+                    .len();
             if groundcovers_len > 0 {
                 let mut preset_config_merge_load_order_grass = cfg.guts.preset_config_merge_load_order_grass.clone();
                 if cfg.presets.turn_normal_grass {
-                    let (_, _, plugin_grass_name) = get_tng_dir_and_plugin_names(&cfg.guts.preset_config_merge_load_order[0], cfg)
-                        .with_context(|| "Failed to get turn normal grass directory or plugin names")?;
+                    let (_, _, plugin_grass_name) = get_tng_dir_and_plugin_names(
+                        cfg.guts
+                            .preset_config_merge_load_order
+                            .first()
+                            .with_context(|| "Bug: cfg.guts.preset_config_merge_load_order is empty")?,
+                        cfg,
+                    )
+                    .with_context(|| "Failed to get turn normal grass directory or plugin names")?;
                     preset_config_merge_load_order_grass.push(format!(
                         "{}{}",
                         cfg.guts.list_options_prefix_append_to_use_load_order, plugin_grass_name
@@ -378,6 +413,7 @@ pub(crate) fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
                     merge_override.push(preset_config_merge_load_order_grass);
                 } else if groundcovers_len > 1 {
                     merge_override.push(preset_config_merge_load_order_grass);
+                } else { //
                 }
             }
         };
@@ -385,7 +421,7 @@ pub(crate) fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
     Ok(merge_override)
 }
 
-pub(crate) fn get_expanded_plugin_list(
+pub fn get_expanded_plugin_list(
     plugin_list: &[String],
     index: usize,
     list_options: &ListOptions,
@@ -397,6 +433,7 @@ pub(crate) fn get_expanded_plugin_list(
         scan_load_order(h, cfg, log)?;
         let is_grass = matches!(list_options.mode, Mode::Grass);
         if plugin_list.len() > index {
+            #[allow(clippy::arithmetic_side_effects)]
             let text = format!(
                 "{} {}plugins defined in list were replaced with contents of load order due to \"use_load_order\" flag",
                 plugin_list.len() - index,
@@ -410,19 +447,35 @@ pub(crate) fn get_expanded_plugin_list(
             );
             msg(text, 0, cfg, log)?;
         }
-        let mut result = if is_grass {
-            plugin_list[..index]
-                .iter()
-                .cloned()
-                .chain(h.t.game_configs[h.g.config_index].load_order.groundcovers.clone())
-                .collect::<Vec<_>>()
-        } else {
-            plugin_list[..index]
-                .iter()
-                .cloned()
-                .chain(h.t.game_configs[h.g.config_index].load_order.contents.clone())
-                .collect::<Vec<_>>()
-        };
+        macro_rules! result {
+            ($kind:ident) => {
+                plugin_list
+                    .get(..index)
+                    .with_context(|| {
+                        format!(
+                            "Bug: plugin_list.len() = \"{}\" < index = \"{index}\"",
+                            plugin_list.len()
+                        )
+                    })?
+                    .iter()
+                    .cloned()
+                    .chain(
+                        h.t.game_configs
+                            .get(h.g.config_index)
+                            .with_context(|| {
+                                format!(
+                                    "Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"",
+                                    h.g.config_index
+                                )
+                            })?
+                            .load_order
+                            .$kind
+                            .clone(),
+                    )
+                    .collect::<Vec<_>>()
+            };
+        }
+        let mut result = if is_grass { result!(groundcovers) } else { result!(contents) };
         if !list_options.append_to_use_load_order.is_empty() {
             result.push(list_options.append_to_use_load_order.clone());
             let text = format!(
@@ -439,7 +492,7 @@ pub(crate) fn get_expanded_plugin_list(
     Ok(expanded_plugin_list)
 }
 
-pub(crate) fn should_skip_list(
+pub fn should_skip_list(
     name: &str,
     plugin_list: &[String],
     index: usize,
@@ -447,27 +500,23 @@ pub(crate) fn should_skip_list(
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<bool> {
-    if plugin_list.len() < (index + 1) {
-        let text = format!("Output plugin \"{}\" processing skipped due to empty list of plugins", name);
-        msg(text, 0, cfg, log)?;
-        return Ok(true);
-    }
-    if !cfg.grass {
-        if let Mode::Grass = list_options.mode {
-            let text = format!("Output plugin \"{}\" processing skipped due to \"grass=false\"", name);
-            msg(text, 0, cfg, log)?;
-            return Ok(true);
-        };
-    }
-    Ok(false)
+    let text = if plugin_list.len() <= index {
+        format!("Output plugin {name:?} processing skipped due to empty list of plugins")
+    } else if !cfg.grass && matches!(list_options.mode, Mode::Grass) {
+        format!("Output plugin {name:?} processing skipped due to \"grass=false\"")
+    } else {
+        return Ok(false);
+    };
+    msg(text, 0, cfg, log)?;
+    Ok(true)
 }
 
-pub(crate) fn process_plugin(plugin_name: &str, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn process_plugin(plugin_name: &str, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     let (plugin_pathbuf, plugin_pathstring) = get_plugin_pathbuf_pathstring(plugin_name, h);
     msg(format!("  Processing plugin \"{}\"", &plugin_pathstring), 2, cfg, log)?;
     h.local_init(plugin_pathbuf, h.g.plugins_processed.len())
         .with_context(|| "Failed to start processing plugin")?;
-    let mut plugin: Plugin = Plugin::new();
+    let mut plugin = Plugin::new();
     plugin
         .load_path(&plugin_pathstring)
         .with_context(|| format!("Failed to load plugin \"{}\"", &plugin_pathstring))?;
@@ -483,7 +532,7 @@ fn get_plugin_pathbuf_pathstring(plugin_name: &str, h: &Helper) -> (PathBuf, Str
     (plugin_pathbuf, plugin_path)
 }
 
-pub(crate) fn process_turn_normal_grass(
+pub fn process_turn_normal_grass(
     name: &str,
     out: &mut Out,
     old_plugin: &mut Plugin,
@@ -504,15 +553,15 @@ pub(crate) fn process_turn_normal_grass(
                 cfg,
                 log,
             )
-            .with_context(|| format!("Failed to write output plugin \"{}\"", plugin_deleted_content_name))?;
+            .with_context(|| format!("Failed to write output plugin {plugin_deleted_content_name:?}"))?;
         }
         write_output_plugin(&plugin_grass_name, &mut plugin_grass, old_plugin, 2, h, cfg, log)
-            .with_context(|| format!("Failed to write output plugin \"{}\"", plugin_grass_name))?;
+            .with_context(|| format!("Failed to write output plugin {plugin_grass_name:?}"))?;
     }
     Ok(())
 }
 
-pub(crate) fn get_tng_dir_and_plugin_names(name: &str, cfg: &Cfg) -> Result<(PathBuf, String, String)> {
+pub fn get_tng_dir_and_plugin_names(name: &str, cfg: &Cfg) -> Result<(PathBuf, String, String)> {
     let name_path = PathBuf::from(name);
     let name_stem = match name_path.file_stem() {
         None => {
@@ -523,10 +572,7 @@ pub(crate) fn get_tng_dir_and_plugin_names(name: &str, cfg: &Cfg) -> Result<(Pat
         }
         Some(stem) => stem.to_string_lossy().into_owned(),
     };
-    let dir = match name_path.parent() {
-        None => PathBuf::new(),
-        Some(path) => path.to_path_buf(),
-    };
+    let dir = name_path.parent().map_or_else(PathBuf::new, Path::to_path_buf);
     let plugin_deleted_content_name_pathbuf = dir.join(format!(
         "{}{}",
         name_stem, &cfg.guts.turn_normal_grass_plugin_name_suffix_deleted_content
@@ -537,17 +583,16 @@ pub(crate) fn get_tng_dir_and_plugin_names(name: &str, cfg: &Cfg) -> Result<(Pat
     Ok((dir, plugin_deleted_content_name, plugin_grass_name))
 }
 
-pub(crate) fn read_lines(filename: &Path) -> Result<io::Lines<io::BufReader<File>>> {
+pub fn read_lines(filename: &Path) -> Result<io::Lines<io::BufReader<File>>> {
     let file = File::open(filename).with_context(|| format!("Failed to open file \"{}\"", filename.display()))?;
     Ok(io::BufReader::new(file).lines())
 }
 
-pub(crate) fn show_settings_version_message(cfg: &Cfg, log: &mut Log) -> Result<()> {
-    if let Some(message) = &cfg.settings_file.version_message {
-        msg(message, 0, cfg, log)
-    } else {
-        Ok(())
-    }
+pub fn show_settings_version_message(cfg: &Cfg, log: &mut Log) -> Result<()> {
+    cfg.settings_file
+        .version_message
+        .as_ref()
+        .map_or_else(|| Ok(()), |message| msg(message, 0, cfg, log))
 }
 
 fn backup_log_file(log_file: &PathBuf, backup_suffix: &str) -> String {
@@ -555,36 +600,34 @@ fn backup_log_file(log_file: &PathBuf, backup_suffix: &str) -> String {
     backup_path.push(backup_suffix);
     let backup_file: PathBuf = backup_path.into();
     match rename(log_file, &backup_file) {
-        Ok(_) => format!("Previous log file was renamed to \"{}\"", backup_file.display()),
+        Ok(()) => format!("Previous log file was renamed to \"{}\"", backup_file.display()),
         Err(_) => String::new(),
     }
 }
 
-pub(crate) fn get_cell_name(cell: &Cell) -> String {
+pub fn get_cell_name(cell: &Cell) -> String {
     if cell.data.flags.contains(CellFlags::IS_INTERIOR) {
         format!("{:?}", cell.name)
     } else {
         format!(
             "\"{}{:?}\"",
-            if let Some(region) = &cell.region {
-                format!("{} ", region)
-            } else {
-                String::new()
-            },
+            cell.region.as_ref().map_or_else(String::new, |region| format!("{region} ")),
             cell.data.grid
         )
     }
 }
 
-pub(crate) fn show_removed_record_ids(
-    removed_record_ids: Vec<String>,
+pub fn show_removed_record_ids(
+    removed_record_ids: &[String],
     reason: &str,
     name: &str,
     verbosity: u8,
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<()> {
-    if !removed_record_ids.is_empty() {
+    if removed_record_ids.is_empty() {
+        Ok(())
+    } else {
         if verbosity < 1 {
             return Err(anyhow!(
                 "Bug: verbosity passed to show_removed_record_ids should be >= 1, value passed is \"{}\"",
@@ -613,50 +656,48 @@ pub(crate) fn show_removed_record_ids(
         text.push_str(":\n");
         text.push_str(&removed_record_ids.join("\n"));
         msg(text, verbosity, cfg, log)
-    } else {
-        Ok(())
     }
 }
 
-pub(crate) fn select_header_description(h: &Helper, cfg: &Cfg) -> String {
+pub fn select_header_description(h: &Helper, cfg: &Cfg) -> String {
     let len = h.g.plugins_processed.len();
-    match len {
-        1 => format!(
+    if len == 1 {
+        format!(
             "{}{}{}",
             &cfg.guts.header_description_processed_one_plugin_prefix,
-            h.g.plugins_processed[0].name,
+            h.g.plugins_processed.first().map_or("", |plugin_processed| &plugin_processed.name),
             &cfg.guts.header_description_processed_one_plugin_suffix
-        ),
-        _ => format!(
+        )
+    } else {
+        format!(
             "{}{}{}",
             &cfg.guts.header_description_merged_many_plugins_prefix, len, &cfg.guts.header_description_merged_many_plugins_suffix
-        ),
+        )
     }
 }
 
-pub(crate) fn truncate_header_text(field: &str, len: usize, value: &str, cfg: &Cfg, log: &mut Log) -> Result<String> {
+pub fn truncate_header_text(field: &str, len: usize, value: &str, cfg: &Cfg, log: &mut Log) -> Result<String> {
+    #[allow(clippy::arithmetic_side_effects)]
     if value.len() > len {
-        let truncated_value = &value[..len];
-        let mut text = format!(
-            "Warning: header's \"{}\" field was truncated to \"{}\" characters(format's limit for this field)",
-            field, len
-        );
-        msg_no_log(format!("{}, check log for details", text), 0, cfg);
-        text.push_str(&format!(
+        let truncated_value = value.get(..len).with_context(|| "Bug: indexing slicing")?;
+        let mut text = format!("Warning: header's {field:?} field was truncated to {len:?} characters(format's limit for this field)");
+        msg_no_log(format!("{text}, check log for details"), 0, cfg);
+        write!(
+            text,
             ":\n  Original value was:\n    \"{}\"\n  Truncated value is:\n    \"{}\"\n  Characters cut({}):\n    \"{}\"",
             value,
             truncated_value,
             value.len() - len,
-            &value[len..]
-        ));
+            &value.get(len..).with_context(|| "Bug: indexing slicing")?
+        )?;
         msg(&text, u8::MAX, cfg, log)?;
-        Ok(truncated_value[..len].to_owned())
+        Ok(truncated_value.get(..len).with_context(|| "Bug: indexing slicing")?.to_owned())
     } else {
         Ok(value.to_owned())
     }
 }
 
-pub(crate) fn get_tng_content_name_low(name: &str, h: &Helper, cfg: &Cfg) -> Result<String> {
+pub fn get_tng_content_name_low(name: &str, h: &Helper, cfg: &Cfg) -> Result<String> {
     if !h.g.list_options.turn_normal_grass && !h.g.list_options.use_load_order {
         Ok(String::new())
     } else {
@@ -666,7 +707,7 @@ pub(crate) fn get_tng_content_name_low(name: &str, h: &Helper, cfg: &Cfg) -> Res
     }
 }
 
-pub(crate) fn get_skip_plugin_name_low(h: &Helper) -> String {
+pub fn get_skip_plugin_name_low(h: &Helper) -> String {
     if h.g.list_options.use_load_order && !h.g.list_options.skip_from_use_load_order.is_empty() {
         h.g.list_options.skip_from_use_load_order.to_lowercase()
     } else {
@@ -674,7 +715,7 @@ pub(crate) fn get_skip_plugin_name_low(h: &Helper) -> String {
     }
 }
 
-pub(super) fn get_regex_plugin_list(
+pub fn get_regex_plugin_list(
     plugin_list: &[String],
     index: usize,
     list_options: &ListOptions,
@@ -684,20 +725,43 @@ pub(super) fn get_regex_plugin_list(
     let mut regex_plugin_list = Vec::new();
     let regex_sublists = get_regex_sublists(plugin_list, index, list_options, cfg, log)?;
     if !regex_sublists.is_empty() {
-        regex_plugin_list = plugin_list[..index].iter().map(|x| x.to_owned()).collect::<Vec<_>>();
+        regex_plugin_list = plugin_list
+            .get(..index)
+            .with_context(|| format!("Bug: indexing slicing plugin_list[..{index}]"))?
+            .iter()
+            .map(ToOwned::to_owned)
+            .collect::<Vec<_>>();
         let mut new_index = index;
-        for (subindex, sublist) in regex_sublists.into_iter() {
-            if subindex + index > new_index {
-                regex_plugin_list.extend(plugin_list[new_index..subindex + index].iter().map(|x| x.to_owned()));
-                new_index = subindex + index;
+        let mut sum: usize;
+        for (subindex, sublist) in regex_sublists {
+            sum = subindex
+                .checked_add(index)
+                .with_context(|| format!("Bug: overflow adding index = \"{index}\" to subindex = \"{subindex}\""))?;
+            if sum > new_index {
+                regex_plugin_list.extend(
+                    plugin_list
+                        .get(new_index..sum)
+                        .with_context(|| format!("Bug: indexing slicing plugin_list[{new_index}..{sum}]"))?
+                        .iter()
+                        .map(ToOwned::to_owned),
+                );
+                new_index = sum;
             }
             if !sublist.is_empty() {
                 regex_plugin_list.extend(sublist.into_iter());
             }
-            new_index += 1;
+            new_index = new_index
+                .checked_add(1)
+                .with_context(|| format!("Bug: overflow incrementing new_index = \"{new_index}\""))?;
         }
         if new_index < plugin_list.len() {
-            regex_plugin_list.extend(plugin_list[new_index..].iter().map(|x| x.to_owned()));
+            regex_plugin_list.extend(
+                plugin_list
+                    .get(new_index..)
+                    .with_context(|| format!("Bug: indexing slicing plugin_list[{new_index}..]"))?
+                    .iter()
+                    .map(ToOwned::to_owned),
+            );
         }
     }
     Ok(regex_plugin_list)
@@ -712,11 +776,17 @@ fn get_regex_sublists(
 ) -> Result<Vec<(usize, Vec<String>)>> {
     let mut regex_sublists = Vec::new();
     let mut split: Vec<&str>;
-    for (subindex, item) in plugin_list[index..].iter().enumerate() {
+    for (subindex, item) in plugin_list
+        .get(index..)
+        .with_context(|| format!("Bug: indexing slicing plugin_list[{index}..]"))?
+        .iter()
+        .enumerate()
+    {
         split = item.splitn(2, ':').collect();
         if split.len() != 2 {
             continue;
         }
+        #[allow(clippy::indexing_slicing)]
         let (pattern, is_regex) = if split[0].to_lowercase() == "regex" {
             (split[1], true)
         } else if split[0].to_lowercase() == "glob" {
@@ -764,7 +834,7 @@ fn get_regex_sublists(
             } else {
                 format!("{}{MAIN_SEPARATOR}", list_options.base_dir.to_string_lossy())
             };
-            for name in regex_sublist.iter_mut() {
+            for name in &mut regex_sublist {
                 if let Some(stripped) = name.strip_prefix(&prefix) {
                     *name = stripped.to_owned();
                 }
@@ -777,7 +847,7 @@ fn get_regex_sublists(
             let mut text = format!("Pattern {item:?} expanded to:");
             for plugin in &regex_sublist {
                 if plugin.contains(' ') {
-                    write!(text, " {plugin:?}")?;
+                    write!(text, " \"{plugin}\"")?;
                 } else {
                     write!(text, " {plugin}")?;
                 };
@@ -846,13 +916,10 @@ fn get_regex_plugins(
             }
         }
     }
-    let regex_pattern = match pattern
+    let regex_pattern = pattern
         .to_string_lossy()
         .strip_prefix(&format!("{}{}", dir.to_string_lossy(), MAIN_SEPARATOR))
-    {
-        Some(stripped) => stripped.to_owned(),
-        None => pattern.to_string_lossy().into_owned(),
-    };
+        .map_or_else(|| pattern.to_string_lossy().into_owned(), ToOwned::to_owned);
     let regex_expression = RegexBuilder::new(&regex_pattern)
         .case_insensitive(!list_options.regex_case_sensitive)
         .build()?;
@@ -861,10 +928,7 @@ fn get_regex_plugins(
         dir = Path::new(".");
     };
     for entry in read_dir(dir)?.flatten() {
-        if match entry.file_type() {
-            Ok(file_type) => !file_type.is_dir(),
-            Err(_) => true,
-        } {
+        if entry.file_type().map_or(true, |file_type| !file_type.is_dir()) {
             let path = entry.path();
             if let Some(plugin_extension) = path.extension() {
                 if cfg.guts.omw_plugin_extensions.contains(&plugin_extension.to_ascii_lowercase())

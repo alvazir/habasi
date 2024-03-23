@@ -6,6 +6,7 @@ use hashbrown::{hash_map::Entry, HashMap};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::path::{Path, PathBuf};
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Default)]
 struct GetPluginsHelper {
     mor_found: bool,
@@ -16,9 +17,13 @@ struct GetPluginsHelper {
     omw_all_plugins_found: bool,
 }
 
-pub(crate) fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    let config_path = &h.t.game_configs[h.g.config_index].path;
-    let config_path_canonical = &h.t.game_configs[h.g.config_index].path_canonical;
+pub fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    let game_config =
+        h.t.game_configs
+            .get_mut(h.g.config_index)
+            .with_context(|| format!("Bug: indexing slicing h.g.config_index[{}]", h.g.config_index))?;
+    let config_path = &game_config.path;
+    let config_path_canonical = &game_config.path_canonical;
     let text = format!("Gathering plugins from game configuration file \"{}\"", config_path.display());
     msg(text, 1, cfg, log)?;
     let config_lines =
@@ -31,7 +36,7 @@ pub(crate) fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result
     let mut omw_groundcovers: Vec<String> = Vec::new();
     let mut omw_fallback_archives: Vec<String> = Vec::new();
     let mut omw_all_plugins: HashMap<String, PathBuf> = HashMap::new();
-    for line in config_lines.flatten() {
+    for line in config_lines.map_while(Result::ok) {
         if !helper.omw_found {
             if line.starts_with(&cfg.guts.mor_line_beginning_content) {
                 mor_get_plugin(&line, config_path_canonical, &mut res, &mut helper, ignore, cfg, log)
@@ -39,6 +44,7 @@ pub(crate) fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result
             } else if line.starts_with(&cfg.guts.mor_line_beginning_archive) {
                 mor_get_archive(&line, config_path_canonical, &mut res, false, &mut helper, ignore, cfg, log)
                     .with_context(|| "Failed to find Morrowind's archive")?;
+            } else { //
             }
         }
         if !helper.mor_found {
@@ -57,6 +63,7 @@ pub(crate) fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result
                 if let Some(raw_name) = line.split('=').nth(1) {
                     omw_plugins.push(raw_name.trim().to_owned());
                 }
+            } else { //
             }
         }
     }
@@ -84,9 +91,10 @@ pub(crate) fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result
         let missing_bsa = &cfg.guts.mor_line_missing_archive;
         mor_get_archive(missing_bsa, config_path, &mut res, true, &mut helper, ignore, cfg, log)
             .with_context(|| "Failed to find Morrowind's base archive")?;
+    } else { //
     }
     res.scanned = true;
-    h.t.game_configs[h.g.config_index].load_order = res;
+    game_config.load_order = res;
     Ok(())
 }
 
@@ -98,19 +106,16 @@ fn get_all_plugins(
 ) -> Result<HashMap<String, PathBuf>> {
     let mut found_plugins: Vec<(usize, String, PathBuf)> = omw_data_dirs
         .par_iter()
-        .map(|(id, dir_path)| -> Result<Vec<(usize, String, PathBuf)>, _> {
+        .map(|&(id, ref dir_path)| -> Result<Vec<(usize, String, PathBuf)>, _> {
             let mut res: Vec<(usize, String, PathBuf)> = Vec::new();
             match read_dir(dir_path) {
                 Ok(dir_contents) => {
                     for entry in dir_contents.flatten() {
-                        if match entry.file_type() {
-                            Ok(file_type) => !file_type.is_dir(),
-                            Err(_) => true,
-                        } {
+                        if entry.file_type().map_or(true, |file_type| !file_type.is_dir()) {
                             let path = entry.path();
                             if let Some(plugin_extension) = path.extension() {
                                 if cfg.guts.omw_plugin_extensions.contains(&plugin_extension.to_ascii_lowercase()) {
-                                    res.push((*id, entry.file_name().to_string_lossy().into_owned(), path));
+                                    res.push((id, entry.file_name().to_string_lossy().into_owned(), path));
                                 }
                             }
                         }
@@ -213,25 +218,20 @@ fn mor_get_archive(
         let name = raw_name.trim();
         let path = helper.mor_data_files_dir.join(name);
         if path.exists() {
-            let modification_time = match path.metadata() {
-                Err(_) => None,
-                Ok(meta) => match meta.modified() {
-                    Err(_) => None,
-                    Ok(time) => Some(time),
-                },
-            };
-
+            let modification_time = path.metadata().map_or(None, |meta| meta.modified().ok());
+            let path_str = path.to_string_lossy().into_owned();
             if prepend {
-                let path = path.to_string_lossy().into_owned();
-                if !res.fallback_archives.iter().any(|x| x.1 == path.to_lowercase()) {
-                    for (id, _, _) in res.fallback_archives.iter_mut() {
-                        *id += 1;
+                if !res.fallback_archives.iter().any(|x| x.1 == path_str.to_lowercase()) {
+                    for &mut (ref mut id, _, _) in &mut res.fallback_archives {
+                        *id = id
+                            .checked_add(1)
+                            .with_context(|| format!("Bug: overflow incrementing id = \"{id}\""))?;
                     }
-                    res.fallback_archives.insert(0, (0, path, modification_time));
+                    res.fallback_archives.insert(0, (0, path_str, modification_time));
                 }
             } else {
                 res.fallback_archives
-                    .push((res.fallback_archives.len(), path.to_string_lossy().into_owned(), modification_time));
+                    .push((res.fallback_archives.len(), path_str, modification_time));
             }
         } else {
             let text = format!(
@@ -261,12 +261,24 @@ fn omw_get_data_dir(
 ) -> Result<()> {
     if let Some(raw_data) = line.split('=').nth(1) {
         let data = PathBuf::from(if raw_data.starts_with('"') && raw_data.ends_with('"') {
-            &raw_data[1..raw_data.len() - 1]
+            raw_data
+                .get(
+                    1..raw_data
+                        .len()
+                        .checked_sub(1)
+                        .with_context(|| format!("Bug: overflow decrementing raw_data.len() = \"{}\"", raw_data.len()))?,
+                )
+                .with_context(|| format!("Bug: indexing slicing raw_data[1..{}]", raw_data.len()))?
         } else {
             raw_data
         });
         omw_data_dirs.push((helper.omw_data_counter, data));
-        helper.omw_data_counter += 1;
+        helper.omw_data_counter = helper.omw_data_counter.checked_add(1).with_context(|| {
+            format!(
+                "Bug: overflow incrementing helper.omw_data_counter = \"{}\"",
+                helper.omw_data_counter
+            )
+        })?;
     } else {
         let text = format!("Failed to parse line \"{line}\"");
         err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
@@ -291,13 +303,7 @@ fn omw_get_plugin(
             "plugin" => res.contents.push(path.to_string_lossy().into_owned()),
             "groundcover" => res.groundcovers.push(path.to_string_lossy().into_owned()),
             "fallback archive" => {
-                let modification_time = match path.metadata() {
-                    Err(_) => None,
-                    Ok(meta) => match meta.modified() {
-                        Err(_) => None,
-                        Ok(time) => Some(time),
-                    },
-                };
+                let modification_time = path.metadata().map_or(None, |meta| meta.modified().ok());
                 res.fallback_archives
                     .push((res.fallback_archives.len(), path.to_string_lossy().into_owned(), modification_time));
             }
@@ -321,15 +327,19 @@ fn omw_get_cs_data_dir(
         ($omw_cs_data_path:expr) => {
             if $omw_cs_data_path.exists() {
                 omw_data_dirs.push((helper.omw_data_counter, $omw_cs_data_path));
-                helper.omw_data_counter += 1;
+                helper.omw_data_counter = helper.omw_data_counter.checked_add(1).with_context(|| {
+                    format!(
+                        "Bug: overflow incrementing helper.omw_data_counter = \"{}\"",
+                        helper.omw_data_counter
+                    )
+                })?;
                 let text = format!(
                     "Added \"hidden\" OpenMW-CS data path \"{}\" to the list of directories",
                     $omw_cs_data_path.display()
                 );
                 return msg(text, 0, cfg, log);
-            } else {
-                checked_paths.push($omw_cs_data_path);
             }
+            checked_paths.push($omw_cs_data_path);
         };
     }
     if let Some(dir) = data_dir() {
