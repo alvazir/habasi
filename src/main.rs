@@ -33,11 +33,9 @@ mod stats;
 mod structs;
 mod util;
 use assets::{bsa::Bsa, make_tng_meshes::make_tng_meshes};
-use config::{get_self_config, Cfg};
-use input::process_records;
-use load_order::{get_game_config::get_game_config, get_load_order::get_load_order};
+use config::Cfg;
 use output::{
-    make_output_plugin::make_output_plugin, make_turn_normal_grass::make_turn_normal_grass, transform_output::transform,
+    make_output_plugin::make_output_plugin, make_turn_normal_grass::make_turn_normal_grass, transform::transform,
     write_output_plugin::write_output_plugin,
 };
 // use peak_alloc::PeakAlloc; // slows down the program too much
@@ -52,10 +50,9 @@ use util::{
     check_presets, create_dir_early, err_or_ignore, err_or_ignore_thread_safe, get_append_to_use_load_order_string, get_base_dir_path,
     get_cell_name, get_expanded_plugin_list, get_game_config_string, get_regex_plugin_list, get_skip_from_use_load_order_string,
     get_skip_plugin_name_low, get_tng_content_name_low, get_tng_dir_and_plugin_names, msg, msg_no_log, process_moved_instances,
-    process_plugin, process_turn_normal_grass, read_lines, references_sorted, scan_load_order, select_header_description,
-    should_skip_list, show_global_list_options, show_ignored_ref_errors, show_log_path, show_removed_record_ids,
-    show_settings_version_message, show_settings_written, truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN,
-    SNDG_MAX_SOUND_FLAG,
+    process_plugin, process_turn_normal_grass, read_lines, references_sorted, select_header_description, should_skip_list,
+    show_global_list_options, show_ignored_ref_errors, show_log_path, show_removed_record_ids, show_settings_version_message,
+    show_settings_written, truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG,
 };
 
 // #[global_allocator]
@@ -77,7 +74,7 @@ fn main() {
 
 fn run() -> Result<()> {
     let timer_total = Instant::now();
-    let cfg = get_self_config()?;
+    let cfg = config::get()?;
     let mut log = Log::new(&cfg)?;
     show_log_path(&cfg, &mut log)?;
     if cfg.settings_file.write {

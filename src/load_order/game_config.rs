@@ -3,7 +3,7 @@ use anyhow::{anyhow, Context, Result};
 use dirs::{document_dir, preference_dir};
 use std::path::PathBuf;
 
-pub fn get_game_config(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub(super) fn get(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     let config_path = if h.g.list_options.config.is_empty() {
         find_config(h, cfg, log).with_context(|| "Failed to find game configuration file")?
     } else {

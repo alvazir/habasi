@@ -55,7 +55,7 @@ zip() (
 )
 
 main() {
-# TODO cargo clippy --all -- -D clippy::all -D clippy::pedantic -D warnings || return 1
+cargo clippy --all -- -D clippy::all -D clippy::pedantic -D warnings -A clippy::blanket-clippy-restriction-lints || return 1
 build || return 1
 if [ "${1}" == "zip" ]; then
   zip || return 1

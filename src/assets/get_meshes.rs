@@ -6,7 +6,12 @@ use std::path::{Path, PathBuf};
 use walkdir::{DirEntry, WalkDir};
 
 #[allow(clippy::too_many_lines)]
-pub fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, ignore_important_errors: bool, cfg: &Cfg) -> Result<()> {
+pub(in crate::assets) fn get_loose_meshes(
+    load_order: &LoadOrder,
+    assets: &mut Assets,
+    ignore_important_errors: bool,
+    cfg: &Cfg,
+) -> Result<()> {
     #[allow(clippy::pattern_type_mismatch)]
     let mut found_files: Vec<(usize, String, PathBuf)> = load_order
         .datas
@@ -116,7 +121,7 @@ pub fn get_loose_meshes(load_order: &LoadOrder, assets: &mut Assets, ignore_impo
     Ok(())
 }
 
-pub fn get_bsa_meshes(load_order: &LoadOrder, assets: &mut Assets, cfg: &Cfg) -> Result<()> {
+pub(in crate::assets) fn get_bsa_meshes(load_order: &LoadOrder, assets: &mut Assets, cfg: &Cfg) -> Result<()> {
     read_bsas(load_order, assets).with_context(|| "Failed to read BSA archives")?;
     #[allow(clippy::pattern_type_mismatch)]
     let mut found_files: Vec<(usize, String, FileInBsa)> = load_order

@@ -87,18 +87,12 @@ missing_crate_level_docs = "warn"
 all = { level = "deny", priority = -1 } # Includes groups: correctness, suspicious, style, complexity, perf
 # 4 more groups: pedantic, restriction, nursery, cargo
 pedantic = "warn"
-
-# TODO should select either one in next iteration
-mod_module_files = { level = "allow", priority = 1 }
-self_named_module_files = { level = "allow", priority = 1 }
-# TODO deal with this next
-module_name_repetitions = "allow"
-
 nursery = "warn"
 cargo = "warn"
 multiple_crate_versions = { level = "allow", priority = 1 } # I have no idea how to overcome the underlying problem
 restriction = "warn"
 blanket_clippy_restriction_lints = { level = "allow", priority = 1 } # Disable warning about restriction group
+self_named_module_files = { level = "allow", priority = 1 } # Matter of preference instead of mod_module_names
 single_call_fn = { level = "allow", priority = 1 } # It's not bad
 question_mark_used = "allow" # It's not bad
 implicit_return = "allow" # More idiomatic

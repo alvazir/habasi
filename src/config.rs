@@ -277,7 +277,7 @@ impl Cfg {
     }
 }
 
-pub fn get_self_config() -> Result<Cfg> {
+pub fn get() -> Result<Cfg> {
     let options = get_options()?;
     let (exe, dir) = get_exe_name_and_dir();
     let mut settings_file = get_settings_file(&exe, &dir, &options).with_context(|| "Failed to get program settings file path")?;

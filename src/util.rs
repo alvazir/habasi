@@ -1,6 +1,6 @@
 use crate::{
-    get_game_config, get_load_order, make_turn_normal_grass, process_records, write_output_plugin, Cfg, Helper, IgnoredRefError,
-    ListOptions, Mode, Out, Plugin, PluginName, RegexPluginInfo,
+    input, load_order, make_turn_normal_grass, write_output_plugin, Cfg, Helper, IgnoredRefError, ListOptions, Mode, Out, Plugin,
+    PluginName, RegexPluginInfo,
 };
 use anyhow::{anyhow, Context, Result};
 use crc::{Crc, CRC_64_ECMA_182};
@@ -347,23 +347,6 @@ pub fn show_global_list_options(cfg: &Cfg, log: &mut Log) -> Result<()> {
     msg(text, 1, cfg, log)
 }
 
-pub fn scan_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    if h.g.config_index == usize::MAX {
-        get_game_config(h, cfg, log).with_context(|| "Failed to get game configuration file")?;
-    }
-    if !h
-        .t
-        .game_configs
-        .get(h.g.config_index)
-        .with_context(|| format!("Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"", h.g.config_index))?
-        .load_order
-        .scanned
-    {
-        get_load_order(h, cfg, log).with_context(|| "Failed to get load order")?;
-    }
-    Ok(())
-}
-
 pub fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Vec<Vec<String>>> {
     let mut merge_override: Vec<Vec<String>> = Vec::new();
     if cfg.presets.present {
@@ -387,7 +370,7 @@ pub fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Vec<Vec
                 preset_config_merge_load_order.extend(cfg.guts.preset_config_merge_load_order_add_with_turn_normal_grass.clone());
             }
             merge_override = vec![preset_config_merge_load_order];
-            scan_load_order(h, cfg, log)?;
+            load_order::scan(h, cfg, log)?;
             let groundcovers_len =
                 h.t.game_configs
                     .get(h.g.config_index)
@@ -430,7 +413,7 @@ pub fn get_expanded_plugin_list(
     log: &mut Log,
 ) -> Result<Vec<String>> {
     let expanded_plugin_list = if list_options.use_load_order {
-        scan_load_order(h, cfg, log)?;
+        load_order::scan(h, cfg, log)?;
         let is_grass = matches!(list_options.mode, Mode::Grass);
         if plugin_list.len() > index {
             #[allow(clippy::arithmetic_side_effects)]
@@ -520,7 +503,7 @@ pub fn process_plugin(plugin_name: &str, out: &mut Out, name: &str, h: &mut Help
     plugin
         .load_path(&plugin_pathstring)
         .with_context(|| format!("Failed to load plugin \"{}\"", &plugin_pathstring))?;
-    process_records(plugin, out, name, h, cfg, log)
+    input::process_records(plugin, out, name, h, cfg, log)
         .with_context(|| format!("Failed to process records from plugin \"{}\"", &plugin_pathstring))?;
     Ok(())
 }

@@ -1,6 +1,6 @@
 use super::make_header;
 use crate::{
-    get_tng_dir_and_plugin_names, make_tng_meshes, msg, msg_no_log, references_sorted, scan_load_order, CellExtGrid, Cfg, HeaderText,
+    get_tng_dir_and_plugin_names, load_order, make_tng_meshes, msg, msg_no_log, references_sorted, CellExtGrid, Cfg, HeaderText,
     Helper, Log, MastId, OldRefSources, Out, PluginInfo, RefSources, RefrId, TurnNormalGrass,
 };
 use anyhow::{anyhow, Context, Result};
@@ -36,7 +36,7 @@ pub fn make_turn_normal_grass(
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<(String, Plugin, String, Plugin)> {
-    scan_load_order(h, cfg, log).with_context(|| "Failed to scan load order while trying to turn normal grass")?;
+    load_order::scan(h, cfg, log).with_context(|| "Failed to scan load order while trying to turn normal grass")?;
     let (del_ref_cells, grass_cells, new_masters, found_stat_ids) = get_tng_cells(
         &mut out.cell,
         &h.g.r.ext_ref_sources,

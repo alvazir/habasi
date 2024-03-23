@@ -5,6 +5,24 @@ use fs_err::read_dir;
 use hashbrown::{hash_map::Entry, HashMap};
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::path::{Path, PathBuf};
+mod game_config;
+
+pub fn scan(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    if h.g.config_index == usize::MAX {
+        game_config::get(h, cfg, log).with_context(|| "Failed to get game configuration file")?;
+    }
+    if !h
+        .t
+        .game_configs
+        .get(h.g.config_index)
+        .with_context(|| format!("Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"", h.g.config_index))?
+        .load_order
+        .scanned
+    {
+        get_load_order(h, cfg, log).with_context(|| "Failed to get load order")?;
+    }
+    Ok(())
+}
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Default)]
@@ -17,7 +35,7 @@ struct GetPluginsHelper {
     omw_all_plugins_found: bool,
 }
 
-pub fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     let game_config =
         h.t.game_configs
             .get_mut(h.g.config_index)
