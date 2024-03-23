@@ -5,13 +5,20 @@ use tes3::esp::{DialogueInfo, ObjectFlags};
 
 pub fn process(info: DialogueInfo, out: &mut Out, h: &mut Helper, cfg: &Cfg) -> Result<()> {
     let active_dial_id = match h.l.active_dial_id {
-        None => return Err(anyhow!("Failed to get dialogue id for info record \"{}\"", info.id)),
+        None => {
+            return Err(anyhow!(
+                "Failed to get dialogue id for info record \"{}\"",
+                info.id
+            ))
+        }
         Some(active_dial_id) => active_dial_id,
     };
     let out_dial = &mut out
         .dial
         .get_mut(active_dial_id)
-        .with_context(|| format!("Bug: out.dial doesn't contain active_dial_id = \"{active_dial_id}\""))?
+        .with_context(|| {
+            format!("Bug: out.dial doesn't contain active_dial_id = \"{active_dial_id}\"")
+        })?
         .0;
     #[allow(clippy::as_conversions)]
     if out_dial.dialogue.dialogue_type as u8
@@ -31,7 +38,11 @@ pub fn process(info: DialogueInfo, out: &mut Out, h: &mut Helper, cfg: &Cfg) -> 
     }
     let next_info_id = out_dial.info.len();
     match h.g.r.dials.get_mut(&h.l.active_dial_name_low) {
-        None => return Err(anyhow!("Unreachable error: dial id for info is not found in list of dial ids")),
+        None => {
+            return Err(anyhow!(
+                "Unreachable error: dial id for info is not found in list of dial ids"
+            ))
+        }
         Some(dial_meta) => match dial_meta.info_metas.entry(info.id.clone()) {
             Entry::Vacant(v) => {
                 v.insert(next_info_id);
@@ -39,10 +50,9 @@ pub fn process(info: DialogueInfo, out: &mut Out, h: &mut Helper, cfg: &Cfg) -> 
             }
             Entry::Occupied(mut o) => {
                 if &info
-                    == out_dial
-                        .info
-                        .get(*o.get())
-                        .with_context(|| format!("Bug: indexing slicing out_dial.info[{}]", *o.get()))?
+                    == out_dial.info.get(*o.get()).with_context(|| {
+                        format!("Bug: indexing slicing out_dial.info[{}]", *o.get())
+                    })?
                 {
                     h.l.stats.info(StatsUpdateKind::Duplicate);
                     return Ok(());

@@ -3,12 +3,23 @@ use anyhow::{anyhow, Context, Result};
 use hashbrown::hash_map::Entry;
 use tes3::esp::LandscapeTexture;
 
-pub fn process(ltex: LandscapeTexture, land_found: bool, out: &mut Out, h: &mut Helper) -> Result<()> {
+pub fn process(
+    ltex: LandscapeTexture,
+    land_found: bool,
+    out: &mut Out,
+    h: &mut Helper,
+) -> Result<()> {
     if land_found {
-        return Err(anyhow!("Plugin is corrupted, because LTEX record comes after LAND records"));
+        return Err(anyhow!(
+            "Plugin is corrupted, because LTEX record comes after LAND records"
+        ));
     }
-    let ltex_index =
-        u16::try_from(ltex.index).with_context(|| format!("Bug: failed to cast {:?}(ltex.index, u32) to u16", ltex.index))?;
+    let ltex_index = u16::try_from(ltex.index).with_context(|| {
+        format!(
+            "Bug: failed to cast {:?}(ltex.index, u32) to u16",
+            ltex.index
+        )
+    })?;
     match h.g.r.ltex.entry(ltex.id.to_lowercase()) {
         Entry::Vacant(v) => {
             let ltex_len = u16::try_from(out.ltex.len()).with_context(|| {
@@ -20,12 +31,12 @@ pub fn process(ltex: LandscapeTexture, land_found: bool, out: &mut Out, h: &mut 
             if h.l
                 .vtex
                 .insert(
-                    ltex_index
-                        .checked_add(1)
-                        .with_context(|| format!("Bug: overflow incrementing ltex_index = \"{ltex_index}\""))?,
-                    ltex_len
-                        .checked_add(1)
-                        .with_context(|| format!("Bug: overflow incrementing ltex_len = \"{ltex_len}\""))?,
+                    ltex_index.checked_add(1).with_context(|| {
+                        format!("Bug: overflow incrementing ltex_index = \"{ltex_index}\"")
+                    })?,
+                    ltex_len.checked_add(1).with_context(|| {
+                        format!("Bug: overflow incrementing ltex_len = \"{ltex_len}\"")
+                    })?,
                 )
                 .is_some()
             {
@@ -44,9 +55,9 @@ pub fn process(ltex: LandscapeTexture, land_found: bool, out: &mut Out, h: &mut 
         Entry::Occupied(o) => {
             let mut replaced = false;
             let ltex_global_id = *o.get();
-            let ltex_global_id_incremented = ltex_global_id
-                .checked_add(1)
-                .with_context(|| format!("Bug: overflow incrementing ltex_global_id = \"{ltex_global_id}\""))?;
+            let ltex_global_id_incremented = ltex_global_id.checked_add(1).with_context(|| {
+                format!("Bug: overflow incrementing ltex_global_id = \"{ltex_global_id}\"")
+            })?;
             if h.l
                 .vtex
                 .insert(

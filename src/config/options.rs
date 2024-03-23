@@ -108,7 +108,12 @@ pub(in crate::config) struct Options {
     /// Process grass lists(enabled by default).
     ///
     /// Grass rarely changes and it's processing may take more time then other plugins combined due to the size. Consider setting this option to "false" in settings file and then use this flag sometimes.
-    #[arg(conflicts_with = "settings_write", short, long, help = "Process grass lists(enabled by default)")]
+    #[arg(
+        conflicts_with = "settings_write",
+        short,
+        long,
+        help = "Process grass lists(enabled by default)"
+    )]
     pub(super) grass: bool,
     /// Print help for specific option. Accepts both short and long option names.
     ///
@@ -634,7 +639,12 @@ pub(in crate::config) struct Options {
     /// Do not show anything.
     ///
     /// This flag takes precedence over --verbose.
-    #[arg(help_heading = "Display output", short, long, help = "Do not show anything")]
+    #[arg(
+        help_heading = "Display output",
+        short,
+        long,
+        help = "Do not show anything"
+    )]
     pub(super) quiet: bool,
     /// Show list of plugins to merge(handy when using wildcard/glob/regex patterns).
     #[arg(
@@ -650,7 +660,12 @@ fn arg_get_help(arg: &Arg) -> Result<StyledStr> {
     arg.get_long_help().map_or_else(
         || {
             arg.get_help().map_or_else(
-                || Err(anyhow!("Error: failed to find help for \"{}\" argument", arg.get_id())),
+                || {
+                    Err(anyhow!(
+                        "Error: failed to find help for \"{}\" argument",
+                        arg.get_id()
+                    ))
+                },
                 |help| Ok(help.clone()),
             )
         },

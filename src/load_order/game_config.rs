@@ -7,7 +7,8 @@ pub(super) fn get(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     let config_path = if h.g.list_options.config.is_empty() {
         find_config(h, cfg, log).with_context(|| "Failed to find game configuration file")?
     } else {
-        check_config(&h.g.list_options.config).with_context(|| "Failed to read game configuration file")?
+        check_config(&h.g.list_options.config)
+            .with_context(|| "Failed to read game configuration file")?
     };
     let config_path_canonical = config_path
         .canonicalize()
@@ -31,7 +32,10 @@ fn find_config(h: &Helper, cfg: &Cfg, log: &mut Log) -> Result<PathBuf> {
     macro_rules! check_config_path {
         ($config_path:expr) => {
             if $config_path.exists() {
-                let text = format!("Found game configuration file \"{}\"", $config_path.display());
+                let text = format!(
+                    "Found game configuration file \"{}\"",
+                    $config_path.display()
+                );
                 let verbosity = if h.t.game_configs.iter().any(|x| x.path == $config_path) {
                     u8::MAX
                 } else {
@@ -77,6 +81,8 @@ fn check_config(config: &str) -> Result<PathBuf> {
     if config_path != PathBuf::new() && config_path.exists() {
         Ok(config_path)
     } else {
-        Err(anyhow!("Failed to find game configuration file at path \"{config}\""))
+        Err(anyhow!(
+            "Failed to find game configuration file at path \"{config}\""
+        ))
     }
 }

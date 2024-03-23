@@ -30,7 +30,9 @@ pub fn process(dial: Dialogue, out: &mut Out, h: &mut Helper) -> Result<()> {
             let out_dialogue = &mut out
                 .dial
                 .get_mut(active_dial_id)
-                .with_context(|| format!("Bug: out.dial doesn't contain active_dial_id = \"{active_dial_id}\""))?
+                .with_context(|| {
+                    format!("Bug: out.dial doesn't contain active_dial_id = \"{active_dial_id}\"")
+                })?
                 .0
                 .dialogue;
             if *out_dialogue == dial {

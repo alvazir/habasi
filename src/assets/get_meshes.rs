@@ -111,57 +111,66 @@ pub(in crate::assets) fn get_loose_meshes(
 
     found_files.sort();
     let mut all_files: HashMap<String, PathBuf> = HashMap::new();
-    found_files.into_iter().rev().for_each(|(_, file_name_lowercased, path)| {
-        if let Entry::Vacant(v) = all_files.entry(file_name_lowercased) {
-            v.insert(path);
-        }
-    });
+    found_files
+        .into_iter()
+        .rev()
+        .for_each(|(_, file_name_lowercased, path)| {
+            if let Entry::Vacant(v) = all_files.entry(file_name_lowercased) {
+                v.insert(path);
+            }
+        });
     assets.meshes.loose.scanned = true;
     assets.meshes.loose.files = all_files;
     Ok(())
 }
 
-pub(in crate::assets) fn get_bsa_meshes(load_order: &LoadOrder, assets: &mut Assets, cfg: &Cfg) -> Result<()> {
+pub(in crate::assets) fn get_bsa_meshes(
+    load_order: &LoadOrder,
+    assets: &mut Assets,
+    cfg: &Cfg,
+) -> Result<()> {
     read_bsas(load_order, assets).with_context(|| "Failed to read BSA archives")?;
     #[allow(clippy::pattern_type_mismatch)]
     let mut found_files: Vec<(usize, String, FileInBsa)> = load_order
         .fallback_archives
         .par_iter()
-        .map(|(bsa_index, _, _)| -> Result<Vec<(usize, String, FileInBsa)>, _> {
-            let mut res: Vec<(usize, String, FileInBsa)> = Vec::new();
-            for (file_index, name) in assets
-                .bsa
-                .get(*bsa_index)
-                .with_context(|| format!("Bug: indexing slicing assets.bsa[{bsa_index}]"))?
-                .names
-                .iter()
-                .enumerate()
-            {
-                if name.ends_with(&cfg.guts.mesh_extension.string) {
-                    let mut relative_path = PathBuf::new();
-                    let mut path_components = Vec::new();
-                    for component in Path::new(&name.replace('\\', "/")).iter().rev() {
-                        if component == cfg.guts.meshes_dir.os_string {
-                            for i in path_components.iter().rev() {
-                                relative_path.push(i);
+        .map(
+            |(bsa_index, _, _)| -> Result<Vec<(usize, String, FileInBsa)>, _> {
+                let mut res: Vec<(usize, String, FileInBsa)> = Vec::new();
+                for (file_index, name) in assets
+                    .bsa
+                    .get(*bsa_index)
+                    .with_context(|| format!("Bug: indexing slicing assets.bsa[{bsa_index}]"))?
+                    .names
+                    .iter()
+                    .enumerate()
+                {
+                    if name.ends_with(&cfg.guts.mesh_extension.string) {
+                        let mut relative_path = PathBuf::new();
+                        let mut path_components = Vec::new();
+                        for component in Path::new(&name.replace('\\', "/")).iter().rev() {
+                            if component == cfg.guts.meshes_dir.os_string {
+                                for i in path_components.iter().rev() {
+                                    relative_path.push(i);
+                                }
+                                break;
                             }
-                            break;
+                            path_components.push(component);
                         }
-                        path_components.push(component);
+                        res.push((
+                            *bsa_index,
+                            relative_path.to_string_lossy().into_owned(),
+                            FileInBsa {
+                                path: name.to_owned(),
+                                bsa_index: *bsa_index,
+                                file_index,
+                            },
+                        ));
                     }
-                    res.push((
-                        *bsa_index,
-                        relative_path.to_string_lossy().into_owned(),
-                        FileInBsa {
-                            path: name.to_owned(),
-                            bsa_index: *bsa_index,
-                            file_index,
-                        },
-                    ));
                 }
-            }
-            Ok(res)
-        })
+                Ok(res)
+            },
+        )
         .collect::<Result<Vec<_>>>()?
         .into_iter()
         .filter(|vec| !vec.is_empty())
@@ -169,18 +178,26 @@ pub(in crate::assets) fn get_bsa_meshes(load_order: &LoadOrder, assets: &mut Ass
         .collect();
     found_files.sort_by_key(|x| x.0);
     let mut all_files: HashMap<String, FileInBsa> = HashMap::new();
-    found_files.into_iter().rev().for_each(|(_, file_name_lowercased, file_in_bsa)| {
-        if let Entry::Vacant(v) = all_files.entry(file_name_lowercased) {
-            v.insert(file_in_bsa);
-        }
-    });
+    found_files
+        .into_iter()
+        .rev()
+        .for_each(|(_, file_name_lowercased, file_in_bsa)| {
+            if let Entry::Vacant(v) = all_files.entry(file_name_lowercased) {
+                v.insert(file_in_bsa);
+            }
+        });
     assets.meshes.bsa.scanned = true;
     assets.meshes.bsa.files = all_files;
     Ok(())
 }
 
 fn is_not_meshes_dir(entry: &DirEntry, meshes_dir: &str) -> bool {
-    entry.depth() == 1 && entry.file_type().is_dir() && entry.file_name().to_str().is_some_and(|s| !s.eq_ignore_ascii_case(meshes_dir))
+    entry.depth() == 1
+        && entry.file_type().is_dir()
+        && entry
+            .file_name()
+            .to_str()
+            .is_some_and(|s| !s.eq_ignore_ascii_case(meshes_dir))
 }
 
 fn read_bsas(load_order: &LoadOrder, assets: &mut Assets) -> Result<()> {
@@ -189,7 +206,8 @@ fn read_bsas(load_order: &LoadOrder, assets: &mut Assets) -> Result<()> {
         .fallback_archives
         .par_iter()
         .map(|(index, path, _)| -> Result<(usize, Bsa), _> {
-            let bsa = Bsa::new(path).with_context(|| format!("Failed to read BSA file {path:?}"))?;
+            let bsa =
+                Bsa::new(path).with_context(|| format!("Failed to read BSA file {path:?}"))?;
             Ok((*index, bsa))
         })
         .collect::<Result<_>>()?;

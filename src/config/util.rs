@@ -11,13 +11,18 @@ use std::{
 pub fn get_exe_name_and_dir() -> (Option<String>, Option<PathBuf>) {
     current_exe().map_or((None, None), |path| {
         (
-            path.file_stem().map(|exe| exe.to_string_lossy().into_owned()),
+            path.file_stem()
+                .map(|exe| exe.to_string_lossy().into_owned()),
             path.parent().map(ToOwned::to_owned),
         )
     })
 }
 
-pub fn get_settings_file(exe: &Option<String>, dir: &Option<PathBuf>, options: &Options) -> Result<SettingsFile> {
+pub fn get_settings_file(
+    exe: &Option<String>,
+    dir: &Option<PathBuf>,
+    options: &Options,
+) -> Result<SettingsFile> {
     let extension = "toml";
     let fallback_filename = "settings.toml";
     let name = &options.settings;
@@ -61,7 +66,12 @@ pub fn get_settings_file(exe: &Option<String>, dir: &Option<PathBuf>, options: &
     Ok(settings_file)
 }
 
-pub fn get_log_file(no_log: bool, name: &str, exe: Option<String>, dir: Option<PathBuf>) -> Result<Option<PathBuf>> {
+pub fn get_log_file(
+    no_log: bool,
+    name: &str,
+    exe: Option<String>,
+    dir: Option<PathBuf>,
+) -> Result<Option<PathBuf>> {
     if no_log {
         return Ok(None);
     }
@@ -99,11 +109,20 @@ pub fn get_log_file(no_log: bool, name: &str, exe: Option<String>, dir: Option<P
     Ok(Some(log))
 }
 
-pub fn get_lists(opt: Option<Vec<String>>, set: Vec<Vec<String>>, arguments_tail: Vec<String>) -> Vec<Vec<String>> {
+pub fn get_lists(
+    opt: Option<Vec<String>>,
+    set: Vec<Vec<String>>,
+    arguments_tail: Vec<String>,
+) -> Vec<Vec<String>> {
     opt.map_or(set, |list_strings| {
         let mut lists = Vec::new();
         for string in list_strings {
-            lists.push(string.split(',').map(|element| element.trim().to_owned()).collect::<Vec<String>>());
+            lists.push(
+                string
+                    .split(',')
+                    .map(|element| element.trim().to_owned())
+                    .collect::<Vec<String>>(),
+            );
         }
         if !arguments_tail.is_empty() {
             if let Some(list) = lists.last_mut() {
@@ -136,7 +155,10 @@ pub fn check_base_dir(base_dir_string: &str) -> Result<PathBuf> {
         if base_dir.exists() {
             Ok(base_dir)
         } else {
-            Err(anyhow!("Provided base_dir doesn't exist: \"{}\"", base_dir_string))
+            Err(anyhow!(
+                "Provided base_dir doesn't exist: \"{}\"",
+                base_dir_string
+            ))
         }
     }
 }
@@ -161,8 +183,18 @@ pub fn make_tng_stat_ids(list: Vec<String>, separator: &str) -> Result<TngStatId
     let mut source_map = HashMap::new();
     for line in list {
         let mut split_line = line.split(separator);
-        let fallback_plugin = parse_tng_stat_id_line(split_line.next(), &TngStatIdLinePart::FallbackPlugin, &line, separator)?;
-        let stat_id = parse_tng_stat_id_line(split_line.next(), &TngStatIdLinePart::NameOfStatic, &line, separator)?;
+        let fallback_plugin = parse_tng_stat_id_line(
+            split_line.next(),
+            &TngStatIdLinePart::FallbackPlugin,
+            &line,
+            separator,
+        )?;
+        let stat_id = parse_tng_stat_id_line(
+            split_line.next(),
+            &TngStatIdLinePart::NameOfStatic,
+            &line,
+            separator,
+        )?;
         if split_line.next().is_none() {
             source_map.insert(stat_id.clone(), fallback_plugin);
             set.insert(stat_id);
@@ -178,7 +210,12 @@ pub fn make_tng_stat_ids(list: Vec<String>, separator: &str) -> Result<TngStatId
     Ok(TngStatIds { set, source_map })
 }
 
-fn parse_tng_stat_id_line(opt_string: Option<&str>, kind: &TngStatIdLinePart, line: &str, separator: &str) -> Result<String> {
+fn parse_tng_stat_id_line(
+    opt_string: Option<&str>,
+    kind: &TngStatIdLinePart,
+    line: &str,
+    separator: &str,
+) -> Result<String> {
     opt_string.map_or_else(
         || Err(tng_stat_id_line_error("is missing", kind, line, separator)),
         |value| {
@@ -191,8 +228,14 @@ fn parse_tng_stat_id_line(opt_string: Option<&str>, kind: &TngStatIdLinePart, li
     )
 }
 
-fn tng_stat_id_line_error(reason: &str, kind: &TngStatIdLinePart, line: &str, separator: &str) -> anyhow::Error {
-    let (fallback_plugin, name_of_static, extra_value) = ("fallback plugin", "name of the static", "line");
+fn tng_stat_id_line_error(
+    reason: &str,
+    kind: &TngStatIdLinePart,
+    line: &str,
+    separator: &str,
+) -> anyhow::Error {
+    let (fallback_plugin, name_of_static, extra_value) =
+        ("fallback plugin", "name of the static", "line");
     let kind_str = match *kind {
         TngStatIdLinePart::FallbackPlugin => fallback_plugin,
         TngStatIdLinePart::NameOfStatic => name_of_static,
@@ -214,8 +257,12 @@ pub fn set_new_name_retries(num: u8) -> Result<u8> {
 
 pub fn check_settings_version(settings_file: &mut SettingsFile) -> Result<()> {
     if settings_file.path.exists() {
-        let settings_toml_lines = read_lines(&settings_file.path)
-            .with_context(|| format!("Failed to read program configuration file \"{}\"", &settings_file.path.display()))?;
+        let settings_toml_lines = read_lines(&settings_file.path).with_context(|| {
+            format!(
+                "Failed to read program configuration file \"{}\"",
+                &settings_file.path.display()
+            )
+        })?;
         let settings_version_prefix = "# # Settings version: ";
         let expected_settings_version = String::from("0.3.0");
         let mut detected_settings_version = String::from("0.1.0");
@@ -257,26 +304,49 @@ pub fn backup_settings_file(settings_file: &mut SettingsFile, backup_suffix: &st
     }
 }
 
-pub fn make_keep_only_last_info_ids(list: Vec<Vec<String>>) -> Result<HashMap<String, HashMap<String, String>>> {
+pub fn make_keep_only_last_info_ids(
+    list: Vec<Vec<String>>,
+) -> Result<HashMap<String, HashMap<String, String>>> {
     let mut res = HashMap::new();
     for (n, line) in list.into_iter().enumerate() {
         let line_len = line.len();
         #[allow(clippy::redundant_else)]
         if line_len < 2 {
             let description = "Should contain at least 2 subelements [\"ID\", \"Topic\"]";
-            return Err(anyhow!(make_keep_only_last_info_ids_err_text(description, n, &line)?));
+            return Err(anyhow!(make_keep_only_last_info_ids_err_text(
+                description,
+                n,
+                &line
+            )?));
         } else if line_len > 3 {
-            let description = "Should contain no more than 3 subelements [\"ID\", \"Topic\", \"Reason\"]";
-            return Err(anyhow!(make_keep_only_last_info_ids_err_text(description, n, &line)?));
+            let description =
+                "Should contain no more than 3 subelements [\"ID\", \"Topic\", \"Reason\"]";
+            return Err(anyhow!(make_keep_only_last_info_ids_err_text(
+                description,
+                n,
+                &line
+            )?));
         } else {
-            let id = line.first().context("Bug: unreachable due to 2 <= line_len <= 3")?.clone();
+            let id = line
+                .first()
+                .context("Bug: unreachable due to 2 <= line_len <= 3")?
+                .clone();
             if !id.chars().all(|b| "0123456789".contains(b)) {
                 let description = "ID should only contain digits(0-9)";
-                return Err(anyhow!(make_keep_only_last_info_ids_err_text(description, n, &line)?));
+                return Err(anyhow!(make_keep_only_last_info_ids_err_text(
+                    description,
+                    n,
+                    &line
+                )?));
             }
-            let topic = line.get(1).context("Bug: unreachable due to 2 <= line_len <= 3")?.to_lowercase();
+            let topic = line
+                .get(1)
+                .context("Bug: unreachable due to 2 <= line_len <= 3")?
+                .to_lowercase();
             let reason = if line_len == 3 {
-                line.get(2).context("Bug: unreachable due to 2 <= line_len <= 3")?.clone()
+                line.get(2)
+                    .context("Bug: unreachable due to 2 <= line_len <= 3")?
+                    .clone()
             } else {
                 String::from("Reason not defined.")
             };
@@ -289,7 +359,11 @@ pub fn make_keep_only_last_info_ids(list: Vec<Vec<String>>) -> Result<HashMap<St
                     #[allow(clippy::shadow_reuse)]
                     if let Some(reason) = value.insert(topic, reason) {
                         let description = &format!("There is already a pair of \"ID\" and \"Topic\" with \"Reason\": {reason:?}");
-                        return Err(anyhow!(make_keep_only_last_info_ids_err_text(description, n, &line)?));
+                        return Err(anyhow!(make_keep_only_last_info_ids_err_text(
+                            description,
+                            n,
+                            &line
+                        )?));
                     }
                 }
             };
@@ -298,7 +372,11 @@ pub fn make_keep_only_last_info_ids(list: Vec<Vec<String>>) -> Result<HashMap<St
     Ok(res)
 }
 
-fn make_keep_only_last_info_ids_err_text(description: &str, line_num: usize, line: &[String]) -> Result<String> {
+fn make_keep_only_last_info_ids_err_text(
+    description: &str,
+    line_num: usize,
+    line: &[String],
+) -> Result<String> {
     Ok(format!(
         "Error: settings.advanced.keep_only_last_info_ids element \"{}\" is incorrect\nDescription: {description}\nElement: [{}]",
         line_num

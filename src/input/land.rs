@@ -4,7 +4,12 @@ use anyhow::{anyhow, Context, Result};
 use hashbrown::{hash_map::Entry, HashMap};
 use tes3::esp::{Landscape, TextureIndices};
 
-pub fn process(land: Landscape, land_found: &mut bool, out: &mut Out, h: &mut Helper) -> Result<()> {
+pub fn process(
+    land: Landscape,
+    land_found: &mut bool,
+    out: &mut Out,
+    h: &mut Helper,
+) -> Result<()> {
     if !*land_found {
         *land_found = true;
     };
@@ -27,10 +32,9 @@ pub fn process(land: Landscape, land_found: &mut bool, out: &mut Out, h: &mut He
                 texture_indices: update_texture_indices(land.texture_indices, &h.l.vtex)?,
                 ..land
             };
-            let out_v = out
-                .land
-                .get_mut(land_global_id)
-                .with_context(|| format!("Bug: out.land doesn't contain index = \"{land_global_id}\""))?;
+            let out_v = out.land.get_mut(land_global_id).with_context(|| {
+                format!("Bug: out.land doesn't contain index = \"{land_global_id}\"")
+            })?;
             if out_v.0 == new_land {
                 if h.g.list_options.debug {
                     keep_previous!(out_v, new_land);
@@ -47,7 +51,10 @@ pub fn process(land: Landscape, land_found: &mut bool, out: &mut Out, h: &mut He
 }
 
 // COMMENT: VTEX id 1 corresponds to LTEX with id 0, VTEX id 0 is some "default" texture
-fn update_texture_indices(mut vtex: TextureIndices, vtex_map: &HashMap<LocalVtexId, GlobalVtexId>) -> Result<TextureIndices> {
+fn update_texture_indices(
+    mut vtex: TextureIndices,
+    vtex_map: &HashMap<LocalVtexId, GlobalVtexId>,
+) -> Result<TextureIndices> {
     for line in vtex.data.iter_mut() {
         for id in line {
             if *id != 0 {

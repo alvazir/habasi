@@ -10,9 +10,9 @@ use confique::toml::{template, FormatOptions};
 use options::{get_options, Options};
 use settings::{get_settings, Settings};
 use util::{
-    backup_settings_file, check_base_dir, check_mode, check_settings_version, get_exe_name_and_dir, get_lists, get_log_file,
-    get_settings_file, make_keep_only_last_info_ids, make_tng_stat_ids, prepare_plugin_extensions_to_ignore, set_low_string_osstring,
-    set_new_name_retries,
+    backup_settings_file, check_base_dir, check_mode, check_settings_version, get_exe_name_and_dir,
+    get_lists, get_log_file, get_settings_file, make_keep_only_last_info_ids, make_tng_stat_ids,
+    prepare_plugin_extensions_to_ignore, set_low_string_osstring, set_new_name_retries,
 };
 
 #[allow(clippy::struct_excessive_bools)]
@@ -129,7 +129,13 @@ pub struct TngStatIds {
 
 impl Cfg {
     #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
-    fn new(opt: Options, set: Settings, settings_file: SettingsFile, exe: Option<String>, dir: Option<PathBuf>) -> Result<Self> {
+    fn new(
+        opt: Options,
+        set: Settings,
+        settings_file: SettingsFile,
+        exe: Option<String>,
+        dir: Option<PathBuf>,
+    ) -> Result<Self> {
         macro_rules! opt_or_set_bool {
             ($name:ident) => {
                 match opt.$name {
@@ -169,7 +175,8 @@ impl Cfg {
                 dry_run: opt_or_set_bool!(dry_run),
                 dry_run_secondary: opt_or_set_bool!(dry_run_secondary),
                 mode: check_mode(&mode)?,
-                base_dir: check_base_dir(&base_dir_string).with_context(|| "Failed to get default base_dir")?,
+                base_dir: check_base_dir(&base_dir_string)
+                    .with_context(|| "Failed to get default base_dir")?,
                 no_ignore_errors: opt_or_set_bool!(no_ignore_errors),
                 strip_masters: opt_or_set_bool!(strip_masters),
                 reindex: opt_or_set_bool!(reindex),
@@ -189,11 +196,17 @@ impl Cfg {
                 append_to_use_load_order: opt_or_set_some!(append_to_use_load_order),
                 skip_from_use_load_order: opt_or_set_some!(skip_from_use_load_order),
             },
-            verbose: if opt.verbose == 0 { set.options.verbose } else { opt.verbose },
+            verbose: if opt.verbose == 0 {
+                set.options.verbose
+            } else {
+                opt.verbose
+            },
             quiet: opt_or_set_bool!(quiet),
             show_plugins: opt_or_set_bool!(show_plugins),
             presets: Presets {
-                present: preset_check_references || preset_merge_load_order || preset_turn_normal_grass,
+                present: preset_check_references
+                    || preset_merge_load_order
+                    || preset_turn_normal_grass,
                 check_references: preset_check_references,
                 merge_load_order: preset_merge_load_order,
                 turn_normal_grass: preset_turn_normal_grass,
@@ -204,7 +217,9 @@ impl Cfg {
                     set.advanced.turn_normal_grass_stat_ids,
                     &set.guts.turn_normal_grass_stat_ids_separator,
                 )?,
-                keep_only_last_info_ids: make_keep_only_last_info_ids(set.advanced.keep_only_last_info_ids)?,
+                keep_only_last_info_ids: make_keep_only_last_info_ids(
+                    set.advanced.keep_only_last_info_ids,
+                )?,
             },
             guts: Guts {
                 // [Section: Presets]
@@ -234,20 +249,41 @@ impl Cfg {
                 omw_line_beginning_fallback_archive: set.guts.omw_line_beginning_fallback_archive,
                 omw_line_beginning_groundcover: set.guts.omw_line_beginning_groundcover,
                 omw_plugin_extensions: set_ext_vec!(set.guts.omw_plugin_extensions),
-                plugin_extensions_to_ignore: prepare_plugin_extensions_to_ignore(&set.guts.plugin_extensions_to_ignore),
-                unexpected_tags_to_ignore: set.guts.unexpected_tags_to_ignore.iter().map(|tag| tag.to_lowercase()).collect(),
-                skipped_processing_plugins_msg_verbosity: set.guts.skipped_processing_plugins_msg_verbosity,
+                plugin_extensions_to_ignore: prepare_plugin_extensions_to_ignore(
+                    &set.guts.plugin_extensions_to_ignore,
+                ),
+                unexpected_tags_to_ignore: set
+                    .guts
+                    .unexpected_tags_to_ignore
+                    .iter()
+                    .map(|tag| tag.to_lowercase())
+                    .collect(),
+                skipped_processing_plugins_msg_verbosity: set
+                    .guts
+                    .skipped_processing_plugins_msg_verbosity,
                 // [Section: "Hidden" OpenMW-CS data directory]
                 omw_cs_data_path_suffix_linux_macos: set.guts.omw_cs_data_path_suffix_linux_macos,
                 omw_cs_data_path_suffix_windows: set.guts.omw_cs_data_path_suffix_windows,
                 omw_cs_data_paths_list: set.guts.omw_cs_data_paths_list,
                 // [Section: Turn normal grass]
-                turn_normal_grass_new_name_retries: set_new_name_retries(set.guts.turn_normal_grass_mesh_new_name_retries)?,
-                turn_normal_grass_plugin_name_suffix_deleted_content: set.guts.turn_normal_grass_plugin_name_suffix_deleted_content,
-                turn_normal_grass_plugin_name_suffix_grass: set.guts.turn_normal_grass_plugin_name_suffix_grass,
-                turn_normal_grass_header_author_append: set.guts.turn_normal_grass_header_author_append,
-                turn_normal_grass_header_description_content: set.guts.turn_normal_grass_header_description_content,
-                turn_normal_grass_header_description_groundcover: set.guts.turn_normal_grass_header_description_groundcover,
+                turn_normal_grass_new_name_retries: set_new_name_retries(
+                    set.guts.turn_normal_grass_mesh_new_name_retries,
+                )?,
+                turn_normal_grass_plugin_name_suffix_deleted_content: set
+                    .guts
+                    .turn_normal_grass_plugin_name_suffix_deleted_content,
+                turn_normal_grass_plugin_name_suffix_grass: set
+                    .guts
+                    .turn_normal_grass_plugin_name_suffix_grass,
+                turn_normal_grass_header_author_append: set
+                    .guts
+                    .turn_normal_grass_header_author_append,
+                turn_normal_grass_header_description_content: set
+                    .guts
+                    .turn_normal_grass_header_description_content,
+                turn_normal_grass_header_description_groundcover: set
+                    .guts
+                    .turn_normal_grass_header_description_groundcover,
                 // [Section: Meshes]
                 mesh_extension: set_low_string_osstring(&set.guts.mesh_extension),
                 meshes_dir: set_low_string_osstring(&set.guts.meshes_dir),
@@ -255,23 +291,39 @@ impl Cfg {
                 // [Section: Header]
                 header_version: set.guts.header_version,
                 header_author: set.guts.header_author,
-                header_description_merged_many_plugins_prefix: set.guts.header_description_merged_many_plugins_prefix,
-                header_description_merged_many_plugins_suffix: set.guts.header_description_merged_many_plugins_suffix,
-                header_description_processed_one_plugin_prefix: set.guts.header_description_processed_one_plugin_prefix,
-                header_description_processed_one_plugin_suffix: set.guts.header_description_processed_one_plugin_suffix,
+                header_description_merged_many_plugins_prefix: set
+                    .guts
+                    .header_description_merged_many_plugins_prefix,
+                header_description_merged_many_plugins_suffix: set
+                    .guts
+                    .header_description_merged_many_plugins_suffix,
+                header_description_processed_one_plugin_prefix: set
+                    .guts
+                    .header_description_processed_one_plugin_prefix,
+                header_description_processed_one_plugin_suffix: set
+                    .guts
+                    .header_description_processed_one_plugin_suffix,
                 // [Section: Backup files suffixes]
                 log_backup_suffix: set.guts.log_backup_suffix,
                 // [Section: Prefixes of per list options that take paths]
                 list_options_prefix_base_dir: set.guts.list_options_prefix_base_dir,
                 list_options_prefix_config: set.guts.list_options_prefix_config,
-                list_options_prefix_append_to_use_load_order: set.guts.list_options_prefix_append_to_use_load_order,
-                list_options_prefix_skip_from_use_load_order: set.guts.list_options_prefix_skip_from_use_load_order,
+                list_options_prefix_append_to_use_load_order: set
+                    .guts
+                    .list_options_prefix_append_to_use_load_order,
+                list_options_prefix_skip_from_use_load_order: set
+                    .guts
+                    .list_options_prefix_skip_from_use_load_order,
                 // [Section: Messages]
                 prefix_combined_stats: set.guts.prefix_combined_stats,
                 prefix_list_stats: set.guts.prefix_list_stats,
-                prefix_ignored_important_error_message: set.guts.prefix_ignored_important_error_message,
+                prefix_ignored_important_error_message: set
+                    .guts
+                    .prefix_ignored_important_error_message,
                 infix_add_unexpected_tag_suggestion: set.guts.infix_add_unexpected_tag_suggestion,
-                suffix_add_ignore_important_errors_suggestion: set.guts.suffix_add_ignore_important_errors_suggestion,
+                suffix_add_ignore_important_errors_suggestion: set
+                    .guts
+                    .suffix_add_ignore_important_errors_suggestion,
             },
         })
     }
@@ -280,15 +332,22 @@ impl Cfg {
 pub fn get() -> Result<Cfg> {
     let options = get_options()?;
     let (exe, dir) = get_exe_name_and_dir();
-    let mut settings_file = get_settings_file(&exe, &dir, &options).with_context(|| "Failed to get program settings file path")?;
-    let settings = get_settings(&mut settings_file).with_context(|| "Failed to get default or provided settings")?;
+    let mut settings_file = get_settings_file(&exe, &dir, &options)
+        .with_context(|| "Failed to get program settings file path")?;
+    let settings = get_settings(&mut settings_file)
+        .with_context(|| "Failed to get default or provided settings")?;
     if options.settings_write {
         let toml = template::<Settings>(FormatOptions::default());
         create_dir_early(&settings_file.path, "Settings")?;
         backup_settings_file(&mut settings_file, &settings.guts.settings_backup_suffix)?;
-        write(&settings_file.path, toml)
-            .with_context(|| format!("Failed to write default program settings into \"{}\"", settings_file.path.display()))?;
+        write(&settings_file.path, toml).with_context(|| {
+            format!(
+                "Failed to write default program settings into \"{}\"",
+                settings_file.path.display()
+            )
+        })?;
     }
-    let configuration = Cfg::new(options, settings, settings_file, exe, dir).with_context(|| "Failed to configure program")?;
+    let configuration = Cfg::new(options, settings, settings_file, exe, dir)
+        .with_context(|| "Failed to configure program")?;
     Ok(configuration)
 }

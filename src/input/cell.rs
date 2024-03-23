@@ -1,14 +1,21 @@
 use crate::{
-    msg, references_sorted, CellExtGrid, CellMeta, Cfg, Helper, IgnoredRefError, ListOptions, LocalMaster, LocalMergedMaster, Log,
-    MastId, MergedPluginMeta, MergedPluginRefr, Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, RefSources, RefrId,
-    StatsUpdateKind,
+    msg, references_sorted, CellExtGrid, CellMeta, Cfg, Helper, IgnoredRefError, ListOptions,
+    LocalMaster, LocalMergedMaster, Log, MastId, MergedPluginMeta, MergedPluginRefr, Mode,
+    MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, RefSources, RefrId, StatsUpdateKind,
 };
 use anyhow::{anyhow, Context, Result};
 use hashbrown::{hash_map::Entry, HashMap};
 use tes3::esp::{Cell, CellFlags, Reference};
 
 #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
-pub fn process(cell: Cell, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn process(
+    cell: Cell,
+    out: &mut Out,
+    name: &str,
+    h: &mut Helper,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
     let plugin_num = MastId::try_from(h.g.plugins_processed.len()).with_context(|| {
         format!(
             "Bug: failed to cast {:?}(plugins_processed.len(), usize) to u32(MastId)",
@@ -28,7 +35,8 @@ pub fn process(cell: Cell, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg,
 
         _ => cell.references.values().collect(),
     };
-    h.l.stats.instances_processed_add_count(cell.references.len())?;
+    h.l.stats
+        .instances_processed_add_count(cell.references.len())?;
     if matches!(h.g.list_options.mode, Mode::Grass) {
         h.l.stats
             .grass_filtered(cell.references.len().checked_sub(local_references.len()).with_context(|| {
@@ -259,9 +267,10 @@ fn add_simple_reference(
     };
     references.insert((0, refr), new_reference);
     if turn_normal_grass {
-        ref_sources
-            .0
-            .insert((0, refr), ((plugin_num, local_reference.refr_index), false, false));
+        ref_sources.0.insert(
+            (0, refr),
+            ((plugin_num, local_reference.refr_index), false, false),
+        );
     }
     local_plugin_refrs.push(MergedPluginRefr {
         local_refr: local_reference.refr_index,
@@ -276,7 +285,10 @@ fn add_external_reference(
     ref_sources: &mut (RefSources, OldRefSources),
     turn_normal_grass: bool,
 ) -> Result<()> {
-    let mast_index = match local_masters.iter().find(|x| x.local_id == local_reference.mast_index) {
+    let mast_index = match local_masters
+        .iter()
+        .find(|x| x.local_id == local_reference.mast_index)
+    {
         Some(local_master) => local_master.global_id,
         None => {
             return Err(anyhow!(
@@ -325,7 +337,10 @@ fn get_global_refr(
     local_merged_master: &LocalMergedMaster,
     plugin_metas: &[MergedPluginMeta],
 ) -> Result<RefrId> {
-    let refr_index = match plugin_metas.iter().find(|x| x.plugin_name_low == *local_merged_master.name_low) {
+    let refr_index = match plugin_metas
+        .iter()
+        .find(|x| x.plugin_name_low == *local_merged_master.name_low)
+    {
         None => {
             return Err(anyhow!(
                 "Failed to find any references added by master \"{}\"",
@@ -374,14 +389,20 @@ fn modify_global_reference(
                 }
                 Some(new_grid) => {
                     let old_grid = match grid {
-                        None => return Err(anyhow!("Error: interior cell should not contain moved records")),
+                        None => {
+                            return Err(anyhow!(
+                                "Error: interior cell should not contain moved records"
+                            ))
+                        }
                         Some(old_grid) => old_grid,
                     };
                     match moved_instances.entry((0, refr_index)) {
                         Entry::Vacant(v) => {
                             v.insert(MovedInstanceGrids { old_grid, new_grid });
                         }
-                        Entry::Occupied(mut moved) => *moved.get_mut() = MovedInstanceGrids { old_grid, new_grid },
+                        Entry::Occupied(mut moved) => {
+                            *moved.get_mut() = MovedInstanceGrids { old_grid, new_grid }
+                        }
                     }
                 }
             }
@@ -438,14 +459,20 @@ fn missing_ref_append(
     log: &mut Log,
 ) -> Result<()> {
     let text = format!("    Ignored error: merged {text1}");
-    if let Some(ignored_ref_error) = ignored_ref_errors.iter_mut().find(|x| x.master == merged_master.name_low) {
+    if let Some(ignored_ref_error) = ignored_ref_errors
+        .iter_mut()
+        .find(|x| x.master == merged_master.name_low)
+    {
         if !*flag {
-            ignored_ref_error.cell_counter = ignored_ref_error.cell_counter.checked_add(1).with_context(|| {
-                format!(
-                    "Bug: overflow incrementing ignored_ref_error.cell_counter = \"{}\"",
-                    ignored_ref_error.cell_counter
-                )
-            })?;
+            ignored_ref_error.cell_counter = ignored_ref_error
+                .cell_counter
+                .checked_add(1)
+                .with_context(|| {
+                    format!(
+                        "Bug: overflow incrementing ignored_ref_error.cell_counter = \"{}\"",
+                        ignored_ref_error.cell_counter
+                    )
+                })?;
             if !list_options.no_show_missing_refs {
                 msg(&text, 2, cfg, log)?;
             }
@@ -454,12 +481,16 @@ fn missing_ref_append(
             msg(&text, 2, cfg, log)?;
         } else { //
         }
-        ignored_ref_error.ref_counter = ignored_ref_error.ref_counter.checked_add(1).with_context(|| {
-            format!(
-                "Bug: overflow incrementing ignored_ref_error.ref_counter = \"{}\"",
-                ignored_ref_error.ref_counter
-            )
-        })?;
+        ignored_ref_error.ref_counter =
+            ignored_ref_error
+                .ref_counter
+                .checked_add(1)
+                .with_context(|| {
+                    format!(
+                        "Bug: overflow incrementing ignored_ref_error.ref_counter = \"{}\"",
+                        ignored_ref_error.ref_counter
+                    )
+                })?;
     } else {
         if !list_options.no_show_missing_refs {
             msg(&text, 2, cfg, log)?;

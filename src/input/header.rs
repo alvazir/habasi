@@ -1,4 +1,6 @@
-use crate::{GlobalMaster, Helper, LocalMaster, LocalMergedMaster, MasterNameLow, Out, StatsUpdateKind};
+use crate::{
+    GlobalMaster, Helper, LocalMaster, LocalMergedMaster, MasterNameLow, Out, StatsUpdateKind,
+};
 use anyhow::{anyhow, Context, Result};
 use tes3::esp::TES3Object;
 
@@ -8,14 +10,32 @@ pub fn process(record: TES3Object, out: &mut Out, h: &mut Helper) -> Result<()> 
     };
     for (&(ref master_name, master_size), id) in header.masters.iter().zip(1_u32..) {
         let name_low: MasterNameLow = master_name.to_lowercase();
-        match h.g.plugins_processed.iter().find(|x| x.name_low == name_low) {
-            Some(_) => h.l.merged_masters.push(LocalMergedMaster { local_id: id, name_low }),
+        match h
+            .g
+            .plugins_processed
+            .iter()
+            .find(|x| x.name_low == name_low)
+        {
+            Some(_) => h.l.merged_masters.push(LocalMergedMaster {
+                local_id: id,
+                name_low,
+            }),
             None => match h.g.masters.iter().find(|x| x.name_low == name_low) {
                 None => {
                     let next_global_master_id = u32::try_from(h.g.masters.len())
-                        .with_context(|| format!("Bug: failed to cast {:?}(h.g.masters.len(), usize) to u32", h.g.masters.len()))?
+                        .with_context(|| {
+                            format!(
+                                "Bug: failed to cast {:?}(h.g.masters.len(), usize) to u32",
+                                h.g.masters.len()
+                            )
+                        })?
                         .checked_add(1)
-                        .with_context(|| format!("Bug: overflow incrementing h.g.masters.len() = \"{}\"", h.g.masters.len()))?;
+                        .with_context(|| {
+                            format!(
+                                "Bug: overflow incrementing h.g.masters.len() = \"{}\"",
+                                h.g.masters.len()
+                            )
+                        })?;
                     h.l.masters.push(LocalMaster {
                         local_id: id,
                         global_id: next_global_master_id,

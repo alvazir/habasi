@@ -346,9 +346,13 @@ pub(super) struct Guts {
     pub(super) prefix_list_stats: String,
     #[config(default = "Ignored important error: ")]
     pub(super) prefix_ignored_important_error_message: String,
-    #[config(default = "\n\tConsider reporting the error to add this tag to the list of unexpected tags to skip by default")]
+    #[config(
+        default = "\n\tConsider reporting the error to add this tag to the list of unexpected tags to skip by default"
+    )]
     pub(super) infix_add_unexpected_tag_suggestion: String,
-    #[config(default = "\n\tFix the problem or add \"--ignore-important-errors\"(may rarely cause unexpected behaviour) to ignore")]
+    #[config(
+        default = "\n\tFix the problem or add \"--ignore-important-errors\"(may rarely cause unexpected behaviour) to ignore"
+    )]
     pub(super) suffix_add_ignore_important_errors_suggestion: String,
 }
 
@@ -356,7 +360,9 @@ pub(in crate::config) fn get_settings(settings_file: &mut SettingsFile) -> Resul
     let settings = Settings::builder()
         .file(&settings_file.path)
         .load()
-        .with_context(|| "Failed to load settings. Try to recreate settings file or run without it.")?;
+        .with_context(|| {
+            "Failed to load settings. Try to recreate settings file or run without it."
+        })?;
     check_settings_version(settings_file)?;
     Ok(settings)
 }

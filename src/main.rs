@@ -35,24 +35,28 @@ mod util;
 use assets::{bsa::Bsa, make_tng_meshes::make_tng_meshes};
 use config::Cfg;
 use output::{
-    make_output_plugin::make_output_plugin, make_turn_normal_grass::make_turn_normal_grass, transform::transform,
-    write_output_plugin::write_output_plugin,
+    make_output_plugin::make_output_plugin, make_turn_normal_grass::make_turn_normal_grass,
+    transform::transform, write_output_plugin::write_output_plugin,
 };
 // use peak_alloc::PeakAlloc; // slows down the program too much
 use stats::{Stats, StatsUpdateKind};
 use structs::{
-    Assets, CellExtGrid, CellMeta, Dial, DialMeta, FallbackStatics, FileInBsa, GlobalMaster, GlobalVtexId, HeaderText, Helper,
-    IgnoredRefError, ListOptions, LoadOrder, LocalMaster, LocalMergedMaster, LocalVtexId, MastId, MasterNameLow, MergedPluginMeta,
-    MergedPluginRefr, Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, PluginInfo, PluginName, RefSources, RefrId,
-    RegexPluginInfo, TurnNormalGrass,
+    Assets, CellExtGrid, CellMeta, Dial, DialMeta, FallbackStatics, FileInBsa, GlobalMaster,
+    GlobalVtexId, HeaderText, Helper, IgnoredRefError, ListOptions, LoadOrder, LocalMaster,
+    LocalMergedMaster, LocalVtexId, MastId, MasterNameLow, MergedPluginMeta, MergedPluginRefr,
+    Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, PluginInfo, PluginName,
+    RefSources, RefrId, RegexPluginInfo, TurnNormalGrass,
 };
 use util::{
-    check_presets, create_dir_early, err_or_ignore, err_or_ignore_thread_safe, get_append_to_use_load_order_string, get_base_dir_path,
-    get_cell_name, get_expanded_plugin_list, get_game_config_string, get_regex_plugin_list, get_skip_from_use_load_order_string,
-    get_skip_plugin_name_low, get_tng_content_name_low, get_tng_dir_and_plugin_names, msg, msg_no_log, process_moved_instances,
-    process_plugin, process_turn_normal_grass, read_lines, references_sorted, select_header_description, should_skip_list,
-    show_global_list_options, show_ignored_ref_errors, show_log_path, show_removed_record_ids, show_settings_version_message,
-    show_settings_written, truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG,
+    check_presets, create_dir_early, err_or_ignore, err_or_ignore_thread_safe,
+    get_append_to_use_load_order_string, get_base_dir_path, get_cell_name,
+    get_expanded_plugin_list, get_game_config_string, get_regex_plugin_list,
+    get_skip_from_use_load_order_string, get_skip_plugin_name_low, get_tng_content_name_low,
+    get_tng_dir_and_plugin_names, msg, msg_no_log, process_moved_instances, process_plugin,
+    process_turn_normal_grass, read_lines, references_sorted, select_header_description,
+    should_skip_list, show_global_list_options, show_ignored_ref_errors, show_log_path,
+    show_removed_record_ids, show_settings_version_message, show_settings_written,
+    truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG,
 };
 
 // #[global_allocator]
@@ -85,7 +89,11 @@ fn run() -> Result<()> {
     let mut h = Helper::new();
     show_global_list_options(&cfg, &mut log)?;
     let merge_override = check_presets(&mut h, &cfg, &mut log)?;
-    let merge = if merge_override.is_empty() { &cfg.merge } else { &merge_override };
+    let merge = if merge_override.is_empty() {
+        &cfg.merge
+    } else {
+        &merge_override
+    };
     if merge.is_empty() {
         let text = "Nothing to proceed: at least one --merge or --preset-* option is required";
         msg(text, 0, &cfg, &mut log)?;
@@ -94,8 +102,15 @@ fn run() -> Result<()> {
     let mut output_plugin = Plugin::new();
     let mut old_output_plugin = Plugin::new();
     for list in merge {
-        process_list(list, &mut output_plugin, &mut old_output_plugin, &mut h, &cfg, &mut log)
-            .with_context(|| format!("Failed to process list \"{}\"", list.join(", ")))?;
+        process_list(
+            list,
+            &mut output_plugin,
+            &mut old_output_plugin,
+            &mut h,
+            &cfg,
+            &mut log,
+        )
+        .with_context(|| format!("Failed to process list \"{}\"", list.join(", ")))?;
     }
     h.total_commit(timer_total, &cfg, &mut log)?;
     Ok(())
@@ -116,7 +131,8 @@ fn process_list(
         msg("Skipping empty list", 0, cfg, log)?;
         return Ok(());
     } else {
-        list.first().with_context(|| "Bug: failed to get name from list")?
+        list.first()
+            .with_context(|| "Bug: failed to get name from list")?
     };
     let (index, list_options) = cfg.list_options.get_list_options(list, cfg, log)?;
     let expanded_plugin_list = get_expanded_plugin_list(list, index, &list_options, h, cfg, log)
@@ -151,7 +167,11 @@ fn process_list(
         );
         msg(&text, 0, cfg, log)?;
     }
-    text = format!("Processing list \"{}\" with options: {}", &name, list_options.show()?);
+    text = format!(
+        "Processing list \"{}\" with options: {}",
+        &name,
+        list_options.show()?
+    );
     msg(&text, 1, cfg, log)?;
     h.global_init(list_options);
     let tng_content_name_low = get_tng_content_name_low(name, h, cfg)?;
@@ -164,18 +184,41 @@ fn process_list(
             .iter()
             .any(|ext| plugin_name_low.ends_with(ext))
         {
-            text = format!("  Skipped processing plugin \"{plugin_name}\" because it has extension to ignore");
-            msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
+            text = format!(
+                "  Skipped processing plugin \"{plugin_name}\" because it has extension to ignore"
+            );
+            msg(
+                &text,
+                cfg.guts.skipped_processing_plugins_msg_verbosity,
+                cfg,
+                log,
+            )?;
             h.total_add_skipped_processing_plugin(text);
             continue;
         }
         if !tng_content_name_low.is_empty() && plugin_name_low.ends_with(&tng_content_name_low) {
-            text = format!("  Skipped processing plugin \"{plugin_name}\" trying to recreate it from scratch");
-            msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
+            text = format!(
+                "  Skipped processing plugin \"{plugin_name}\" trying to recreate it from scratch"
+            );
+            msg(
+                &text,
+                cfg.guts.skipped_processing_plugins_msg_verbosity,
+                cfg,
+                log,
+            )?;
             h.total_add_skipped_processing_plugin(text);
-        } else if !skip_plugin_name_low.is_empty() && plugin_name_low.ends_with(&skip_plugin_name_low) {
-            text = format!("  Skipped processing plugin \"{plugin_name}\" due to \"skip_from_use_load_order\"");
-            msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
+        } else if !skip_plugin_name_low.is_empty()
+            && plugin_name_low.ends_with(&skip_plugin_name_low)
+        {
+            text = format!(
+                "  Skipped processing plugin \"{plugin_name}\" due to \"skip_from_use_load_order\""
+            );
+            msg(
+                &text,
+                cfg.guts.skipped_processing_plugins_msg_verbosity,
+                cfg,
+                log,
+            )?;
             h.total_add_skipped_processing_plugin(text);
         } else {
             if let Err(err) = process_plugin(plugin_name, &mut out, name, h, cfg, log) {
@@ -183,22 +226,43 @@ fn process_list(
                     if let Some(inner) = err.downcast_ref::<IOError>() {
                         if matches!(inner.kind(), ErrorKind::InvalidData) {
                             if let Some(tag) = inner.to_string().strip_prefix("Unexpected Tag: ") {
-                                if cfg.guts.unexpected_tags_to_ignore.contains(&tag.to_lowercase()) {
+                                if cfg
+                                    .guts
+                                    .unexpected_tags_to_ignore
+                                    .contains(&tag.to_lowercase())
+                                {
                                     text = format!(
                                         "  Skipped processing plugin \"{plugin_name}\" because it contains unexpected record type to ignore: \"{tag}\""
                                     );
-                                    msg(&text, cfg.guts.skipped_processing_plugins_msg_verbosity, cfg, log)?;
+                                    msg(
+                                        &text,
+                                        cfg.guts.skipped_processing_plugins_msg_verbosity,
+                                        cfg,
+                                        log,
+                                    )?;
                                     h.total_add_skipped_processing_plugin(text);
                                 } else {
-                                    err_or_ignore(format!("{err:#}"), h.g.list_options.ignore_important_errors, true, cfg, log)
-                                        .with_context(|| "Failed to process plugin")?;
+                                    err_or_ignore(
+                                        format!("{err:#}"),
+                                        h.g.list_options.ignore_important_errors,
+                                        true,
+                                        cfg,
+                                        log,
+                                    )
+                                    .with_context(|| "Failed to process plugin")?;
                                 }
                                 continue;
                             }
                         };
                     }
-                    err_or_ignore(format!("{err:#}"), h.g.list_options.ignore_important_errors, false, cfg, log)
-                        .with_context(|| "Failed to process plugin")?;
+                    err_or_ignore(
+                        format!("{err:#}"),
+                        h.g.list_options.ignore_important_errors,
+                        false,
+                        cfg,
+                        log,
+                    )
+                    .with_context(|| "Failed to process plugin")?;
                     continue;
                 };
             };
@@ -206,13 +270,19 @@ fn process_list(
         }
     }
     if h.g.stats.all_plugins_ignored() {
-        msg("Skipping list because all plugins were skipped", 0, cfg, log)?;
+        msg(
+            "Skipping list because all plugins were skipped",
+            0,
+            cfg,
+            log,
+        )?;
         return Ok(());
     }
     process_moved_instances(&mut out, h)?;
     out = transform(name, out, h, cfg, log)?;
     process_turn_normal_grass(name, &mut out, old_output_plugin, h, cfg, log)?;
-    make_output_plugin(name, out, output_plugin, h, cfg, log).with_context(|| format!("Failed to make output plugin {name:?}"))?;
+    make_output_plugin(name, out, output_plugin, h, cfg, log)
+        .with_context(|| format!("Failed to make output plugin {name:?}"))?;
     write_output_plugin(name, output_plugin, old_output_plugin, 1, h, cfg, log)
         .with_context(|| format!("Failed to write output plugin {name:?}"))?;
     h.global_commit(timer_global, output_plugin, cfg, log)?;

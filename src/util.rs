@@ -1,6 +1,6 @@
 use crate::{
-    input, load_order, make_turn_normal_grass, write_output_plugin, Cfg, Helper, IgnoredRefError, ListOptions, Mode, Out, Plugin,
-    PluginName, RegexPluginInfo,
+    input, load_order, make_turn_normal_grass, write_output_plugin, Cfg, Helper, IgnoredRefError,
+    ListOptions, Mode, Out, Plugin, PluginName, RegexPluginInfo,
 };
 use anyhow::{anyhow, Context, Result};
 use crc::{Crc, CRC_64_ECMA_182};
@@ -31,7 +31,8 @@ macro_rules! msg {
 
 pub fn msg<S: AsRef<str>>(text: S, verbose: u8, cfg: &Cfg, log: &mut Log) -> Result<()> {
     if !cfg.no_log {
-        log.write(&text).with_context(|| "Failed to write to log file buffer")?;
+        log.write(&text)
+            .with_context(|| "Failed to write to log file buffer")?;
     }
     msg!(text, verbose, cfg);
     Ok(())
@@ -41,10 +42,20 @@ pub fn msg_no_log<S: AsRef<str>>(text: S, verbose: u8, cfg: &Cfg) {
     msg!(text, verbose, cfg);
 }
 
-pub fn err_or_ignore<S: AsRef<str>>(text: S, ignore: bool, unexpected_tag: bool, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn err_or_ignore<S: AsRef<str>>(
+    text: S,
+    ignore: bool,
+    unexpected_tag: bool,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
     if ignore {
         msg(
-            format!("{}{}", cfg.guts.prefix_ignored_important_error_message, text.as_ref()),
+            format!(
+                "{}{}",
+                cfg.guts.prefix_ignored_important_error_message,
+                text.as_ref()
+            ),
             0,
             cfg,
             log,
@@ -66,7 +77,11 @@ pub fn err_or_ignore<S: AsRef<str>>(text: S, ignore: bool, unexpected_tag: bool,
 pub fn err_or_ignore_thread_safe<S: AsRef<str>>(text: S, ignore: bool, cfg: &Cfg) -> Result<()> {
     if ignore {
         msg_no_log(
-            format!("{}{}", cfg.guts.prefix_ignored_important_error_message, text.as_ref()),
+            format!(
+                "{}{}",
+                cfg.guts.prefix_ignored_important_error_message,
+                text.as_ref()
+            ),
             0,
             cfg,
         );
@@ -95,9 +110,9 @@ impl Log {
             };
             create_dir_early(log, "Log")?;
             let log_backup_message = backup_log_file(log, &cfg.guts.log_backup_suffix);
-            let buffer = Some(BufWriter::new(
-                File::create(log).with_context(|| format!("Failed to create/open log file \"{}\"", log.display()))?,
-            ));
+            let buffer = Some(BufWriter::new(File::create(log).with_context(|| {
+                format!("Failed to create/open log file \"{}\"", log.display())
+            })?));
             let mut result = Self { buffer };
             if !log_backup_message.is_empty() {
                 msg(log_backup_message, 3, cfg, &mut result)?;
@@ -121,7 +136,12 @@ pub fn show_log_path(cfg: &Cfg, log: &mut Log) -> Result<()> {
             None => return Err(anyhow!("Failed to show log path because it's empty")),
             Some(ref log_path) => log_path,
         };
-        msg(format!("Log is written to \"{}\"", log_path.display()), 0, cfg, log)
+        msg(
+            format!("Log is written to \"{}\"", log_path.display()),
+            0,
+            cfg,
+            log,
+        )
     }
 }
 
@@ -139,7 +159,11 @@ pub fn show_settings_written(cfg: &Cfg, log: &mut Log) -> Result<()> {
             },
         )?;
     }
-    write!(text, "Wrote default program settings into \"{}\"", cfg.settings_file.path.display())?;
+    write!(
+        text,
+        "Wrote default program settings into \"{}\"",
+        cfg.settings_file.path.display()
+    )?;
     msg(text, 0, cfg, log)
 }
 
@@ -154,7 +178,10 @@ pub fn create_dir_early(path: &Path, name_capitalized: &str) -> Result<()> {
                     name_capitalized.to_lowercase()
                 )
             })?;
-            eprintln!("{name_capitalized} directory \"{}\" was created", dir.display());
+            eprintln!(
+                "{name_capitalized} directory \"{}\" was created",
+                dir.display()
+            );
         }
     }
     Ok(())
@@ -167,25 +194,43 @@ fn prepare_complex_arg_string(string: &str, pattern: &str, arg_name: &str) -> Re
     if let Some(stripped) = string_prepared.strip_prefix(long_prefix) {
         pattern_len = pattern_len
             .checked_add(long_prefix.len())
-            .with_context(|| format!("Bug: overflow adding \"{}\" to \"{pattern_len}\"", long_prefix.len()))?;
+            .with_context(|| {
+                format!(
+                    "Bug: overflow adding \"{}\" to \"{pattern_len}\"",
+                    long_prefix.len()
+                )
+            })?;
         string_prepared = stripped;
     }
     if string_prepared.starts_with(pattern) {
         Ok(string
             .trim()
             .get(pattern_len..)
-            .with_context(|| format!("Bug: argument \"{string}\" contains nothing after pattern \"{pattern}\""))?
+            .with_context(|| {
+                format!("Bug: argument \"{string}\" contains nothing after pattern \"{pattern}\"")
+            })?
             .trim()
             .to_owned())
     } else {
-        Err(anyhow!("Error: \"{}\" argument should start with \"{}\"", arg_name, &pattern))
+        Err(anyhow!(
+            "Error: \"{}\" argument should start with \"{}\"",
+            arg_name,
+            &pattern
+        ))
     }
 }
 
 pub fn get_base_dir_path(raw: &str, cfg: &Cfg) -> Result<PathBuf> {
-    let base_dir = PathBuf::from(prepare_complex_arg_string(raw, &cfg.guts.list_options_prefix_base_dir, "base_dir")?);
+    let base_dir = PathBuf::from(prepare_complex_arg_string(
+        raw,
+        &cfg.guts.list_options_prefix_base_dir,
+        "base_dir",
+    )?);
     if base_dir != PathBuf::new() && !base_dir.exists() {
-        Err(anyhow!("Error: failed to find base_dir \"{}\"", base_dir.display()))
+        Err(anyhow!(
+            "Error: failed to find base_dir \"{}\"",
+            base_dir.display()
+        ))
     } else {
         Ok(base_dir)
     }
@@ -231,17 +276,27 @@ pub fn process_moved_instances(out: &mut Out, h: &mut Helper) -> Result<()> {
     if !h.g.r.moved_instances.is_empty() {
         for (id, grids) in &h.g.r.moved_instances {
             let old_cell_id = match h.g.r.ext_cells.get(&grids.old_grid) {
-                None => return Err(anyhow!("Error: failed to find old_cell_id for moved instance")),
+                None => {
+                    return Err(anyhow!(
+                        "Error: failed to find old_cell_id for moved instance"
+                    ))
+                }
                 Some(cell_meta) => cell_meta.global_cell_id,
             };
             let new_cell_id = match h.g.r.ext_cells.get(&grids.new_grid) {
-                None => return Err(anyhow!("Error: failed to find new_cell_id for moved instance")),
+                None => {
+                    return Err(anyhow!(
+                        "Error: failed to find new_cell_id for moved instance"
+                    ))
+                }
                 Some(cell_meta) => cell_meta.global_cell_id,
             };
             let reference = match out
                 .cell
                 .get_mut(old_cell_id)
-                .with_context(|| format!("Bug: out.cell with old_cell_id = \"{old_cell_id}\" not found"))?
+                .with_context(|| {
+                    format!("Bug: out.cell with old_cell_id = \"{old_cell_id}\" not found")
+                })?
                 .0
                 .references
                 .remove(id)
@@ -253,7 +308,9 @@ pub fn process_moved_instances(out: &mut Out, h: &mut Helper) -> Result<()> {
             if out
                 .cell
                 .get_mut(new_cell_id)
-                .with_context(|| format!("Bug: out.cell with new_cell_id = \"{new_cell_id}\" not found"))?
+                .with_context(|| {
+                    format!("Bug: out.cell with new_cell_id = \"{new_cell_id}\" not found")
+                })?
                 .0
                 .references
                 .insert(
@@ -309,14 +366,21 @@ pub fn show_ignored_ref_errors(
 ) -> Result<()> {
     if !ignored_ref_errors.is_empty() {
         let ignored_ref_errors_len = ignored_ref_errors.len();
-        let (mut master_suffix, mut cell_suffix, mut ref_suffix, mut encountered_prefix, mut encountered_suffix) =
-            ("", "", "", "first ", "(check log for more)");
+        let (
+            mut master_suffix,
+            mut cell_suffix,
+            mut ref_suffix,
+            mut encountered_prefix,
+            mut encountered_suffix,
+        ) = ("", "", "", "first ", "(check log for more)");
         if ignored_ref_errors_len > 1 {
             master_suffix = "s";
             cell_suffix = "s";
             ref_suffix = "s";
         } else {
-            let ignored_ref_errors_first = ignored_ref_errors.first().with_context(|| "Bug: ignored_ref_errors is empty")?;
+            let ignored_ref_errors_first = ignored_ref_errors
+                .first()
+                .with_context(|| "Bug: ignored_ref_errors is empty")?;
             if ignored_ref_errors_first.cell_counter > 1 {
                 cell_suffix = "s";
                 ref_suffix = "s";
@@ -327,7 +391,11 @@ pub fn show_ignored_ref_errors(
                 encountered_suffix = "";
             }
         };
-        let cell_msg_part = if cell { format!("for cell{cell_suffix} ") } else { String::new() };
+        let cell_msg_part = if cell {
+            format!("for cell{cell_suffix} ")
+        } else {
+            String::new()
+        };
         let mut text = format!(
             "Warning: probably outdated plugin \"{plugin_name}\" contains modified cell reference{ref_suffix} {cell_msg_part}missing from master{master_suffix}:"
         );
@@ -350,42 +418,67 @@ pub fn show_global_list_options(cfg: &Cfg, log: &mut Log) -> Result<()> {
 pub fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Vec<Vec<String>>> {
     let mut merge_override: Vec<Vec<String>> = Vec::new();
     if cfg.presets.present {
-        h.g.list_options = cfg.list_options.get_list_options(&[String::new()], cfg, log)?.1;
+        h.g.list_options = cfg
+            .list_options
+            .get_list_options(&[String::new()], cfg, log)?
+            .1;
         if cfg.presets.check_references {
             merge_override = vec![cfg.guts.preset_config_check_references.clone()];
         };
         if cfg.presets.turn_normal_grass {
-            let mut preset_config_turn_normal_grass = cfg.guts.preset_config_turn_normal_grass.clone();
+            let mut preset_config_turn_normal_grass =
+                cfg.guts.preset_config_turn_normal_grass.clone();
             if cfg.presets.check_references {
-                preset_config_turn_normal_grass.extend(cfg.guts.preset_config_turn_normal_grass_add_with_check_references.clone());
+                preset_config_turn_normal_grass.extend(
+                    cfg.guts
+                        .preset_config_turn_normal_grass_add_with_check_references
+                        .clone(),
+                );
             }
             merge_override = vec![preset_config_turn_normal_grass];
         };
         if cfg.presets.merge_load_order {
-            let mut preset_config_merge_load_order = cfg.guts.preset_config_merge_load_order.clone();
+            let mut preset_config_merge_load_order =
+                cfg.guts.preset_config_merge_load_order.clone();
             if cfg.presets.check_references {
-                preset_config_merge_load_order.extend(cfg.guts.preset_config_merge_load_order_add_with_check_references.clone());
+                preset_config_merge_load_order.extend(
+                    cfg.guts
+                        .preset_config_merge_load_order_add_with_check_references
+                        .clone(),
+                );
             }
             if cfg.presets.turn_normal_grass {
-                preset_config_merge_load_order.extend(cfg.guts.preset_config_merge_load_order_add_with_turn_normal_grass.clone());
+                preset_config_merge_load_order.extend(
+                    cfg.guts
+                        .preset_config_merge_load_order_add_with_turn_normal_grass
+                        .clone(),
+                );
             }
             merge_override = vec![preset_config_merge_load_order];
             load_order::scan(h, cfg, log)?;
             let groundcovers_len =
                 h.t.game_configs
                     .get(h.g.config_index)
-                    .with_context(|| format!("Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"", h.g.config_index))?
+                    .with_context(|| {
+                        format!(
+                            "Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"",
+                            h.g.config_index
+                        )
+                    })?
                     .load_order
                     .groundcovers
                     .len();
             if groundcovers_len > 0 {
-                let mut preset_config_merge_load_order_grass = cfg.guts.preset_config_merge_load_order_grass.clone();
+                let mut preset_config_merge_load_order_grass =
+                    cfg.guts.preset_config_merge_load_order_grass.clone();
                 if cfg.presets.turn_normal_grass {
                     let (_, _, plugin_grass_name) = get_tng_dir_and_plugin_names(
                         cfg.guts
                             .preset_config_merge_load_order
                             .first()
-                            .with_context(|| "Bug: cfg.guts.preset_config_merge_load_order is empty")?,
+                            .with_context(|| {
+                                "Bug: cfg.guts.preset_config_merge_load_order is empty"
+                            })?,
                         cfg,
                     )
                     .with_context(|| "Failed to get turn normal grass directory or plugin names")?;
@@ -424,7 +517,8 @@ pub fn get_expanded_plugin_list(
             );
             msg(text, 0, cfg, log)?;
         } else {
-            let text = format!(
+            let text =
+                format!(
                 "{} list was expanded with contents of load order due to \"use_load_order\" flag",
                 if is_grass { "Groundcover plugins" } else { "Plugin" },
             );
@@ -458,12 +552,20 @@ pub fn get_expanded_plugin_list(
                     .collect::<Vec<_>>()
             };
         }
-        let mut result = if is_grass { result!(groundcovers) } else { result!(contents) };
+        let mut result = if is_grass {
+            result!(groundcovers)
+        } else {
+            result!(contents)
+        };
         if !list_options.append_to_use_load_order.is_empty() {
             result.push(list_options.append_to_use_load_order.clone());
             let text = format!(
                 "{} list was expanded with \"{}\" due to \"append_to_use_load_order\" option",
-                if is_grass { "Groundcover plugins" } else { "Plugin" },
+                if is_grass {
+                    "Groundcover plugins"
+                } else {
+                    "Plugin"
+                },
                 list_options.append_to_use_load_order
             );
             msg(text, 0, cfg, log)?;
@@ -494,17 +596,33 @@ pub fn should_skip_list(
     Ok(true)
 }
 
-pub fn process_plugin(plugin_name: &str, out: &mut Out, name: &str, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn process_plugin(
+    plugin_name: &str,
+    out: &mut Out,
+    name: &str,
+    h: &mut Helper,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
     let (plugin_pathbuf, plugin_pathstring) = get_plugin_pathbuf_pathstring(plugin_name, h);
-    msg(format!("  Processing plugin \"{}\"", &plugin_pathstring), 2, cfg, log)?;
+    msg(
+        format!("  Processing plugin \"{}\"", &plugin_pathstring),
+        2,
+        cfg,
+        log,
+    )?;
     h.local_init(plugin_pathbuf, h.g.plugins_processed.len())
         .with_context(|| "Failed to start processing plugin")?;
     let mut plugin = Plugin::new();
     plugin
         .load_path(&plugin_pathstring)
         .with_context(|| format!("Failed to load plugin \"{}\"", &plugin_pathstring))?;
-    input::process_records(plugin, out, name, h, cfg, log)
-        .with_context(|| format!("Failed to process records from plugin \"{}\"", &plugin_pathstring))?;
+    input::process_records(plugin, out, name, h, cfg, log).with_context(|| {
+        format!(
+            "Failed to process records from plugin \"{}\"",
+            &plugin_pathstring
+        )
+    })?;
     Ok(())
 }
 
@@ -524,8 +642,12 @@ pub fn process_turn_normal_grass(
     log: &mut Log,
 ) -> Result<()> {
     if h.g.list_options.turn_normal_grass {
-        let (plugin_deleted_content_name, mut plugin_deleted_content, plugin_grass_name, mut plugin_grass) =
-            make_turn_normal_grass(name, out, h, cfg, log)?;
+        let (
+            plugin_deleted_content_name,
+            mut plugin_deleted_content,
+            plugin_grass_name,
+            mut plugin_grass,
+        ) = make_turn_normal_grass(name, out, h, cfg, log)?;
         if !h.g.list_options.exclude_deleted_records {
             write_output_plugin(
                 &plugin_deleted_content_name,
@@ -536,10 +658,20 @@ pub fn process_turn_normal_grass(
                 cfg,
                 log,
             )
-            .with_context(|| format!("Failed to write output plugin {plugin_deleted_content_name:?}"))?;
+            .with_context(|| {
+                format!("Failed to write output plugin {plugin_deleted_content_name:?}")
+            })?;
         }
-        write_output_plugin(&plugin_grass_name, &mut plugin_grass, old_plugin, 2, h, cfg, log)
-            .with_context(|| format!("Failed to write output plugin {plugin_grass_name:?}"))?;
+        write_output_plugin(
+            &plugin_grass_name,
+            &mut plugin_grass,
+            old_plugin,
+            2,
+            h,
+            cfg,
+            log,
+        )
+        .with_context(|| format!("Failed to write output plugin {plugin_grass_name:?}"))?;
     }
     Ok(())
 }
@@ -549,25 +681,35 @@ pub fn get_tng_dir_and_plugin_names(name: &str, cfg: &Cfg) -> Result<(PathBuf, S
     let name_stem = match name_path.file_stem() {
         None => {
             return Err(anyhow!(
-                "Failed to find output plugin file name without path and extension from input \"{}\"",
-                name
-            ))
+            "Failed to find output plugin file name without path and extension from input \"{}\"",
+            name
+        ))
         }
         Some(stem) => stem.to_string_lossy().into_owned(),
     };
-    let dir = name_path.parent().map_or_else(PathBuf::new, Path::to_path_buf);
+    let dir = name_path
+        .parent()
+        .map_or_else(PathBuf::new, Path::to_path_buf);
     let plugin_deleted_content_name_pathbuf = dir.join(format!(
         "{}{}",
-        name_stem, &cfg.guts.turn_normal_grass_plugin_name_suffix_deleted_content
+        name_stem,
+        &cfg.guts
+            .turn_normal_grass_plugin_name_suffix_deleted_content
     ));
-    let plugin_deleted_content_name = plugin_deleted_content_name_pathbuf.to_string_lossy().into_owned();
-    let plugin_grass_name_pathbuf = dir.join(format!("{}{}", name_stem, &cfg.guts.turn_normal_grass_plugin_name_suffix_grass));
+    let plugin_deleted_content_name = plugin_deleted_content_name_pathbuf
+        .to_string_lossy()
+        .into_owned();
+    let plugin_grass_name_pathbuf = dir.join(format!(
+        "{}{}",
+        name_stem, &cfg.guts.turn_normal_grass_plugin_name_suffix_grass
+    ));
     let plugin_grass_name = plugin_grass_name_pathbuf.to_string_lossy().into_owned();
     Ok((dir, plugin_deleted_content_name, plugin_grass_name))
 }
 
 pub fn read_lines(filename: &Path) -> Result<io::Lines<io::BufReader<File>>> {
-    let file = File::open(filename).with_context(|| format!("Failed to open file \"{}\"", filename.display()))?;
+    let file = File::open(filename)
+        .with_context(|| format!("Failed to open file \"{}\"", filename.display()))?;
     Ok(io::BufReader::new(file).lines())
 }
 
@@ -583,7 +725,10 @@ fn backup_log_file(log_file: &PathBuf, backup_suffix: &str) -> String {
     backup_path.push(backup_suffix);
     let backup_file: PathBuf = backup_path.into();
     match rename(log_file, &backup_file) {
-        Ok(()) => format!("Previous log file was renamed to \"{}\"", backup_file.display()),
+        Ok(()) => format!(
+            "Previous log file was renamed to \"{}\"",
+            backup_file.display()
+        ),
         Err(_) => String::new(),
     }
 }
@@ -594,7 +739,9 @@ pub fn get_cell_name(cell: &Cell) -> String {
     } else {
         format!(
             "\"{}{:?}\"",
-            cell.region.as_ref().map_or_else(String::new, |region| format!("{region} ")),
+            cell.region
+                .as_ref()
+                .map_or_else(String::new, |region| format!("{region} ")),
             cell.data.grid
         )
     }
@@ -621,7 +768,11 @@ pub fn show_removed_record_ids(
         let mut text = format!(
             "  {} record{} excluded from \"{}\" due to {}",
             removed_record_ids_len,
-            if removed_record_ids_len == 1 { " was" } else { "s were" },
+            if removed_record_ids_len == 1 {
+                " was"
+            } else {
+                "s were"
+            },
             name,
             reason
         );
@@ -630,7 +781,10 @@ pub fn show_removed_record_ids(
                 format!(
                     "{}{}",
                     &text,
-                    &format!("(check log or add -{} to get list)", "v".repeat(verbosity.into()))
+                    &format!(
+                        "(check log or add -{} to get list)",
+                        "v".repeat(verbosity.into())
+                    )
                 ),
                 0,
                 cfg,
@@ -648,18 +802,28 @@ pub fn select_header_description(h: &Helper, cfg: &Cfg) -> String {
         format!(
             "{}{}{}",
             &cfg.guts.header_description_processed_one_plugin_prefix,
-            h.g.plugins_processed.first().map_or("", |plugin_processed| &plugin_processed.name),
+            h.g.plugins_processed
+                .first()
+                .map_or("", |plugin_processed| &plugin_processed.name),
             &cfg.guts.header_description_processed_one_plugin_suffix
         )
     } else {
         format!(
             "{}{}{}",
-            &cfg.guts.header_description_merged_many_plugins_prefix, len, &cfg.guts.header_description_merged_many_plugins_suffix
+            &cfg.guts.header_description_merged_many_plugins_prefix,
+            len,
+            &cfg.guts.header_description_merged_many_plugins_suffix
         )
     }
 }
 
-pub fn truncate_header_text(field: &str, len: usize, value: &str, cfg: &Cfg, log: &mut Log) -> Result<String> {
+pub fn truncate_header_text(
+    field: &str,
+    len: usize,
+    value: &str,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<String> {
     #[allow(clippy::arithmetic_side_effects)]
     if value.len() > len {
         let truncated_value = value.get(..len).with_context(|| "Bug: indexing slicing")?;
@@ -674,7 +838,10 @@ pub fn truncate_header_text(field: &str, len: usize, value: &str, cfg: &Cfg, log
             &value.get(len..).with_context(|| "Bug: indexing slicing")?
         )?;
         msg(&text, u8::MAX, cfg, log)?;
-        Ok(truncated_value.get(..len).with_context(|| "Bug: indexing slicing")?.to_owned())
+        Ok(truncated_value
+            .get(..len)
+            .with_context(|| "Bug: indexing slicing")?
+            .to_owned())
     } else {
         Ok(value.to_owned())
     }
@@ -684,8 +851,8 @@ pub fn get_tng_content_name_low(name: &str, h: &Helper, cfg: &Cfg) -> Result<Str
     if !h.g.list_options.turn_normal_grass && !h.g.list_options.use_load_order {
         Ok(String::new())
     } else {
-        let (_, tng_content_name, _) =
-            get_tng_dir_and_plugin_names(name, cfg).with_context(|| "Failed to get turn normal grass directory or plugin names")?;
+        let (_, tng_content_name, _) = get_tng_dir_and_plugin_names(name, cfg)
+            .with_context(|| "Failed to get turn normal grass directory or plugin names")?;
         Ok(tng_content_name.to_lowercase())
     }
 }
@@ -717,14 +884,16 @@ pub fn get_regex_plugin_list(
         let mut new_index = index;
         let mut sum: usize;
         for (subindex, sublist) in regex_sublists {
-            sum = subindex
-                .checked_add(index)
-                .with_context(|| format!("Bug: overflow adding index = \"{index}\" to subindex = \"{subindex}\""))?;
+            sum = subindex.checked_add(index).with_context(|| {
+                format!("Bug: overflow adding index = \"{index}\" to subindex = \"{subindex}\"")
+            })?;
             if sum > new_index {
                 regex_plugin_list.extend(
                     plugin_list
                         .get(new_index..sum)
-                        .with_context(|| format!("Bug: indexing slicing plugin_list[{new_index}..{sum}]"))?
+                        .with_context(|| {
+                            format!("Bug: indexing slicing plugin_list[{new_index}..{sum}]")
+                        })?
                         .iter()
                         .map(ToOwned::to_owned),
                 );
@@ -733,9 +902,9 @@ pub fn get_regex_plugin_list(
             if !sublist.is_empty() {
                 regex_plugin_list.extend(sublist.into_iter());
             }
-            new_index = new_index
-                .checked_add(1)
-                .with_context(|| format!("Bug: overflow incrementing new_index = \"{new_index}\""))?;
+            new_index = new_index.checked_add(1).with_context(|| {
+                format!("Bug: overflow incrementing new_index = \"{new_index}\"")
+            })?;
         }
         if new_index < plugin_list.len() {
             regex_plugin_list.extend(
@@ -750,6 +919,7 @@ pub fn get_regex_plugin_list(
     Ok(regex_plugin_list)
 }
 
+#[allow(clippy::too_many_lines)]
 fn get_regex_sublists(
     plugin_list: &[String],
     index: usize,
@@ -789,11 +959,33 @@ fn get_regex_sublists(
         plugin_pathbuf.push(pattern);
         let mut dot = false;
         if let Err(error) = if is_regex {
-            get_regex_plugins(&mut sublist, &plugin_pathbuf, &mut sort_by_name, &mut dot, list_options, cfg, log)
+            get_regex_plugins(
+                &mut sublist,
+                &plugin_pathbuf,
+                &mut sort_by_name,
+                &mut dot,
+                list_options,
+                cfg,
+                log,
+            )
         } else {
-            get_glob_plugins(&mut sublist, &plugin_pathbuf, &mut sort_by_name, list_options, cfg, log)
+            get_glob_plugins(
+                &mut sublist,
+                &plugin_pathbuf,
+                &mut sort_by_name,
+                list_options,
+                cfg,
+                log,
+            )
         } {
-            err_or_ignore(format!("{error:?}"), list_options.ignore_important_errors, false, cfg, log).with_context(|| {
+            err_or_ignore(
+                format!("{error:?}"),
+                list_options.ignore_important_errors,
+                false,
+                cfg,
+                log,
+            )
+            .with_context(|| {
                 format!(
                     "Failed to get plugins from {} pattern: {pattern:?}",
                     if is_regex { "regex" } else { "glob" }
@@ -815,7 +1007,10 @@ fn get_regex_sublists(
             let prefix = if dot {
                 format!(".{MAIN_SEPARATOR}")
             } else {
-                format!("{}{MAIN_SEPARATOR}", list_options.base_dir.to_string_lossy())
+                format!(
+                    "{}{MAIN_SEPARATOR}",
+                    list_options.base_dir.to_string_lossy()
+                )
             };
             for name in &mut regex_sublist {
                 if let Some(stripped) = name.strip_prefix(&prefix) {
@@ -911,16 +1106,28 @@ fn get_regex_plugins(
         dir = Path::new(".");
     };
     for entry in read_dir(dir)?.flatten() {
-        if entry.file_type().map_or(true, |file_type| !file_type.is_dir()) {
+        if entry
+            .file_type()
+            .map_or(true, |file_type| !file_type.is_dir())
+        {
             let path = entry.path();
             if let Some(plugin_extension) = path.extension() {
-                if cfg.guts.omw_plugin_extensions.contains(&plugin_extension.to_ascii_lowercase())
+                if cfg
+                    .guts
+                    .omw_plugin_extensions
+                    .contains(&plugin_extension.to_ascii_lowercase())
                     && regex_expression.is_match(&entry.file_name().to_string_lossy())
                 {
                     let time = get_plugin_time(&path, sort_by_name, pattern, "regex", cfg, log)
-                        .with_context(|| format!("Failed to get modification time for: {path:?}"))?;
+                        .with_context(|| {
+                            format!("Failed to get modification time for: {path:?}")
+                        })?;
                     let name_low = entry.file_name().to_string_lossy().to_lowercase();
-                    list.push(RegexPluginInfo { path, name_low, time });
+                    list.push(RegexPluginInfo {
+                        path,
+                        name_low,
+                        time,
+                    });
                 }
             }
         }
@@ -947,10 +1154,18 @@ fn get_glob_plugins(
             None => continue,
         };
         if let Some(plugin_extension) = path.extension() {
-            if cfg.guts.omw_plugin_extensions.contains(&plugin_extension.to_ascii_lowercase()) {
+            if cfg
+                .guts
+                .omw_plugin_extensions
+                .contains(&plugin_extension.to_ascii_lowercase())
+            {
                 let time = get_plugin_time(&path, sort_by_name, pattern, "glob", cfg, log)
                     .with_context(|| format!("Failed to get modification time for: {path:?}"))?;
-                list.push(RegexPluginInfo { path, name_low, time });
+                list.push(RegexPluginInfo {
+                    path,
+                    name_low,
+                    time,
+                });
             }
         };
     }

@@ -1,11 +1,14 @@
 use super::make_header;
 use crate::{
-    get_tng_dir_and_plugin_names, load_order, make_tng_meshes, msg, msg_no_log, references_sorted, CellExtGrid, Cfg, HeaderText,
-    Helper, Log, MastId, OldRefSources, Out, PluginInfo, RefSources, RefrId, TurnNormalGrass,
+    get_tng_dir_and_plugin_names, load_order, make_tng_meshes, msg, msg_no_log, references_sorted,
+    CellExtGrid, Cfg, HeaderText, Helper, Log, MastId, OldRefSources, Out, PluginInfo, RefSources,
+    RefrId, TurnNormalGrass,
 };
 use anyhow::{anyhow, Context, Result};
 use hashbrown::{HashMap, HashSet};
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{
+    IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator,
+};
 use std::fmt::Write as _;
 use tes3::esp::{Cell, CellFlags, ObjectFlags, Plugin, Reference, Static, TES3Object};
 
@@ -36,7 +39,8 @@ pub fn make_turn_normal_grass(
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<(String, Plugin, String, Plugin)> {
-    load_order::scan(h, cfg, log).with_context(|| "Failed to scan load order while trying to turn normal grass")?;
+    load_order::scan(h, cfg, log)
+        .with_context(|| "Failed to scan load order while trying to turn normal grass")?;
     let (del_ref_cells, grass_cells, new_masters, found_stat_ids) = get_tng_cells(
         &mut out.cell,
         &h.g.r.ext_ref_sources,
@@ -49,17 +53,26 @@ pub fn make_turn_normal_grass(
     .with_context(|| "Failed to process cells while trying to turn normal grass")?;
     h.g.found_stat_ids = found_stat_ids;
     let (dir, plugin_deleted_content_name, plugin_grass_name) =
-        get_tng_dir_and_plugin_names(name, cfg).with_context(|| "Failed to get turn normal grass directory or plugin names")?;
+        get_tng_dir_and_plugin_names(name, cfg)
+            .with_context(|| "Failed to get turn normal grass directory or plugin names")?;
     make_tng_meshes(dir, out, h, cfg, log)?;
     let tng_statics = make_tng_statics(&plugin_grass_name, h, cfg, log)
         .with_context(|| "Failed to process STAT records while trying to turn normal grass")?;
-    let header_author = format!("{}{}", &cfg.guts.header_author, &cfg.guts.turn_normal_grass_header_author_append);
+    let header_author = format!(
+        "{}{}",
+        &cfg.guts.header_author, &cfg.guts.turn_normal_grass_header_author_append
+    );
     let plugin_deleted_content = make_tng_plugin(
         &plugin_deleted_content_name,
         del_ref_cells,
         None,
         new_masters.clone(),
-        HeaderText::new(&header_author, &cfg.guts.turn_normal_grass_header_description_content, cfg, log)?,
+        HeaderText::new(
+            &header_author,
+            &cfg.guts.turn_normal_grass_header_description_content,
+            cfg,
+            log,
+        )?,
         h,
         cfg,
         log,
@@ -70,13 +83,23 @@ pub fn make_turn_normal_grass(
         grass_cells,
         Some(tng_statics),
         new_masters,
-        HeaderText::new(&header_author, &cfg.guts.turn_normal_grass_header_description_groundcover, cfg, log)?,
+        HeaderText::new(
+            &header_author,
+            &cfg.guts.turn_normal_grass_header_description_groundcover,
+            cfg,
+            log,
+        )?,
         h,
         cfg,
         log,
     )
     .with_context(|| format!("Failed to make plugin \"{}\"", &plugin_grass_name))?;
-    Ok((plugin_deleted_content_name, plugin_deleted_content, plugin_grass_name, plugin_grass))
+    Ok((
+        plugin_deleted_content_name,
+        plugin_deleted_content,
+        plugin_grass_name,
+        plugin_grass,
+    ))
 }
 
 fn get_tng_cells(
@@ -88,11 +111,20 @@ fn get_tng_cells(
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<TngCellHelper> {
-    let masters_len = u32::try_from(masters.len())
-        .with_context(|| format!("Bug: failed to cast {:?}(masters.len(), usize) to u32", masters.len()))?;
-    let (del_ref_num_cells, new_master_ids, found_stat_ids) =
-        make_del_ref_num_cells(cells, ext_ref_sources, masters_len, exclude_deleted_records, cfg)
-            .with_context(|| "Failed to process cells to find potential grass")?;
+    let masters_len = u32::try_from(masters.len()).with_context(|| {
+        format!(
+            "Bug: failed to cast {:?}(masters.len(), usize) to u32",
+            masters.len()
+        )
+    })?;
+    let (del_ref_num_cells, new_master_ids, found_stat_ids) = make_del_ref_num_cells(
+        cells,
+        ext_ref_sources,
+        masters_len,
+        exclude_deleted_records,
+        cfg,
+    )
+    .with_context(|| "Failed to process cells to find potential grass")?;
     let master_remap_table = make_master_remap_table(&new_master_ids, masters_len)
         .with_context(|| "Failed to produce master remap table, possibly due to a bug")?;
     let new_masters = make_new_masters(
@@ -105,9 +137,11 @@ fn get_tng_cells(
         log,
     )
     .with_context(|| "Failed to produce new masters list")?;
-    let del_ref_master_renum_num_cells = make_del_ref_master_renum_num_cells(del_ref_num_cells, &master_remap_table)
-        .with_context(|| "Failed to make_del_ref_master_renum_num_cells")?;
-    let grass_cells = make_grass_cells(&del_ref_master_renum_num_cells).with_context(|| "Failed to make_grass_cells")?;
+    let del_ref_master_renum_num_cells =
+        make_del_ref_master_renum_num_cells(del_ref_num_cells, &master_remap_table)
+            .with_context(|| "Failed to make_del_ref_master_renum_num_cells")?;
+    let grass_cells = make_grass_cells(&del_ref_master_renum_num_cells)
+        .with_context(|| "Failed to make_grass_cells")?;
     let del_ref_cells = make_del_ref_cells(del_ref_master_renum_num_cells);
     Ok((del_ref_cells, grass_cells, new_masters, found_stat_ids))
 }
@@ -123,8 +157,14 @@ fn make_del_ref_num_cells(
     let mut new_master_ids: NewMasterIds = Vec::new();
     let mut found_stat_ids: FoundStatIds = HashSet::new();
     let del_ref_num_cells_helper: Vec<(usize, Option<DelRefCellHelper>)> =
-        make_del_ref_num_cells_helper(cells, ext_ref_sources, masters_len, exclude_deleted_records, cfg)
-            .with_context(|| "Failed to produce deleted grass references, possibly due to a bug")?;
+        make_del_ref_num_cells_helper(
+            cells,
+            ext_ref_sources,
+            masters_len,
+            exclude_deleted_records,
+            cfg,
+        )
+        .with_context(|| "Failed to produce deleted grass references, possibly due to a bug")?;
     for (id, del_ref_cell_helper) in del_ref_num_cells_helper {
         if let Some((cell, raw_new_master_ids, raw_found_stat_ids)) = del_ref_cell_helper {
             del_ref_num_cells.push((id, cell));
@@ -266,15 +306,22 @@ fn make_del_ref_num_cells_helper(
     Ok(del_ref_cell_helper)
 }
 
-fn make_master_remap_table(new_master_ids: &NewMasterIds, masters_len: u32) -> Result<MasterRemapTable> {
+fn make_master_remap_table(
+    new_master_ids: &NewMasterIds,
+    masters_len: u32,
+) -> Result<MasterRemapTable> {
     let mut master_remap_table = HashMap::new();
     for (id, plugin_id) in new_master_ids.iter().enumerate() {
         let remap = u32::try_from(id)
             .with_context(|| format!("Bug: failed to cast {id:?}(id, usize) to u32"))?
             .checked_add(masters_len)
-            .with_context(|| format!("Bug: overflow adding id = \"{id}\" to masters_len = \"{masters_len}\""))?
+            .with_context(|| {
+                format!("Bug: overflow adding id = \"{id}\" to masters_len = \"{masters_len}\"")
+            })?
             .checked_add(1)
-            .with_context(|| format!("Bug: overflow incrementing remap = \"{id} + {masters_len}\""))?;
+            .with_context(|| {
+                format!("Bug: overflow incrementing remap = \"{id} + {masters_len}\"")
+            })?;
         if master_remap_table
             .insert(
                 plugin_id
@@ -300,7 +347,10 @@ fn make_new_masters(
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<Vec<(String, u64)>> {
-    let mut new_masters: Vec<(String, u64)> = masters.iter().map(|&(ref name, size)| (name.to_owned(), size)).collect();
+    let mut new_masters: Vec<(String, u64)> = masters
+        .iter()
+        .map(|&(ref name, size)| (name.to_owned(), size))
+        .collect();
     for plugin_id in new_master_ids {
         if remap_table.contains_key(
             &(plugin_id
@@ -354,8 +404,11 @@ fn make_del_ref_master_renum_num_cells(
             }
             Ok((
                 id,
-                u32::try_from(renum_references.len())
-                    .with_context(|| format!("Bug: failed to cast {renum_references:?}(renum_references, usize) to u32"))?,
+                u32::try_from(renum_references.len()).with_context(|| {
+                    format!(
+                        "Bug: failed to cast {renum_references:?}(renum_references, usize) to u32"
+                    )
+                })?,
                 Cell {
                     references: renum_references,
                     ..cell
@@ -368,9 +421,9 @@ fn make_del_ref_master_renum_num_cells(
     let mut ref_sum = 0;
     for (id, ref_num, cell) in cells_with_refs_per_cell {
         del_ref_master_renum_num_cells.push((id, ref_sum, cell));
-        ref_sum = ref_sum
-            .checked_add(ref_num)
-            .with_context(|| format!("Bug: overflow adding ref_num = \"{ref_num}\" to ref_sum = \"{ref_sum}\""))?;
+        ref_sum = ref_sum.checked_add(ref_num).with_context(|| {
+            format!("Bug: overflow adding ref_num = \"{ref_num}\" to ref_sum = \"{ref_sum}\"")
+        })?;
     }
     Ok(del_ref_master_renum_num_cells)
 }
@@ -384,9 +437,9 @@ fn make_grass_cells(del_ref_master_renum_num_cells: &NumCellsRefCounted) -> Resu
             let mut local_references: Vec<&Reference> = cell.references.values().collect();
             references_sorted(&mut local_references);
             for reference in local_references {
-                refr_index = refr_index
-                    .checked_add(1)
-                    .with_context(|| format!("Bug: overflow incrementing refr_index = \"{refr_index}\""))?;
+                refr_index = refr_index.checked_add(1).with_context(|| {
+                    format!("Bug: overflow incrementing refr_index = \"{refr_index}\"")
+                })?;
                 grass_references.insert(
                     (0, refr_index),
                     Reference {
@@ -407,7 +460,10 @@ fn make_grass_cells(del_ref_master_renum_num_cells: &NumCellsRefCounted) -> Resu
         })
         .collect::<Result<NumCells>>()?;
     num_grass_cells.sort_by_key(|x| x.0);
-    Ok(num_grass_cells.into_iter().map(|(_, cell)| cell).collect::<GrassCells>())
+    Ok(num_grass_cells
+        .into_iter()
+        .map(|(_, cell)| cell)
+        .collect::<GrassCells>())
 }
 
 fn make_del_ref_cells(del_ref_master_renum_num_cells: NumCellsRefCounted) -> DelRefCells {
@@ -432,7 +488,9 @@ fn make_tng_statics(name: &str, h: &Helper, cfg: &Cfg, log: &mut Log) -> Result<
     let mut tng_statics: Vec<Static> = Vec::new();
     let mut tngs: Vec<&TurnNormalGrass> = h.g.turn_normal_grass.values().collect();
     let tngs_stat_count: usize = tngs.iter().map(|x| x.stat_records.len()).sum();
-    let first = tngs.first().with_context(|| "Bug: indexing slicing tngs[0]")?;
+    let first = tngs
+        .first()
+        .with_context(|| "Bug: indexing slicing tngs[0]")?;
     let first_path = first.new_path.to_string_lossy();
     let meshes_dir = first_path.strip_suffix(&first.new_name_low);
     let mut text =
@@ -441,7 +499,10 @@ fn make_tng_statics(name: &str, h: &Helper, cfg: &Cfg, log: &mut Log) -> Result<
         msg_no_log(&text, 1, cfg);
     }
     if let Some(path) = meshes_dir {
-        write!(text, ":\n    (Meshes paths are relative to directory \"{path}\")")?;
+        write!(
+            text,
+            ":\n    (Meshes paths are relative to directory \"{path}\")"
+        )?;
     };
     tngs.sort_by_key(|x| &x.new_name_low);
     for tng in tngs {
@@ -452,7 +513,10 @@ fn make_tng_statics(name: &str, h: &Helper, cfg: &Cfg, log: &mut Log) -> Result<
                 "\n    STAT \"{}\" points to added mesh \"{}\" copied from:\n      {}",
                 stat.id, mesh, tng.src_info
             )?;
-            tng_statics.push(Static { mesh, ..stat.clone() });
+            tng_statics.push(Static {
+                mesh,
+                ..stat.clone()
+            });
         }
     }
     msg(text, 2, cfg, log)?;
@@ -471,8 +535,12 @@ fn make_tng_plugin(
     log: &mut Log,
 ) -> Result<Plugin> {
     let mut plugin = Plugin::new();
-    let mut num_records =
-        u32::try_from(cells.len()).with_context(|| format!("Bug: failed to cast {:?}(cells.len(), usize) to u32", cells.len()))?;
+    let mut num_records = u32::try_from(cells.len()).with_context(|| {
+        format!(
+            "Bug: failed to cast {:?}(cells.len(), usize) to u32",
+            cells.len()
+        )
+    })?;
     if let Some(ref statics) = statics {
         num_records = num_records
             .checked_add(
@@ -496,8 +564,16 @@ fn make_tng_plugin(
     } else {
         h.g.list_options.strip_masters
     };
-    let header = make_header(name, masters, num_records, strip_masters, header_text, cfg, log)
-        .with_context(|| format!("Failed to make header for plugin \"{name}\""))?;
+    let header = make_header(
+        name,
+        masters,
+        num_records,
+        strip_masters,
+        header_text,
+        cfg,
+        log,
+    )
+    .with_context(|| format!("Failed to make header for plugin \"{name}\""))?;
     plugin.objects.push(TES3Object::Header(header));
     if let Some(statics) = statics {
         for stat in statics {

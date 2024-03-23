@@ -1,12 +1,19 @@
 use crate::{
-    get_cell_name, msg, select_header_description, show_removed_record_ids, Cfg, Dial, HeaderText, Helper, Log, Mode, Out,
-    StatsUpdateKind,
+    get_cell_name, msg, select_header_description, show_removed_record_ids, Cfg, Dial, HeaderText,
+    Helper, Log, Mode, Out, StatsUpdateKind,
 };
 use anyhow::Result;
 use tes3::esp::{DialogueType2, FixedString, Header, ObjectFlags, Plugin, TES3Object};
 
 #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
-pub fn make_output_plugin(name: &str, out: Out, out_plugin: &mut Plugin, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
+pub fn make_output_plugin(
+    name: &str,
+    out: Out,
+    out_plugin: &mut Plugin,
+    h: &mut Helper,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
     let mut objects = Vec::new();
     let lev_mode = if matches!(h.g.list_options.mode, Mode::CompleteReplace) {
         Mode::CompleteReplace
@@ -105,9 +112,22 @@ pub fn make_output_plugin(name: &str, out: Out, out_plugin: &mut Plugin, h: &mut
         let reason = "\"exclude_deleted_records\" and DELETED record flag";
         show_removed_record_ids(&removed_record_ids, reason, name, 1, cfg, log)?;
     }
-    let header_text = HeaderText::new(&cfg.guts.header_author, &select_header_description(h, cfg), cfg, log)?;
+    let header_text = HeaderText::new(
+        &cfg.guts.header_author,
+        &select_header_description(h, cfg),
+        cfg,
+        log,
+    )?;
     let strip_masters = h.g.list_options.strip_masters;
-    let header = make_header(name, out.masters, h.g.stats.total()?, strip_masters, header_text, cfg, log)?;
+    let header = make_header(
+        name,
+        out.masters,
+        h.g.stats.total()?,
+        strip_masters,
+        header_text,
+        cfg,
+        log,
+    )?;
     out_plugin.objects.push(TES3Object::Header(header));
     out_plugin.objects.extend(objects);
     Ok(())

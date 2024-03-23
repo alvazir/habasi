@@ -1,6 +1,7 @@
 use crate::{
-    get_append_to_use_load_order_string, get_base_dir_path, get_game_config_string, get_skip_from_use_load_order_string, msg,
-    msg_no_log, show_ignored_ref_errors, truncate_header_text, Bsa, Cfg, Log, Stats, StatsUpdateKind,
+    get_append_to_use_load_order_string, get_base_dir_path, get_game_config_string,
+    get_skip_from_use_load_order_string, msg, msg_no_log, show_ignored_ref_errors,
+    truncate_header_text, Bsa, Cfg, Log, Stats, StatsUpdateKind,
 };
 use anyhow::{anyhow, Context, Result};
 use fs_err::read;
@@ -11,9 +12,10 @@ use std::{
     time::{Instant, SystemTime},
 };
 use tes3::esp::{
-    Activator, Alchemy, Apparatus, Armor, Birthsign, Bodypart, Book, Cell, Class, Clothing, Container, Creature, Dialogue,
-    DialogueInfo, Door, EffectId, Enchanting, Faction, GameSetting, GlobalVariable, Ingredient, Landscape, LandscapeTexture,
-    LeveledCreature, LeveledItem, Light, Lockpick, MagicEffect, MiscItem, Npc, PathGrid, Plugin, Probe, Race, Reference, Region,
+    Activator, Alchemy, Apparatus, Armor, Birthsign, Bodypart, Book, Cell, Class, Clothing,
+    Container, Creature, Dialogue, DialogueInfo, Door, EffectId, Enchanting, Faction, GameSetting,
+    GlobalVariable, Ingredient, Landscape, LandscapeTexture, LeveledCreature, LeveledItem, Light,
+    Lockpick, MagicEffect, MiscItem, Npc, PathGrid, Plugin, Probe, Race, Reference, Region,
     RepairItem, Script, Skill, SkillId, Sound, SoundGen, Spell, StartScript, Static, Weapon,
 };
 
@@ -106,10 +108,18 @@ impl ListOptions {
             write!(text, ", config = {}", self.config)?;
         };
         if self.append_to_use_load_order != String::new() {
-            write!(text, ", append_to_use_load_order = {}", self.append_to_use_load_order)?;
+            write!(
+                text,
+                ", append_to_use_load_order = {}",
+                self.append_to_use_load_order
+            )?;
         };
         if self.skip_from_use_load_order != String::new() {
-            write!(text, ", skip_from_use_load_order = {}", self.skip_from_use_load_order)?;
+            write!(
+                text,
+                ", skip_from_use_load_order = {}",
+                self.skip_from_use_load_order
+            )?;
         };
         macro_rules! push_str_if {
             ($($var:ident),+) => {
@@ -142,7 +152,12 @@ impl ListOptions {
         Ok(text)
     }
 
-    pub(crate) fn get_list_options(&self, plugin_list: &[String], cfg: &Cfg, log: &mut Log) -> Result<(usize, Self)> {
+    pub(crate) fn get_list_options(
+        &self,
+        plugin_list: &[String],
+        cfg: &Cfg,
+        log: &mut Log,
+    ) -> Result<(usize, Self)> {
         let mut index: usize = 1;
         let mut list_options = self.clone();
         while plugin_list.len()
@@ -158,17 +173,25 @@ impl ListOptions {
                 arg_low = stripped;
             }
             if arg_low.starts_with(&cfg.guts.list_options_prefix_base_dir) {
-                list_options.base_dir =
-                    get_base_dir_path(arg, cfg).with_context(|| format!("Failed to get list base_dir from {arg:?}"))?;
+                list_options.base_dir = get_base_dir_path(arg, cfg)
+                    .with_context(|| format!("Failed to get list base_dir from {arg:?}"))?;
             } else if arg_low.starts_with(&cfg.guts.list_options_prefix_config) {
-                list_options.config =
-                    get_game_config_string(arg, cfg).with_context(|| format!("Failed to get game config from {arg:?}"))?;
+                list_options.config = get_game_config_string(arg, cfg)
+                    .with_context(|| format!("Failed to get game config from {arg:?}"))?;
             } else if arg_low.starts_with(&cfg.guts.list_options_prefix_append_to_use_load_order) {
-                list_options.append_to_use_load_order = get_append_to_use_load_order_string(arg, cfg)
-                    .with_context(|| format!("Failed to get plugin path to append to use_load_order from {arg:?}"))?;
+                list_options.append_to_use_load_order =
+                    get_append_to_use_load_order_string(arg, cfg).with_context(|| {
+                        format!(
+                            "Failed to get plugin path to append to use_load_order from {arg:?}"
+                        )
+                    })?;
             } else if arg_low.starts_with(&cfg.guts.list_options_prefix_skip_from_use_load_order) {
-                list_options.skip_from_use_load_order = get_skip_from_use_load_order_string(arg, cfg)
-                    .with_context(|| format!("Failed to get plugin name to skip from use_load_order from {arg:?}"))?;
+                list_options.skip_from_use_load_order =
+                    get_skip_from_use_load_order_string(arg, cfg).with_context(|| {
+                        format!(
+                            "Failed to get plugin name to skip from use_load_order from {arg:?}"
+                        )
+                    })?;
             } else {
                 match arg_low {
                     "keep" => list_options.mode = Mode::Keep,
@@ -393,15 +416,27 @@ pub struct TurnNormalGrass {
 impl TurnNormalGrass {
     pub(crate) fn read_from_bsa(&mut self, bsas: &[Bsa]) -> Result<()> {
         self.file_contents = match self.bsa {
-            None => return Err(anyhow!("Bug: trying to read from BSA, though there is no info about BSA")),
+            None => {
+                return Err(anyhow!(
+                    "Bug: trying to read from BSA, though there is no info about BSA"
+                ))
+            }
             Some(ref bsa) => {
-                let bsas_bsa = &bsas
-                    .get(bsa.bsa_index)
-                    .with_context(|| format!("Bug: indexing slicing bsas[bsa.bsa_index = {}]", bsa.bsa_index))?;
+                let bsas_bsa = &bsas.get(bsa.bsa_index).with_context(|| {
+                    format!(
+                        "Bug: indexing slicing bsas[bsa.bsa_index = {}]",
+                        bsa.bsa_index
+                    )
+                })?;
                 self.src_info = format!("mesh \"{}\" from BSA \"{}\"", bsa.path, bsas_bsa.path);
                 bsas_bsa
                     .get_file_by_index(bsa.file_index)
-                    .with_context(|| format!("Failed to get file \"{}\" by index from BSA \"{}\"", bsa.path, bsas_bsa.path))?
+                    .with_context(|| {
+                        format!(
+                            "Failed to get file \"{}\" by index from BSA \"{}\"",
+                            bsa.path, bsas_bsa.path
+                        )
+                    })?
             }
         };
         Ok(())
@@ -419,7 +454,13 @@ impl TurnNormalGrass {
                     self.src_info = format!("loose mesh \"{}\"", path.display());
                     file
                 }
-                Err(err) => return Err(anyhow!("Failed to read from file \"{}\", {}", path.display(), err)),
+                Err(err) => {
+                    return Err(anyhow!(
+                        "Failed to read from file \"{}\", {}",
+                        path.display(),
+                        err
+                    ))
+                }
             },
         };
         Ok(())
@@ -429,8 +470,8 @@ impl TurnNormalGrass {
         let loose_time = match self.loose {
             None => {
                 return Err(anyhow!(
-                    "Bug: trying to get time from loose file, though there is no info about loose file"
-                ))
+                "Bug: trying to get time from loose file, though there is no info about loose file"
+            ))
             }
             Some(ref loose) => loose.metadata().map_or(None, |meta| meta.modified().ok()),
         };
@@ -460,10 +501,18 @@ pub struct HeaderText {
 }
 
 impl HeaderText {
-    pub(crate) fn new(author_raw: &str, description_raw: &str, cfg: &Cfg, log: &mut Log) -> Result<Self> {
+    pub(crate) fn new(
+        author_raw: &str,
+        description_raw: &str,
+        cfg: &Cfg,
+        log: &mut Log,
+    ) -> Result<Self> {
         let author = truncate_header_text("author", 32, author_raw, cfg, log)?;
         let description = truncate_header_text("description", 256, description_raw, cfg, log)?;
-        Ok(Self { author, description })
+        Ok(Self {
+            author,
+            description,
+        })
     }
 }
 
@@ -545,17 +594,37 @@ impl Helper {
         self.g.stats.add_merged_plugin()?;
         self.g.stats.add(&self.l.stats)?;
         if !self.g.list_options.no_show_missing_refs {
-            show_ignored_ref_errors(&self.l.ignored_cell_errors, &self.l.plugin_info.name, true, cfg, log)?;
-            show_ignored_ref_errors(&self.l.ignored_ref_errors, &self.l.plugin_info.name, false, cfg, log)?;
+            show_ignored_ref_errors(
+                &self.l.ignored_cell_errors,
+                &self.l.plugin_info.name,
+                true,
+                cfg,
+                log,
+            )?;
+            show_ignored_ref_errors(
+                &self.l.ignored_ref_errors,
+                &self.l.plugin_info.name,
+                false,
+                cfg,
+                log,
+            )?;
         }
         self.g.plugins_processed.push(self.l.plugin_info.clone());
         Ok(())
     }
 
-    pub(crate) fn global_commit(&mut self, timer: Instant, new_plugin: &mut Plugin, cfg: &Cfg, log: &mut Log) -> Result<()> {
+    pub(crate) fn global_commit(
+        &mut self,
+        timer: Instant,
+        new_plugin: &mut Plugin,
+        cfg: &Cfg,
+        log: &mut Log,
+    ) -> Result<()> {
         self.g.stats.add_result_plugin()?;
         if !self.g.stats.self_check()? {
-            return Err(anyhow!("Error(possible bug): record counts self-check for the list failed"));
+            return Err(anyhow!(
+                "Error(possible bug): record counts self-check for the list failed"
+            ));
         }
         if self.g.stats_dismiss {
             self.t.stats_substract_output.add_output(&self.g.stats)?;
@@ -581,24 +650,38 @@ impl Helper {
 
     pub(crate) fn total_commit(&mut self, timer: Instant, cfg: &Cfg, log: &mut Log) -> Result<()> {
         if !self.t.stats.self_check().with_context(|| "")? {
-            return Err(anyhow!("Error(possible bug): total record counts self-check failed"));
+            return Err(anyhow!(
+                "Error(possible bug): total record counts self-check failed"
+            ));
         }
         self.t.stats.substract(&self.t.stats_substract_output)?;
         self.t.stats.add(&self.t.stats_tng)?;
-        let mut text = format!("{}\n{}", cfg.guts.prefix_combined_stats, self.t.stats.total_string(timer));
+        let mut text = format!(
+            "{}\n{}",
+            cfg.guts.prefix_combined_stats,
+            self.t.stats.total_string(timer)
+        );
         if cfg.verbose < 2 {
             msg_no_log(&text, 0, cfg);
         }
         text = format!("{}{}", text, self.t.stats);
         msg(text, 2, cfg, log)?;
-        if !self.t.skipped_processing_plugins.is_empty() && cfg.verbose < cfg.guts.skipped_processing_plugins_msg_verbosity {
+        if !self.t.skipped_processing_plugins.is_empty()
+            && cfg.verbose < cfg.guts.skipped_processing_plugins_msg_verbosity
+        {
             let skipped_processing_plugins_len = self.t.skipped_processing_plugins.len();
             text = format!(
                 "Skipped processing {} plugin{}({}add -{} to get list)",
                 skipped_processing_plugins_len,
-                if skipped_processing_plugins_len == 1 { "" } else { "s" },
+                if skipped_processing_plugins_len == 1 {
+                    ""
+                } else {
+                    "s"
+                },
                 if cfg.no_log { "" } else { "check log or " },
-                "v".repeat(usize::from(cfg.guts.skipped_processing_plugins_msg_verbosity)),
+                "v".repeat(usize::from(
+                    cfg.guts.skipped_processing_plugins_msg_verbosity
+                )),
             );
             msg(text, 0, cfg, log)?;
         }
@@ -627,9 +710,17 @@ fn get_plugin_info(path: PathBuf, id: usize) -> Result<PluginInfo> {
         Some(file_name) => {
             let name = file_name.to_string_lossy().into_owned();
             let name_low = name.to_lowercase();
-            Ok(PluginInfo { id, name, name_low, path })
+            Ok(PluginInfo {
+                id,
+                name,
+                name_low,
+                path,
+            })
         }
-        None => Err(anyhow!("Failed to get plugin name for \"{}\"", path.display())),
+        None => Err(anyhow!(
+            "Failed to get plugin name for \"{}\"",
+            path.display()
+        )),
     }
 }
 
@@ -640,15 +731,21 @@ fn mutate_list_options(list_options: &mut ListOptions, cfg: &Cfg, log: &mut Log)
         list_options.use_load_order = true;
     }
     if list_options.use_load_order && list_options.base_dir != PathBuf::new() {
-        text.push("List options mutation: Implicitly set \"base_dir:\"(empty) due to \"use_load_order\"");
+        text.push(
+            "List options mutation: Implicitly set \"base_dir:\"(empty) due to \"use_load_order\"",
+        );
         list_options.base_dir = PathBuf::new();
     }
     if matches!(list_options.mode, Mode::Grass) && list_options.turn_normal_grass {
-        text.push("List options mutation: Implicitly set \"no_turn_normal_grass\" due to \"grass\" mode");
+        text.push(
+            "List options mutation: Implicitly set \"no_turn_normal_grass\" due to \"grass\" mode",
+        );
         list_options.turn_normal_grass = false;
     }
     if matches!(list_options.mode, Mode::Grass) && !list_options.insufficient_merge {
-        text.push("List options mutation: Implicitly set \"insufficient_merge\" due to \"grass\" mode");
+        text.push(
+            "List options mutation: Implicitly set \"insufficient_merge\" due to \"grass\" mode",
+        );
         list_options.insufficient_merge = true;
     }
     if !text.is_empty() {

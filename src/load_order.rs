@@ -1,4 +1,6 @@
-use crate::{err_or_ignore, err_or_ignore_thread_safe, msg, read_lines, Cfg, Helper, LoadOrder, Log};
+use crate::{
+    err_or_ignore, err_or_ignore_thread_safe, msg, read_lines, Cfg, Helper, LoadOrder, Log,
+};
 use anyhow::{anyhow, Context, Result};
 use dirs::{data_dir, document_dir};
 use fs_err::read_dir;
@@ -15,7 +17,12 @@ pub fn scan(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
         .t
         .game_configs
         .get(h.g.config_index)
-        .with_context(|| format!("Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"", h.g.config_index))?
+        .with_context(|| {
+            format!(
+                "Bug: h.t.game_configs doesn't contain h.g.config_index = \"{}\"",
+                h.g.config_index
+            )
+        })?
         .load_order
         .scanned
     {
@@ -35,17 +42,30 @@ struct GetPluginsHelper {
     omw_all_plugins_found: bool,
 }
 
+#[allow(clippy::too_many_lines)]
 fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     let game_config =
         h.t.game_configs
             .get_mut(h.g.config_index)
-            .with_context(|| format!("Bug: indexing slicing h.g.config_index[{}]", h.g.config_index))?;
+            .with_context(|| {
+                format!(
+                    "Bug: indexing slicing h.g.config_index[{}]",
+                    h.g.config_index
+                )
+            })?;
     let config_path = &game_config.path;
     let config_path_canonical = &game_config.path_canonical;
-    let text = format!("Gathering plugins from game configuration file \"{}\"", config_path.display());
+    let text = format!(
+        "Gathering plugins from game configuration file \"{}\"",
+        config_path.display()
+    );
     msg(text, 1, cfg, log)?;
-    let config_lines =
-        read_lines(config_path).with_context(|| format!("Failed to read game configuration file \"{}\"", config_path.display()))?;
+    let config_lines = read_lines(config_path).with_context(|| {
+        format!(
+            "Failed to read game configuration file \"{}\"",
+            config_path.display()
+        )
+    })?;
     let ignore = h.g.list_options.ignore_important_errors;
     let mut res: LoadOrder = LoadOrder::default();
     let mut helper: GetPluginsHelper = GetPluginsHelper::default();
@@ -57,11 +77,28 @@ fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     for line in config_lines.map_while(Result::ok) {
         if !helper.omw_found {
             if line.starts_with(&cfg.guts.mor_line_beginning_content) {
-                mor_get_plugin(&line, config_path_canonical, &mut res, &mut helper, ignore, cfg, log)
-                    .with_context(|| "Failed to find Morrowind's plugin")?;
+                mor_get_plugin(
+                    &line,
+                    config_path_canonical,
+                    &mut res,
+                    &mut helper,
+                    ignore,
+                    cfg,
+                    log,
+                )
+                .with_context(|| "Failed to find Morrowind's plugin")?;
             } else if line.starts_with(&cfg.guts.mor_line_beginning_archive) {
-                mor_get_archive(&line, config_path_canonical, &mut res, false, &mut helper, ignore, cfg, log)
-                    .with_context(|| "Failed to find Morrowind's archive")?;
+                mor_get_archive(
+                    &line,
+                    config_path_canonical,
+                    &mut res,
+                    false,
+                    &mut helper,
+                    ignore,
+                    cfg,
+                    log,
+                )
+                .with_context(|| "Failed to find Morrowind's archive")?;
             } else { //
             }
         }
@@ -89,26 +126,63 @@ fn get_load_order(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
         if !helper.omw_all_plugins_found {
             omw_get_cs_data_dir(&mut omw_data_dirs, &mut helper, cfg, log)
                 .with_context(|| "Failed to find \"hidden\" OpenMW-CS data directory path")?;
-            omw_all_plugins =
-                get_all_plugins(&omw_data_dirs, &mut helper, ignore, cfg).with_context(|| "Failed to find all OpenMW's plugins")?;
+            omw_all_plugins = get_all_plugins(&omw_data_dirs, &mut helper, ignore, cfg)
+                .with_context(|| "Failed to find all OpenMW's plugins")?;
         };
         res.datas = omw_data_dirs;
         omw_plugins.iter().try_for_each(|plugin| -> Result<()> {
-            omw_get_plugin(plugin, &mut res, &omw_all_plugins, "plugin", ignore, cfg, log)
-                .with_context(|| "Failed to find OpenMW's plugin")
+            omw_get_plugin(
+                plugin,
+                &mut res,
+                &omw_all_plugins,
+                "plugin",
+                ignore,
+                cfg,
+                log,
+            )
+            .with_context(|| "Failed to find OpenMW's plugin")
         })?;
-        omw_groundcovers.iter().try_for_each(|groundcover| -> Result<()> {
-            omw_get_plugin(groundcover, &mut res, &omw_all_plugins, "groundcover", ignore, cfg, log)
+        omw_groundcovers
+            .iter()
+            .try_for_each(|groundcover| -> Result<()> {
+                omw_get_plugin(
+                    groundcover,
+                    &mut res,
+                    &omw_all_plugins,
+                    "groundcover",
+                    ignore,
+                    cfg,
+                    log,
+                )
                 .with_context(|| "Failed to find OpenMW's groundcover")
-        })?;
-        omw_fallback_archives.iter().try_for_each(|fallback_archive| -> Result<()> {
-            omw_get_plugin(fallback_archive, &mut res, &omw_all_plugins, "fallback archive", ignore, cfg, log)
+            })?;
+        omw_fallback_archives
+            .iter()
+            .try_for_each(|fallback_archive| -> Result<()> {
+                omw_get_plugin(
+                    fallback_archive,
+                    &mut res,
+                    &omw_all_plugins,
+                    "fallback archive",
+                    ignore,
+                    cfg,
+                    log,
+                )
                 .with_context(|| "Failed to find OpenMW's fallback archive")
-        })?;
+            })?;
     } else if helper.mor_found {
         let missing_bsa = &cfg.guts.mor_line_missing_archive;
-        mor_get_archive(missing_bsa, config_path, &mut res, true, &mut helper, ignore, cfg, log)
-            .with_context(|| "Failed to find Morrowind's base archive")?;
+        mor_get_archive(
+            missing_bsa,
+            config_path,
+            &mut res,
+            true,
+            &mut helper,
+            ignore,
+            cfg,
+            log,
+        )
+        .with_context(|| "Failed to find Morrowind's base archive")?;
     } else { //
     }
     res.scanned = true;
@@ -124,29 +198,46 @@ fn get_all_plugins(
 ) -> Result<HashMap<String, PathBuf>> {
     let mut found_plugins: Vec<(usize, String, PathBuf)> = omw_data_dirs
         .par_iter()
-        .map(|&(id, ref dir_path)| -> Result<Vec<(usize, String, PathBuf)>, _> {
-            let mut res: Vec<(usize, String, PathBuf)> = Vec::new();
-            match read_dir(dir_path) {
-                Ok(dir_contents) => {
-                    for entry in dir_contents.flatten() {
-                        if entry.file_type().map_or(true, |file_type| !file_type.is_dir()) {
-                            let path = entry.path();
-                            if let Some(plugin_extension) = path.extension() {
-                                if cfg.guts.omw_plugin_extensions.contains(&plugin_extension.to_ascii_lowercase()) {
-                                    res.push((id, entry.file_name().to_string_lossy().into_owned(), path));
+        .map(
+            |&(id, ref dir_path)| -> Result<Vec<(usize, String, PathBuf)>, _> {
+                let mut res: Vec<(usize, String, PathBuf)> = Vec::new();
+                match read_dir(dir_path) {
+                    Ok(dir_contents) => {
+                        for entry in dir_contents.flatten() {
+                            if entry
+                                .file_type()
+                                .map_or(true, |file_type| !file_type.is_dir())
+                            {
+                                let path = entry.path();
+                                if let Some(plugin_extension) = path.extension() {
+                                    if cfg
+                                        .guts
+                                        .omw_plugin_extensions
+                                        .contains(&plugin_extension.to_ascii_lowercase())
+                                    {
+                                        res.push((
+                                            id,
+                                            entry.file_name().to_string_lossy().into_owned(),
+                                            path,
+                                        ));
+                                    }
                                 }
                             }
                         }
                     }
+                    Err(error) => {
+                        let text = format!(
+                            "Failed to open directory \"{}\" with error: \"{:#}\"",
+                            dir_path.display(),
+                            error
+                        );
+                        err_or_ignore_thread_safe(text, ignore_important_errors, cfg)?;
+                    }
                 }
-                Err(error) => {
-                    let text = format!("Failed to open directory \"{}\" with error: \"{:#}\"", dir_path.display(), error);
-                    err_or_ignore_thread_safe(text, ignore_important_errors, cfg)?;
-                }
-            }
 
-            Ok(res)
-        })
+                Ok(res)
+            },
+        )
         .collect::<Result<Vec<_>>>()?
         .into_iter()
         .filter(|vec| !vec.is_empty())
@@ -154,16 +245,24 @@ fn get_all_plugins(
         .collect();
     found_plugins.sort();
     let mut all_plugins: HashMap<String, PathBuf> = HashMap::new();
-    found_plugins.into_iter().rev().for_each(|(_, plugin, path)| {
-        if let Entry::Vacant(v) = all_plugins.entry(plugin) {
-            v.insert(path);
-        }
-    });
+    found_plugins
+        .into_iter()
+        .rev()
+        .for_each(|(_, plugin, path)| {
+            if let Entry::Vacant(v) = all_plugins.entry(plugin) {
+                v.insert(path);
+            }
+        });
     helper.omw_all_plugins_found = true;
     Ok(all_plugins)
 }
 
-fn mor_get_data_files_dir(config_path_canonical: &Path, res: &mut LoadOrder, helper: &mut GetPluginsHelper, cfg: &Cfg) -> Result<()> {
+fn mor_get_data_files_dir(
+    config_path_canonical: &Path,
+    res: &mut LoadOrder,
+    helper: &mut GetPluginsHelper,
+    cfg: &Cfg,
+) -> Result<()> {
     helper.mor_data_files_dir = match config_path_canonical.parent() {
         Some(path) => {
             let data_files_dir = Path::new(path).join(&cfg.guts.mor_data_files_dir);
@@ -239,17 +338,25 @@ fn mor_get_archive(
             let modification_time = path.metadata().map_or(None, |meta| meta.modified().ok());
             let path_str = path.to_string_lossy().into_owned();
             if prepend {
-                if !res.fallback_archives.iter().any(|x| x.1 == path_str.to_lowercase()) {
+                if !res
+                    .fallback_archives
+                    .iter()
+                    .any(|x| x.1 == path_str.to_lowercase())
+                {
                     for &mut (ref mut id, _, _) in &mut res.fallback_archives {
                         *id = id
                             .checked_add(1)
                             .with_context(|| format!("Bug: overflow incrementing id = \"{id}\""))?;
                     }
-                    res.fallback_archives.insert(0, (0, path_str, modification_time));
+                    res.fallback_archives
+                        .insert(0, (0, path_str, modification_time));
                 }
             } else {
-                res.fallback_archives
-                    .push((res.fallback_archives.len(), path_str, modification_time));
+                res.fallback_archives.push((
+                    res.fallback_archives.len(),
+                    path_str,
+                    modification_time,
+                ));
             }
         } else {
             let text = format!(
@@ -281,10 +388,12 @@ fn omw_get_data_dir(
         let data = PathBuf::from(if raw_data.starts_with('"') && raw_data.ends_with('"') {
             raw_data
                 .get(
-                    1..raw_data
-                        .len()
-                        .checked_sub(1)
-                        .with_context(|| format!("Bug: overflow decrementing raw_data.len() = \"{}\"", raw_data.len()))?,
+                    1..raw_data.len().checked_sub(1).with_context(|| {
+                        format!(
+                            "Bug: overflow decrementing raw_data.len() = \"{}\"",
+                            raw_data.len()
+                        )
+                    })?,
                 )
                 .with_context(|| format!("Bug: indexing slicing raw_data[1..{}]", raw_data.len()))?
         } else {
@@ -322,10 +431,17 @@ fn omw_get_plugin(
             "groundcover" => res.groundcovers.push(path.to_string_lossy().into_owned()),
             "fallback archive" => {
                 let modification_time = path.metadata().map_or(None, |meta| meta.modified().ok());
-                res.fallback_archives
-                    .push((res.fallback_archives.len(), path.to_string_lossy().into_owned(), modification_time));
+                res.fallback_archives.push((
+                    res.fallback_archives.len(),
+                    path.to_string_lossy().into_owned(),
+                    modification_time,
+                ));
             }
-            _ => return Err(anyhow!("Wrong argument passed to the function \"omw_get_plugin\"")),
+            _ => {
+                return Err(anyhow!(
+                    "Wrong argument passed to the function \"omw_get_plugin\""
+                ))
+            }
         }
     } else {
         let text = format!("Failed to find {kind} \"{name}\"");
@@ -345,12 +461,13 @@ fn omw_get_cs_data_dir(
         ($omw_cs_data_path:expr) => {
             if $omw_cs_data_path.exists() {
                 omw_data_dirs.push((helper.omw_data_counter, $omw_cs_data_path));
-                helper.omw_data_counter = helper.omw_data_counter.checked_add(1).with_context(|| {
-                    format!(
-                        "Bug: overflow incrementing helper.omw_data_counter = \"{}\"",
-                        helper.omw_data_counter
-                    )
-                })?;
+                helper.omw_data_counter =
+                    helper.omw_data_counter.checked_add(1).with_context(|| {
+                        format!(
+                            "Bug: overflow incrementing helper.omw_data_counter = \"{}\"",
+                            helper.omw_data_counter
+                        )
+                    })?;
                 let text = format!(
                     "Added \"hidden\" OpenMW-CS data path \"{}\" to the list of directories",
                     $omw_cs_data_path.display()

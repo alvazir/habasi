@@ -1,13 +1,19 @@
 use crate::{
-    get_cell_name, msg, references_sorted, show_removed_record_ids, CellExtGrid, Cfg, Helper, Log, Mode, OldRefSources, Out,
-    RefSources, StatsUpdateKind,
+    get_cell_name, msg, references_sorted, show_removed_record_ids, CellExtGrid, Cfg, Helper, Log,
+    Mode, OldRefSources, Out, RefSources, StatsUpdateKind,
 };
 use anyhow::{anyhow, Context, Result};
 use hashbrown::HashMap;
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use tes3::esp::{Cell, CellFlags, ObjectFlags, Reference, Static};
 
-pub fn transform(name: &str, mut out: Out, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Out> {
+pub fn transform(
+    name: &str,
+    mut out: Out,
+    h: &mut Helper,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<Out> {
     resort_skil_mgef(&mut out);
     set_creature_scale_to_none_if_default(&mut out);
     remove_ambi_whgt_from_deleted_cells(&mut out);
@@ -44,7 +50,14 @@ fn exclude_non_grass_statics(
             h.g.stats.stat(StatsUpdateKind::Excluded);
         }
     }
-    show_removed_record_ids(&removed_record_ids, "\"grass\" mode and non-grass STAT", name, 2, cfg, log)?;
+    show_removed_record_ids(
+        &removed_record_ids,
+        "\"grass\" mode and non-grass STAT",
+        name,
+        2,
+        cfg,
+        log,
+    )?;
     Ok(stats)
 }
 
@@ -75,8 +88,22 @@ fn exclude_interior_and_empty_cells(
             cells.push(cell);
         }
     }
-    show_removed_record_ids(&removed_record_ids_empty, "\"grass\" mode and interior cell", name, 2, cfg, log)?;
-    show_removed_record_ids(&removed_record_ids_interior, "\"grass\" mode and empty cell", name, 2, cfg, log)?;
+    show_removed_record_ids(
+        &removed_record_ids_empty,
+        "\"grass\" mode and interior cell",
+        name,
+        2,
+        cfg,
+        log,
+    )?;
+    show_removed_record_ids(
+        &removed_record_ids_interior,
+        "\"grass\" mode and empty cell",
+        name,
+        2,
+        cfg,
+        log,
+    )?;
     Ok(cells)
 }
 
@@ -99,14 +126,23 @@ fn set_creature_scale_to_none_if_default(out: &mut Out) {
     }
 }
 
-fn reindex_references(name: &str, out: &mut Out, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    let mut dummy_ext_ref_sources: HashMap<CellExtGrid, (RefSources, OldRefSources)> = HashMap::new();
+#[allow(clippy::too_many_lines)]
+fn reindex_references(
+    name: &str,
+    out: &mut Out,
+    h: &mut Helper,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
+    let mut dummy_ext_ref_sources: HashMap<CellExtGrid, (RefSources, OldRefSources)> =
+        HashMap::new();
     let mut new_ext_ref_sources: HashMap<CellExtGrid, (RefSources, OldRefSources)> = HashMap::new();
     let mut refr = 1_u32;
     for &mut (ref mut last, _) in &mut out.cell {
         let mut reindexed_ext_ref_sources: RefSources = HashMap::new();
         let mut reindexed_ext_old_ref_sources: OldRefSources = HashMap::new();
-        let is_ext_ref = h.g.list_options.turn_normal_grass && !last.data.flags.contains(CellFlags::IS_INTERIOR);
+        let is_ext_ref =
+            h.g.list_options.turn_normal_grass && !last.data.flags.contains(CellFlags::IS_INTERIOR);
         let ext_ref_sources = if is_ext_ref {
             match h.g.r.ext_ref_sources.get(&last.data.grid) {
                 None => {
@@ -122,9 +158,9 @@ fn reindex_references(name: &str, out: &mut Out, h: &mut Helper, cfg: &Cfg, log:
             match dummy_ext_ref_sources.get(&last.data.grid) {
                 None => {
                     return Err(anyhow!(
-                        "Bug: failed to find cell \"{:?}\" in dummy_ext_ref_sources while reindexing",
-                        &last.data.grid
-                    ))
+                    "Bug: failed to find cell \"{:?}\" in dummy_ext_ref_sources while reindexing",
+                    &last.data.grid
+                ))
                 }
                 Some(ref_sources) => ref_sources,
             }
@@ -163,7 +199,10 @@ fn reindex_references(name: &str, out: &mut Out, h: &mut Helper, cfg: &Cfg, log:
                     .checked_add(1)
                     .with_context(|| format!("Bug: overflow incrementing refr = \"{refr}\""))?;
             } else {
-                new_refs.insert((reference.mast_index, reference.refr_index), reference.clone());
+                new_refs.insert(
+                    (reference.mast_index, reference.refr_index),
+                    reference.clone(),
+                );
                 if is_ext_ref {
                     match ext_ref_sources.0.get(&(reference.mast_index, reference.refr_index)) {
                         Some(v) => {
@@ -187,7 +226,10 @@ fn reindex_references(name: &str, out: &mut Out, h: &mut Helper, cfg: &Cfg, log:
         }
         last.references = new_refs;
         if is_ext_ref {
-            new_ext_ref_sources.insert(last.data.grid, (reindexed_ext_ref_sources, reindexed_ext_old_ref_sources));
+            new_ext_ref_sources.insert(
+                last.data.grid,
+                (reindexed_ext_ref_sources, reindexed_ext_old_ref_sources),
+            );
         }
     }
     h.g.r.ext_ref_sources = new_ext_ref_sources;
@@ -230,7 +272,14 @@ fn exclude_infos(out: &mut Out, name: &str, cfg: &Cfg, log: &mut Log) -> Result<
             }
         }
     }
-    show_removed_record_ids(&removed_record_ids, "settings.advanced.keep_only_last_info_ids", name, 2, cfg, log)?;
+    show_removed_record_ids(
+        &removed_record_ids,
+        "settings.advanced.keep_only_last_info_ids",
+        name,
+        2,
+        cfg,
+        log,
+    )?;
     Ok(())
 }
 

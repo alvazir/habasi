@@ -24,8 +24,12 @@ pub fn write_output_plugin(
             old_plugin
                 .load_path(name)
                 .with_context(|| format!("Failed to read previous output plugin {name:?}"))?;
-            let (is_plugin_equal, mut text) =
-                is_plugin_equal_to_previous(name, plugin, old_plugin, &mut plugins_differ_insignificantly)?;
+            let (is_plugin_equal, mut text) = is_plugin_equal_to_previous(
+                name,
+                plugin,
+                old_plugin,
+                &mut plugins_differ_insignificantly,
+            )?;
             if is_plugin_equal {
                 if cfg.verbose < 1 {
                     msg_no_log(&text, 0, cfg);
@@ -41,13 +45,23 @@ pub fn write_output_plugin(
     } else if let Some(out_dir) = name_path.parent() {
         if out_dir != Path::new("") && !out_dir.exists() {
             if !dry_run {
-                create_dir_all(out_dir)
-                    .with_context(|| format!("Failed to create output plugin directory \"{}\"", out_dir.display()))?;
+                create_dir_all(out_dir).with_context(|| {
+                    format!(
+                        "Failed to create output plugin directory \"{}\"",
+                        out_dir.display()
+                    )
+                })?;
             }
             let text = if dry_run {
-                format!("Output plugin directory \"{}\" would be created", out_dir.display())
+                format!(
+                    "Output plugin directory \"{}\" would be created",
+                    out_dir.display()
+                )
             } else {
-                format!("Output plugin directory \"{}\" was created", out_dir.display())
+                format!(
+                    "Output plugin directory \"{}\" was created",
+                    out_dir.display()
+                )
             };
             msg(text, 0, cfg, log)?;
         }
@@ -66,7 +80,11 @@ pub fn write_output_plugin(
     } else {
         format!("Output plugin {name:?} would be written")
     };
-    if !text.is_empty() && h.g.contains_non_external_refs && level == 1 && !matches!(h.g.list_options.mode, Mode::Grass) {
+    if !text.is_empty()
+        && h.g.contains_non_external_refs
+        && level == 1
+        && !matches!(h.g.list_options.mode, Mode::Grass)
+    {
         if plugins_differ_insignificantly {
             if dry_run {
                 write!(text, ". New game would not be required.")?;
@@ -74,7 +92,10 @@ pub fn write_output_plugin(
                 write!(text, ". New game is not required.")?;
             }
         } else if !dry_run {
-            write!(text, ". It contains reindexed references most likely, so new game is recommended.")?;
+            write!(
+                text,
+                ". It contains reindexed references most likely, so new game is recommended."
+            )?;
         } else {
             write!(
                 text,
@@ -102,7 +123,8 @@ fn is_plugin_equal_to_previous(
 ) -> Result<(bool, String)> {
     let mut almost_equal_text = String::new();
     let mut only_size_of_masters_changed = false;
-    let mut text = format!("Output plugin {name:?} differs from previous version. First difference is: ");
+    let mut text =
+        format!("Output plugin {name:?} differs from previous version. First difference is: ");
     if new_plugin.objects.len() != old_plugin.objects.len() {
         write!(
             text,
@@ -161,9 +183,12 @@ fn is_plugin_equal_to_previous(
                                 write!(
                                     text,
                                     "records number was changed from \"{}\" to \"{}\" in header.",
-                                    old_header_stripped.num_objects, new_header_stripped.num_objects,
+                                    old_header_stripped.num_objects,
+                                    new_header_stripped.num_objects,
                                 )?;
-                            } else if new_header_stripped.masters.len() != old_header_stripped.masters.len() {
+                            } else if new_header_stripped.masters.len()
+                                != old_header_stripped.masters.len()
+                            {
                                 write!(
                                     text,
                                     "masters number was changed from \"{}\" to \"{}\" in header.",
@@ -196,7 +221,11 @@ fn is_plugin_equal_to_previous(
                         || new_cell.water_height != old_cell.water_height
                         || new_cell.atmosphere_data != old_cell.atmosphere_data
                     {
-                        write!(text, "cell properties were changed in \"{}\".", get_cell_name(new_cell))?;
+                        write!(
+                            text,
+                            "cell properties were changed in \"{}\".",
+                            get_cell_name(new_cell)
+                        )?;
                         return Ok((false, text));
                     };
                     let mut new_refs: Vec<&Reference> = new_cell.references.values().collect();
@@ -204,11 +233,19 @@ fn is_plugin_equal_to_previous(
                     let mut old_refs: Vec<&Reference> = old_cell.references.values().collect();
                     references_sorted(&mut old_refs);
                     if new_refs != old_refs {
-                        write!(text, "references were changed in \"{}\".", get_cell_name(new_cell))?;
+                        write!(
+                            text,
+                            "references were changed in \"{}\".",
+                            get_cell_name(new_cell)
+                        )?;
                         return Ok((false, text));
                     }
                 } else {
-                    write!(text, "previous version didn't contain cell \"{}\".", get_cell_name(new_cell))?;
+                    write!(
+                        text,
+                        "previous version didn't contain cell \"{}\".",
+                        get_cell_name(new_cell)
+                    )?;
                     return Ok((false, text));
                 }
             }
@@ -225,19 +262,31 @@ fn is_plugin_equal_to_previous(
     } else if only_size_of_masters_changed {
         (true, almost_equal_text)
     } else {
-        (true, format!("Output plugin {name:?} is equal to previous version"))
+        (
+            true,
+            format!("Output plugin {name:?} is equal to previous version"),
+        )
     })
 }
 
 fn get_no_compare_and_dry_run(level: u8, h: &Helper) -> Result<(bool, bool)> {
     match level {
         1 => Ok((h.g.list_options.no_compare, h.g.list_options.dry_run)),
-        2 => Ok((h.g.list_options.no_compare_secondary, h.g.list_options.dry_run_secondary)),
-        _ => Err(anyhow!("Bug: wrong plugin operation level passed to write_output_plugin function")),
+        2 => Ok((
+            h.g.list_options.no_compare_secondary,
+            h.g.list_options.dry_run_secondary,
+        )),
+        _ => Err(anyhow!(
+            "Bug: wrong plugin operation level passed to write_output_plugin function"
+        )),
     }
 }
 
-fn add_missing_plugin_stats(level: u8, plugin_objects: &[TES3Object], h: &mut Helper) -> Result<()> {
+fn add_missing_plugin_stats(
+    level: u8,
+    plugin_objects: &[TES3Object],
+    h: &mut Helper,
+) -> Result<()> {
     #[allow(clippy::wildcard_enum_match_arm)]
     if level == 1 {
         for object in plugin_objects {
@@ -255,7 +304,8 @@ fn add_missing_plugin_stats(level: u8, plugin_objects: &[TES3Object], h: &mut He
                 TES3Object::Static(_) => h.g.stats_tng.stat(StatsUpdateKind::ResultUnique),
                 TES3Object::Cell(ref cell) => {
                     h.g.stats_tng.cell(StatsUpdateKind::ResultUnique);
-                    h.g.stats_tng.instances_total_add_count(cell.references.len())?;
+                    h.g.stats_tng
+                        .instances_total_add_count(cell.references.len())?;
                 }
                 _ => continue,
             }

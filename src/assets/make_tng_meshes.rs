@@ -10,9 +10,17 @@ use std::{
 };
 use tes3::esp::{Plugin, Static};
 
-pub fn make_tng_meshes(mut dir: PathBuf, out: &Out, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    select_meshes(out, h, h.g.config_index, cfg, log).with_context(|| "Failed to select meshes to use as grass")?;
-    read_meshes(h, h.g.config_index).with_context(|| "Failed to read meshes that would be used as grass")?;
+pub fn make_tng_meshes(
+    mut dir: PathBuf,
+    out: &Out,
+    h: &mut Helper,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
+    select_meshes(out, h, h.g.config_index, cfg, log)
+        .with_context(|| "Failed to select meshes to use as grass")?;
+    read_meshes(h, h.g.config_index)
+        .with_context(|| "Failed to read meshes that would be used as grass")?;
     get_new_mesh_names(&mut dir, h, h.g.config_index, cfg, log)
         .with_context(|| "Failed to make names for newly added grass meshes")?;
     write_meshes(&dir, h, cfg, log).with_context(|| "Failed to write new grass meshes")?;
@@ -31,15 +39,19 @@ fn select_meshes(out: &Out, h: &mut Helper, idx: usize, cfg: &Cfg, log: &mut Log
             let fallback_plugin = cfg.advanced.turn_normal_grass_stat_ids.source_map.get(stat_id).context(format!(
                 "Bug: fallback_plugin not found in cfg.advanced.turn_normal_grass_stat_ids.source_map.get({stat_id})"
             ))?;
-            if h.g.plugins_processed.iter().any(|x| &x.name_low == fallback_plugin) {
+            if h.g
+                .plugins_processed
+                .iter()
+                .any(|x| &x.name_low == fallback_plugin)
+            {
                 return Err(anyhow!(
                     "Failed to find STAT record \"{stat_id}\", fallback plugin \"{fallback_plugin}\" was already processed"
                 ));
             }
             let fallback_static =
-                h.t.fallback_statics
-                    .get_mut(idx)
-                    .with_context(|| format!("Bug: indexing slicing h.t.fallback_statics[{idx}]"))?;
+                h.t.fallback_statics.get_mut(idx).with_context(|| {
+                    format!("Bug: indexing slicing h.t.fallback_statics[{idx}]")
+                })?;
             if !fallback_static.contains_key(fallback_plugin) {
                 let mut success = false;
                 for plugin_name in
@@ -50,8 +62,15 @@ fn select_meshes(out: &Out, h: &mut Helper, idx: usize, cfg: &Cfg, log: &mut Log
                         .contents
                 {
                     if plugin_name.to_lowercase().ends_with(fallback_plugin) {
-                        success = get_fallback_statics(stat_id, plugin_name, fallback_plugin, fallback_static, cfg, log)
-                            .with_context(|| "Failed to read fallback plugin \"{fallback_plugin}\"")?;
+                        success = get_fallback_statics(
+                            stat_id,
+                            plugin_name,
+                            fallback_plugin,
+                            fallback_static,
+                            cfg,
+                            log,
+                        )
+                        .with_context(|| "Failed to read fallback plugin \"{fallback_plugin}\"")?;
                         break;
                     }
                 }
@@ -84,7 +103,9 @@ fn select_meshes(out: &Out, h: &mut Helper, idx: usize, cfg: &Cfg, log: &mut Log
                     get_loose_meshes(
                         &h.t.game_configs
                             .get(idx)
-                            .with_context(|| format!("Bug: indexing slicing h.t.game_configs[{idx}]"))?
+                            .with_context(|| {
+                                format!("Bug: indexing slicing h.t.game_configs[{idx}]")
+                            })?
                             .load_order,
                         asset,
                         h.g.list_options.ignore_important_errors,
@@ -92,13 +113,20 @@ fn select_meshes(out: &Out, h: &mut Helper, idx: usize, cfg: &Cfg, log: &mut Log
                     )
                     .with_context(|| "Failed to find loose meshes")?;
                 }
-                let loose = asset.meshes.loose.files.get(&mesh_name).map(ToOwned::to_owned);
+                let loose = asset
+                    .meshes
+                    .loose
+                    .files
+                    .get(&mesh_name)
+                    .map(ToOwned::to_owned);
                 let bsa = if loose.is_none() || !h.g.list_options.prefer_loose_over_bsa {
                     if !asset.meshes.bsa.scanned {
                         get_bsa_meshes(
                             &h.t.game_configs
                                 .get(idx)
-                                .with_context(|| format!("Bug: indexing slicing h.t.game_configs[{idx}]"))?
+                                .with_context(|| {
+                                    format!("Bug: indexing slicing h.t.game_configs[{idx}]")
+                                })?
                                 .load_order,
                             asset,
                             cfg,
@@ -110,7 +138,10 @@ fn select_meshes(out: &Out, h: &mut Helper, idx: usize, cfg: &Cfg, log: &mut Log
                     None
                 };
                 if loose.is_none() && bsa.is_none() {
-                    return Err(anyhow!("Failed to find mesh file used by STAT record \"{}\"", stat.id));
+                    return Err(anyhow!(
+                        "Failed to find mesh file used by STAT record \"{}\"",
+                        stat.id
+                    ));
                 }
                 v.insert(TurnNormalGrass {
                     stat_records: vec![stat.clone()],
@@ -164,7 +195,13 @@ fn read_meshes(h: &mut Helper, idx: usize) -> Result<()> {
     Ok(())
 }
 
-fn get_new_mesh_names(dir: &mut PathBuf, h: &mut Helper, idx: usize, cfg: &Cfg, log: &mut Log) -> Result<()> {
+fn get_new_mesh_names(
+    dir: &mut PathBuf,
+    h: &mut Helper,
+    idx: usize,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
     let failed_name_guess_message_verbosity = 3;
     msg(
         "  Picking names for newly added grass meshes:",
@@ -180,10 +217,9 @@ fn get_new_mesh_names(dir: &mut PathBuf, h: &mut Helper, idx: usize, cfg: &Cfg, 
     for (original_name, tng) in &mut h.g.turn_normal_grass {
         let path = Path::new(&original_name);
         let mut name_path = cfg.guts.grass_subdir.path_buf.clone();
-        name_path.push(
-            path.file_name()
-                .context(format!("Bug: failed to get file_name from \"{original_name}\""))?,
-        );
+        name_path.push(path.file_name().context(format!(
+            "Bug: failed to get file_name from \"{original_name}\""
+        ))?);
         let mut name = name_path.to_string_lossy().into_owned();
         for n in 0..cfg.guts.turn_normal_grass_new_name_retries {
             if n > 0 {
@@ -192,7 +228,9 @@ fn get_new_mesh_names(dir: &mut PathBuf, h: &mut Helper, idx: usize, cfg: &Cfg, 
                     name_path.push(format!(
                         "{}_{:02}.nif",
                         path.file_stem()
-                            .context(format!("Bug: failed to get file_stem from \"{original_name}\""))?
+                            .context(format!(
+                                "Bug: failed to get file_stem from \"{original_name}\""
+                            ))?
                             .to_string_lossy(),
                         n
                     ));
@@ -255,7 +293,12 @@ fn get_new_mesh_names(dir: &mut PathBuf, h: &mut Helper, idx: usize, cfg: &Cfg, 
 
 fn write_meshes(dir: &Path, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<()> {
     if !dir.exists() {
-        create_dir_all(dir).with_context(|| format!("Failed to create output meshes directory {:?}", dir.display()))?;
+        create_dir_all(dir).with_context(|| {
+            format!(
+                "Failed to create output meshes directory {:?}",
+                dir.display()
+            )
+        })?;
     }
     let results: Vec<(bool, &PathBuf)> =
         h.g.turn_normal_grass
@@ -273,7 +316,11 @@ fn write_meshes(dir: &Path, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
                         Err(err) => {
                             return Err(anyhow!(
                                 "Failed to {} file \"{}\" with error: \"{:#}\"",
-                                if old_data.is_empty() { "create" } else { "truncate" },
+                                if old_data.is_empty() {
+                                    "create"
+                                } else {
+                                    "truncate"
+                                },
                                 &turn_normal_grass.new_path.display(),
                                 err
                             ))
@@ -282,7 +329,10 @@ fn write_meshes(dir: &Path, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
                     };
                     let mut f = BufWriter::new(file);
                     if f.write_all(&turn_normal_grass.file_contents).is_err() {
-                        return Err(anyhow!("Failed to write into file \"{}\"", &turn_normal_grass.new_path.display(),));
+                        return Err(anyhow!(
+                            "Failed to write into file \"{}\"",
+                            &turn_normal_grass.new_path.display(),
+                        ));
                     }
                     if f.flush().is_err() {
                         return Err(anyhow!(
@@ -312,9 +362,22 @@ fn write_meshes(dir: &Path, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
     msg(text, 0, cfg, log)?;
     for (written, path) in results {
         if written {
-            msg(format!("    Mesh was written: {}", path.display()), 1, cfg, log)?;
+            msg(
+                format!("    Mesh was written: {}", path.display()),
+                1,
+                cfg,
+                log,
+            )?;
         } else {
-            msg(format!("    Mesh was untoched(already the same): {}", path.display()), 2, cfg, log)?;
+            msg(
+                format!(
+                    "    Mesh was untoched(already the same): {}",
+                    path.display()
+                ),
+                2,
+                cfg,
+                log,
+            )?;
         }
     }
     Ok(())
@@ -337,7 +400,12 @@ fn get_fallback_statics(
     let mut statics_index = HashMap::new();
     let mut statics = Vec::new();
     for record in plugin.objects_of_type::<Static>() {
-        if cfg.advanced.turn_normal_grass_stat_ids.set.contains(&record.id.to_lowercase()) {
+        if cfg
+            .advanced
+            .turn_normal_grass_stat_ids
+            .set
+            .contains(&record.id.to_lowercase())
+        {
             statics_index.insert(record.id.to_lowercase(), statics.len());
             statics.push(record.clone());
         }
