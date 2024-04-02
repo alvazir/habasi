@@ -43,7 +43,7 @@ pub(in crate::config) struct Options {
     ///     -m "MergedGhostRevenge.esp, glob:ghostr*"
     ///
     ///   Regex: The most powerful pattern type, though lacks glob's multi-directory access. Defined by prepending pattern with "regex:". Case-insensitive by default, sorted by modification time by default. Examples(produce the same result):
-    ///     -m "MergedGhostRevenge.esp, glob:^ghostr.*"
+    ///     -m "MergedGhostRevenge.esp, regex:^ghostr.*"
     ///
     ///   All of these patterns may be mixed with plugin names and list options. Example:
     ///     -m "out.esp, replace, glob:**/*.omwaddon, regex:^repopulated.*es[mp], Animated_Morrowind - merged.esp" OAAB*Ship*TR* PB_AStrangePlant.esp
