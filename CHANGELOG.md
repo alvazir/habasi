@@ -9,6 +9,7 @@ Miscellaneous
 
 * Massive code refactoring(mostly based on non-default clippy lints)
 * Fix errors in --help and README.md
+* Make TNG meshes log lines order consistent between runs by sorting
 
 ## 0.3.1 (2024-01-16)
 

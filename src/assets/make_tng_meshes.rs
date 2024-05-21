@@ -29,7 +29,10 @@ pub fn make_tng_meshes(
 
 #[allow(clippy::too_many_lines)]
 fn select_meshes(out: &Out, h: &mut Helper, idx: usize, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    for stat_id in &h.g.found_stat_ids {
+    let mut found_stat_ids = h.g.found_stat_ids.iter().collect::<Vec<&String>>();
+    // COMMENT: sort by path so that logs remain consistent between runs
+    found_stat_ids.sort_unstable();
+    for stat_id in found_stat_ids {
         let stat = if let Some(index) = h.g.r.stat.get(stat_id) {
             &out.stat
                 .get(*index)
@@ -214,7 +217,11 @@ fn get_new_mesh_names(
     let dir_canonicalized = dir
         .canonicalize()
         .map_or_else(|_| dir.clone(), |dir_canonicalized| dir_canonicalized);
-    for (original_name, tng) in &mut h.g.turn_normal_grass {
+    let mut h_g_turn_normal_grass: Vec<(&String, &mut TurnNormalGrass)> =
+        h.g.turn_normal_grass.iter_mut().collect();
+    // COMMENT: sort by path so that logs remain consistent between runs
+    h_g_turn_normal_grass.sort_unstable_by_key(|x| x.0);
+    for (original_name, tng) in h_g_turn_normal_grass {
         let path = Path::new(&original_name);
         let mut name_path = cfg.guts.grass_subdir.path_buf.clone();
         name_path.push(path.file_name().context(format!(
@@ -300,7 +307,7 @@ fn write_meshes(dir: &Path, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
             )
         })?;
     }
-    let results: Vec<(bool, &PathBuf)> =
+    let mut results: Vec<(bool, &PathBuf)> =
         h.g.turn_normal_grass
             .par_iter_mut()
             .map(|(_, turn_normal_grass)| -> Result<(bool, &PathBuf), _> {
@@ -344,6 +351,8 @@ fn write_meshes(dir: &Path, h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<
                 }
             })
             .collect::<Result<Vec<_>>>()?;
+    // COMMENT: sort by path so that logs remain consistent between runs
+    results.sort_by_key(|x| x.1);
     let total_count = results.len();
     #[allow(clippy::pattern_type_mismatch)]
     let written_count = results.iter().filter(|(written, _)| *written).count();
