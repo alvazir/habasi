@@ -43,7 +43,8 @@ fn exclude_non_grass_statics(
             stats.push(stat);
         } else {
             removed_record_ids.push(format!(
-                "    Record STAT: {} was excluded from the result because it's not a grass static(mesh path {:?} doesn't start with \"grass\")",
+                // "    Record STAT: {} was excluded from the result because it's not a grass static(mesh path {:?} doesn't start with \"grass\")",
+                "    Record STAT: {} was excluded from the result because it's not a grass static(mesh path \"{}\" doesn't start with \"grass\")",
                 &stat.0.id,
                 &stat.0.mesh
             ));
