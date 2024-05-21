@@ -257,7 +257,7 @@ fn get_new_mesh_names(
                     .get(&name)
             {
                 if !found_mesh_path.starts_with(&dir_canonicalized) {
-                    let text = format!("    Will try again. Name \"{}\" picked for mesh \"{}\" doesn't fit,\n      because there is already the same name at path \"{}\".", name, original_name, found_mesh_path.display());
+                    let text = format!("    Retrying: Name \"{}\" picked for mesh \"{}\" doesn't fit because there is the same name already at path \"{}\".", name, original_name, found_mesh_path.display());
                     msg(text, failed_name_guess_message_verbosity, cfg, log)?;
                     continue;
                 }

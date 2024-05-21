@@ -510,7 +510,7 @@ fn make_tng_statics(name: &str, h: &Helper, cfg: &Cfg, log: &mut Log) -> Result<
             let mesh = tng.new_name_low.replace('/', "\\");
             write!(
                 text,
-                "\n    STAT \"{}\" points to added mesh \"{}\" copied from:\n      {}",
+                "\n    STAT \"{}\" points to added mesh \"{}\" copied from {}",
                 stat.id, mesh, tng.src_info
             )?;
             tng_statics.push(Static {

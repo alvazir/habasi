@@ -8,8 +8,10 @@
 Miscellaneous
 
 * Massive code refactoring(mostly based on non-default clippy lints)
-* Fix errors in --help and README.md
-* Make TNG meshes log lines order consistent between runs by sorting
+* Fix text errors in --help and README.md
+* Slightly improve logging:
+  * Compact TNG two-line logs into one-liners
+  * Make TNG meshes log lines order consistent between runs by sorting
 
 ## 0.3.1 (2024-01-16)
 
