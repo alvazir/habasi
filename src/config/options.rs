@@ -675,8 +675,8 @@ fn arg_get_help(arg: &Arg) -> Result<StyledStr> {
 
 fn check_long_arg_names_and_aliases(string_raw: &str, command: &clap::Command) -> Result<()> {
     let mut string = string_raw.to_lowercase().replace('-', "_");
-    if let Some(stripped) = string.strip_prefix("__") {
-        string = stripped.to_owned();
+    if string.starts_with("__") {
+        string.replace_range(.."__".len(), "");
     }
     match string.as_ref() {
         "help" => return Err(anyhow!("Print help (see a summary with '-h')")),

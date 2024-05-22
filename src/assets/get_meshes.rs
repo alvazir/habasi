@@ -96,7 +96,8 @@ pub(in crate::assets) fn get_loose_meshes(
                         broken_symlinks.len()
                     );
                     msg_no_log(&text, 0, cfg);
-                    text = "  Broken symlink: ".to_owned();
+                    text.clear();
+                    text.push_str("  Broken symlink: ");
                     text.push_str(&broken_symlinks.join("\n  Broken symlink: "));
                     msg_no_log(text, 1, cfg);
                 }

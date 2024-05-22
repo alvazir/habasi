@@ -271,7 +271,9 @@ pub fn check_settings_version(settings_file: &mut SettingsFile) -> Result<()> {
                 let version_raw = &line.strip_prefix(settings_version_prefix);
                 #[allow(clippy::shadow_reuse)]
                 if let Some(version_raw) = *version_raw {
-                    detected_settings_version = version_raw.trim().to_owned();
+                    version_raw
+                        .trim()
+                        .clone_into(&mut detected_settings_version);
                     break;
                 }
             }

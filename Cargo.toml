@@ -3,7 +3,7 @@ name = "habasi"
 version = "0.3.1"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
-rust-version = "1.77.1"
+rust-version = "1.77.2"
 description = "Habasi - TES3 plugin merging and utility tool"
 readme = "README.md"
 homepage = "https://www.nexusmods.com/morrowind/mods/53002"
@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 [dependencies.tes3]
 # path = "../tes3"
 git = "https://github.com/Greatness7/tes3"
-rev = "89a3418"
+rev = "8512f3b"
 # branch = "dev"
 default-features = false
 features = ["esp"]
@@ -30,9 +30,9 @@ clap = { version = "~4.5.4", features = ["derive", "suggestions", "wrap_help"] }
 # settings file
 confique = { version = "~0.2.5", default-features = false, features = ["toml"] }
 # required by confique
-serde = "~1.0.197"
+serde = "~1.0.202"
 # error management
-anyhow = "~1.0.81"
+anyhow = "~1.0.86"
 # find openmw.cfg
 dirs = "~5.0.1"
 # find files in parallel
@@ -40,11 +40,11 @@ rayon = "~1.10.0"
 # better fs errors
 fs-err = "~2.11.0"
 # references processing
-hashbrown = { version = "~0.14.3", features = ["rayon"] }
+hashbrown = { version = "~0.14.5", features = ["rayon"] }
 # find files
 walkdir = "~2.5.0"
 # create id for sscr with empty id
-crc = "~3.0.1"
+crc = "~3.2.1"
 # provide list of plugins via regex
 regex = { version = "~1.10.4", default-features = false, features = ["std", "unicode-case"] }
 # provide list of plugins via glob
@@ -74,11 +74,11 @@ codegen-units = 1
 [lints.rust]
 warnings = { level = "warn", priority = -2 }
 unsafe_code = "warn"
-future_incompatible = "warn"
-nonstandard_style = "warn"
+future_incompatible = { level = "warn", priority = -3 }
+nonstandard_style = { level = "warn", priority = -3 }
 trivial_casts = "warn"
 trivial_numeric_casts = "warn"
-unused = "warn"
+unused = { level = "warn", priority = -3 }
 
 [lints.rustdoc]
 missing_crate_level_docs = "warn"
@@ -86,11 +86,11 @@ missing_crate_level_docs = "warn"
 [lints.clippy]
 all = { level = "deny", priority = -1 } # Includes groups: correctness, suspicious, style, complexity, perf
 # 4 more groups: pedantic, restriction, nursery, cargo
-pedantic = "warn"
-nursery = "warn"
-cargo = "warn"
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
 multiple_crate_versions = { level = "allow", priority = 1 } # I have no idea how to overcome the underlying problem
-restriction = "warn"
+restriction = { level = "warn", priority = -1 }
 blanket_clippy_restriction_lints = { level = "allow", priority = 1 } # Disable warning about restriction group
 self_named_module_files = { level = "allow", priority = 1 } # Matter of preference instead of mod_module_names
 single_call_fn = { level = "allow", priority = 1 } # It's not bad

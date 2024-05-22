@@ -214,9 +214,7 @@ fn get_new_mesh_names(
     )?;
     let mut grass_meshes: HashSet<String> = HashSet::new();
     dir.push(&cfg.guts.meshes_dir.string);
-    let dir_canonicalized = dir
-        .canonicalize()
-        .map_or_else(|_| dir.clone(), |dir_canonicalized| dir_canonicalized);
+    let dir_canonicalized = dir.canonicalize().unwrap_or_else(|_| dir.clone());
     let mut h_g_turn_normal_grass: Vec<(&String, &mut TurnNormalGrass)> =
         h.g.turn_normal_grass.iter_mut().collect();
     // COMMENT: sort by path so that logs remain consistent between runs
@@ -231,7 +229,7 @@ fn get_new_mesh_names(
         for n in 0..cfg.guts.turn_normal_grass_new_name_retries {
             if n > 0 {
                 if n < cfg.guts.turn_normal_grass_new_name_retries {
-                    name_path = cfg.guts.grass_subdir.path_buf.clone();
+                    name_path.clone_from(&cfg.guts.grass_subdir.path_buf);
                     name_path.push(format!(
                         "{}_{:02}.nif",
                         path.file_stem()

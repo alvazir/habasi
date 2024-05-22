@@ -12,7 +12,11 @@ pub(super) struct Settings {
     pub(super) guts: Guts,
 }
 
-#[allow(clippy::struct_excessive_bools)]
+#[allow(
+    clippy::struct_excessive_bools,
+    clippy::doc_markdown,
+    clippy::doc_link_with_quotes
+)]
 #[derive(Config)]
 pub(super) struct Options {
     /// Description of all the options is provided with --help-option <OPTION> or --help. There are two lines per each option: default value and set value. Uncomment second line for the needed option and set the value.
@@ -138,6 +142,7 @@ pub(super) struct Options {
     pub(super) skip_from_use_load_order: String,
 }
 
+#[allow(clippy::doc_markdown, clippy::doc_link_with_quotes)]
 #[derive(Config)]
 pub(super) struct Advanced {
     /// [grass_filter] This filter works only in "grass" mode. By default it filters out "UNKNOWN_GRASS" records from Remiros Groundcover. It's possible to filter more by adding to the list(i.e. if you don't like some kind of grass or added mushrooms etc). Values are case insensitive.
@@ -209,6 +214,7 @@ pub(super) struct Advanced {
     pub(super) keep_only_last_info_ids: Vec<Vec<String>>,
 }
 
+#[allow(clippy::doc_markdown)]
 #[derive(Config)]
 pub(super) struct Guts {
     /// Guts of the program. Use at your own risk ;-)
