@@ -919,7 +919,6 @@ pub fn get_regex_plugin_list(
     Ok(regex_plugin_list)
 }
 
-#[allow(clippy::too_many_lines)]
 fn get_regex_sublists(
     plugin_list: &[String],
     index: usize,
@@ -928,6 +927,7 @@ fn get_regex_sublists(
     log: &mut Log,
 ) -> Result<Vec<(usize, Vec<String>)>> {
     let mut regex_sublists = Vec::new();
+    let mut sublist = Vec::new();
     let mut split: Vec<&str>;
     for (subindex, item) in plugin_list
         .get(index..)
@@ -954,16 +954,16 @@ fn get_regex_sublists(
             continue;
         }
         let mut sort_by_name = list_options.regex_sort_by_name;
-        let mut sublist: Vec<RegexPluginInfo> = Vec::new();
         let mut plugin_pathbuf = list_options.base_dir.clone();
         plugin_pathbuf.push(pattern);
-        let mut dot = false;
+        let mut remove_leading_dot = false;
+        sublist.clear();
         if let Err(error) = if is_regex {
             get_regex_plugins(
                 &mut sublist,
                 &plugin_pathbuf,
                 &mut sort_by_name,
-                &mut dot,
+                &mut remove_leading_dot,
                 list_options,
                 cfg,
                 log,
@@ -999,25 +999,7 @@ fn get_regex_sublists(
         } else {
             sublist.sort_by(|a, b| a.time.cmp(&b.time).then(a.path.cmp(&b.path)));
         }
-        let mut regex_sublist = sublist
-            .into_iter()
-            .map(|regex_plugin_info| regex_plugin_info.path.to_string_lossy().into_owned())
-            .collect::<Vec<String>>();
-        if list_options.base_dir != PathBuf::new() || dot {
-            let prefix = if dot {
-                format!(".{MAIN_SEPARATOR}")
-            } else {
-                format!(
-                    "{}{MAIN_SEPARATOR}",
-                    list_options.base_dir.to_string_lossy()
-                )
-            };
-            for name in &mut regex_sublist {
-                if let Some(stripped) = name.strip_prefix(&prefix) {
-                    *name = stripped.to_owned();
-                }
-            }
-        };
+        let regex_sublist = get_regex_sublist(&sublist, remove_leading_dot, list_options);
         if regex_sublist.is_empty() {
             let text = format!("Nothing found for pattern: {pattern:?}");
             err_or_ignore(text, list_options.ignore_important_errors, false, cfg, log)?;
@@ -1035,6 +1017,36 @@ fn get_regex_sublists(
         regex_sublists.push((subindex, regex_sublist));
     }
     Ok(regex_sublists)
+}
+
+fn get_regex_sublist(
+    sublist: &[RegexPluginInfo],
+    remove_leading_dot: bool,
+    list_options: &ListOptions,
+) -> Vec<String> {
+    let prefix = if remove_leading_dot {
+        format!(".{MAIN_SEPARATOR}")
+    } else if list_options.base_dir != PathBuf::new() {
+        format!(
+            "{}{MAIN_SEPARATOR}",
+            list_options.base_dir.to_string_lossy()
+        )
+    } else {
+        String::new()
+    };
+    sublist
+        .iter()
+        .map(|regex_plugin_info| regex_plugin_info.path.to_string_lossy())
+        .map(|path_str| {
+            if prefix.is_empty() {
+                path_str.into_owned()
+            } else if let Some(stripped) = path_str.strip_prefix(&prefix) {
+                stripped.to_owned()
+            } else {
+                path_str.into_owned()
+            }
+        })
+        .collect::<Vec<String>>()
 }
 
 fn get_plugin_time(
