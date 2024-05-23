@@ -1,21 +1,26 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
+release_binary="habasi"
 release_folder="Habasi"
-release_zip="Habasi.zip"
+release_zip="${release_folder}.zip"
+osxcross_path="${HOME}/projects/osxcross/target/bin" # only used for macos builds
 
 build() {
-set -x
-cargo build --profile release-lto --target x86_64-unknown-linux-gnu || return 1
-cargo build --profile release-lto --target x86_64-unknown-linux-musl || return 1
-cargo ndk -t arm64-v8a build --profile release-lto || return 1
-cargo xwin build --profile release-lto --target x86_64-pc-windows-msvc || return 1
-cargo build --profile release-lto --target x86_64-pc-windows-gnu || return 1
-PATH="$HOME/projects/osxcross/target/bin:$PATH" cargo build --profile release-lto-darwin --target x86_64-apple-darwin --config target.x86_64-apple-darwin.linker=\"x86_64-apple-darwin21.4-clang\" --config target.x86_64-apple-darwin.ar=\"x86_64-apple-darwin21.4-ar\" || return 1
-PATH="$HOME/projects/osxcross/target/bin:$PATH" cargo build --profile release-lto-darwin --target aarch64-apple-darwin --config target.aarch64-apple-darwin.linker=\"aarch64-apple-darwin21.4-clang\" --config target.aarch64-apple-darwin.ar=\"aarch64-apple-darwin21.4-ar\" || return 1
-set +x
+  set -x
+  cargo build --target x86_64-unknown-linux-gnu --profile release-lto || return 1
+  cargo build --target x86_64-unknown-linux-musl --profile release-lto || return 1
+  cargo ndk --target arm64-v8a build --profile release-lto || return 1
+  cargo xwin build --target x86_64-pc-windows-msvc --profile release-lto || return 1
+  cargo build --profile release-lto --target x86_64-pc-windows-gnu || return 1
+  PATH="${osxcross_path}:$PATH" cargo build --target x86_64-apple-darwin --profile release-lto-darwin\
+    --config target.x86_64-apple-darwin.linker=\"x86_64-apple-darwin21.4-clang\"\
+    --config target.x86_64-apple-darwin.ar=\"x86_64-apple-darwin21.4-ar\" || return 1
+  PATH="${osxcross_path}:$PATH" cargo build --target aarch64-apple-darwin --profile release-lto-darwin\
+    --config target.aarch64-apple-darwin.linker=\"aarch64-apple-darwin21.4-clang\"\
+    --config target.aarch64-apple-darwin.ar=\"aarch64-apple-darwin21.4-ar\" || return 1
+  set +x
 }
 
 zip() (
-
   if [ -d "${release_folder}" ]; then
     echo "${release_folder} exists"
     return 1
@@ -25,25 +30,25 @@ zip() (
   fi
   mkdir -pv "${release_folder}/linux_x86-64" || return 1
   cp    -vt "${release_folder}/linux_x86-64"\
-    "target/x86_64-unknown-linux-gnu/release-lto/habasi" || return 1
+    "target/x86_64-unknown-linux-gnu/release-lto/${release_binary}" || return 1
   mkdir -pv "${release_folder}/linux_x86-64_musl" || return 1
   cp    -vt "${release_folder}/linux_x86-64_musl"\
-    "target/x86_64-unknown-linux-musl/release-lto/habasi" || return 1
+    "target/x86_64-unknown-linux-musl/release-lto/${release_binary}" || return 1
   mkdir -pv "${release_folder}/android_aarch64" || return 1
   cp    -vt "${release_folder}/android_aarch64"\
-    "target/aarch64-linux-android/release-lto/habasi" || return 1
+    "target/aarch64-linux-android/release-lto/${release_binary}" || return 1
   mkdir -pv "${release_folder}/windows_x86-64_msvc" || return 1
   cp    -vt "${release_folder}/windows_x86-64_msvc"\
-    "target/x86_64-pc-windows-msvc/release-lto/habasi.exe" || return 1
+    "target/x86_64-pc-windows-msvc/release-lto/${release_binary}.exe" || return 1
   mkdir -pv "${release_folder}/windows_x86-64_gnu" || return 1
   cp    -vt "${release_folder}/windows_x86-64_gnu"\
-    "target/x86_64-pc-windows-gnu/release-lto/habasi.exe" || return 1
+    "target/x86_64-pc-windows-gnu/release-lto/${release_binary}.exe" || return 1
   mkdir -pv "${release_folder}/macos_x86-64" || return 1
   cp    -vt "${release_folder}/macos_x86-64"\
-    "target/x86_64-apple-darwin/release-lto-darwin/habasi" || return 1
+    "target/x86_64-apple-darwin/release-lto-darwin/${release_binary}" || return 1
   mkdir -pv "${release_folder}/macos_aarch64" || return 1
   cp    -vt "${release_folder}/macos_aarch64"\
-    "target/aarch64-apple-darwin/release-lto-darwin/habasi" || return 1
+    "target/aarch64-apple-darwin/release-lto-darwin/${release_binary}" || return 1
   cp   -rvt "${release_folder}/"\
     "_configuration_examples" || return 1
 
@@ -55,26 +60,28 @@ zip() (
 )
 
 main() {
-cargo clippy --all -- -D clippy::all -D clippy::pedantic -D warnings -A clippy::blanket-clippy-restriction-lints || return 1
-build || return 1
-if [ "${1}" == "zip" ]; then
-  zip || return 1
-fi
+  cargo clippy --all -- -D clippy::all -D clippy::pedantic -D warnings -A clippy::blanket-clippy-restriction-lints || return 1
+  build || return 1
+  if [ "${1}" = "zip" ]; then
+    zip || return 1
+  fi
 }
 
 main "$@" || echo "error"
 
 # [Build for your platform]
+#
 # RUSTFLAGS="-C target-cpu=native" cargo build --profile release-lto
 
 # [Preparations on arch-linux to build for other platforms]
+#
 # rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl x86_64-pc-windows-gnu x86_64-pc-windows-gnu x86_64-apple-darwin aarch64-apple-darwin
 # [Preparations:android]
 # yay -S android-ndk cargo-ndk
-# [Preparations:windows_GNU]
-# yay -S mingw-w64-gcc
 # [Preparations:windows_MSVC]
 # cargo install cargo-xwin
+# [Preparations:windows_GNU]
+# yay -S mingw-w64-gcc
 # [Preparations:macOS]
 # yay -S clang
 # # https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html
@@ -90,6 +97,7 @@ main "$@" || echo "error"
 # ./build.sh
 
 # [PGO template] Doesn't improve anything for this project.
+#
 # rustup component add llvm-tools-preview
 # rm -rf /tmp/pgo-data/
 # RUSTFLAGS="-C target-cpu=native -C profile-generate=/tmp/pgo-data" cargo build --profile release-lto
