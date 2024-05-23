@@ -7,12 +7,16 @@
 
 Miscellaneous
 
-* Massive code refactoring(mostly based on non-default clippy lints)
-* Fix text errors in --help and README.md
+* Massive code refactoring(mostly based on non-default clippy lints).
+* Fix text errors in --help and README.md.
 * Slightly improve logging:
-  * Compact TNG two-line logs into one-liners
-  * Make TNG meshes log lines order consistent between runs by sorting
-* State proper MSRV in Cargo.toml and README instead of current rust version
+  * Compact TNG two-line logs into one-liners.
+  * Make TNG meshes log lines order consistent between runs by sorting.
+* State proper MSRV in Cargo.toml and README instead of current rust version.
+* Binary downloads page:
+  * Add `Win7` Windows build to be used with Windows 7+ because Rust [1.78+ requires Windows 10+](https://releases.rs/docs/1.78.0/#compiler).
+  * Drop `GNU` Windows build because it's not needed.
+  * Remove `-msvc` suffix from Windows 10+ build's folder.
 
 ## 0.3.1 (2024-01-16)
 

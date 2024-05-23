@@ -10,7 +10,8 @@ build() {
   cargo build --target x86_64-unknown-linux-musl --profile release-lto || return 1
   cargo ndk --target arm64-v8a build --profile release-lto || return 1
   cargo xwin build --target x86_64-pc-windows-msvc --profile release-lto || return 1
-  cargo build --profile release-lto --target x86_64-pc-windows-gnu || return 1
+  cargo +1.77.2 xwin build --target x86_64-pc-windows-msvc --profile release-lto --target-dir "target/1.77.2_win7" || return 1
+  # cargo build --profile release-lto --target x86_64-pc-windows-gnu || return 1
   PATH="${osxcross_path}:$PATH" cargo build --target x86_64-apple-darwin --profile release-lto-darwin\
     --config target.x86_64-apple-darwin.linker=\"x86_64-apple-darwin21.4-clang\"\
     --config target.x86_64-apple-darwin.ar=\"x86_64-apple-darwin21.4-ar\" || return 1
@@ -37,12 +38,15 @@ zip() (
   mkdir -pv "${release_folder}/android_aarch64" || return 1
   cp    -vt "${release_folder}/android_aarch64"\
     "target/aarch64-linux-android/release-lto/${release_binary}" || return 1
-  mkdir -pv "${release_folder}/windows_x86-64_msvc" || return 1
-  cp    -vt "${release_folder}/windows_x86-64_msvc"\
+  mkdir -pv "${release_folder}/windows_x86-64" || return 1
+  cp    -vt "${release_folder}/windows_x86-64"\
     "target/x86_64-pc-windows-msvc/release-lto/${release_binary}.exe" || return 1
-  mkdir -pv "${release_folder}/windows_x86-64_gnu" || return 1
-  cp    -vt "${release_folder}/windows_x86-64_gnu"\
-    "target/x86_64-pc-windows-gnu/release-lto/${release_binary}.exe" || return 1
+  mkdir -pv "${release_folder}/windows_x86-64_win7" || return 1
+  cp    -vt "${release_folder}/windows_x86-64_win7"\
+    "target/1.77.2_win7/x86_64-pc-windows-msvc/release-lto/${release_binary}.exe" || return 1
+  # mkdir -pv "${release_folder}/windows_x86-64_gnu" || return 1
+  # cp    -vt "${release_folder}/windows_x86-64_gnu"\
+  #   "target/x86_64-pc-windows-gnu/release-lto/${release_binary}.exe" || return 1
   mkdir -pv "${release_folder}/macos_x86-64" || return 1
   cp    -vt "${release_folder}/macos_x86-64"\
     "target/x86_64-apple-darwin/release-lto-darwin/${release_binary}" || return 1
@@ -83,6 +87,10 @@ main "$@" || echo "error"
 # cargo install cargo-xwin
 # [Preparations:windows_GNU]
 # yay -S mingw-w64-gcc
+# [Preparations:windows_WIN7]
+# rustup install 1.77.2
+# rustup +1.77.2 target add x86_64-pc-windows-msvc
+# rustup +1.77.2 show
 # [Preparations:macOS]
 # yay -S clang
 # # https://wapl.es/rust/2019/02/17/rust-cross-compile-linux-to-macos.html
