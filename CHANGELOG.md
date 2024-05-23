@@ -12,6 +12,7 @@ Miscellaneous
 * Slightly improve logging:
   * Compact TNG two-line logs into one-liners
   * Make TNG meshes log lines order consistent between runs by sorting
+* State proper MSRV in Cargo.toml and README instead of current rust version
 
 ## 0.3.1 (2024-01-16)
 

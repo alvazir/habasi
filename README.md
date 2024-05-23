@@ -170,7 +170,7 @@ The most extreme cases of merging everything:
 
 <details>
 
-<summary>Habasi is written in Rust, so you'll need to grab a https://www.rust-lang.org in order to compile it. Habasi compiles with Rust 1.77.0(stable) or newer</summary>
+<summary>Habasi is written in Rust, so you'll need to grab a https://www.rust-lang.org in order to compile it. Habasi compiles with Rust 1.74.1 or newer</summary>
 
 ```shell
 git clone https://github.com/alvazir/habasi

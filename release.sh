@@ -61,6 +61,7 @@ zip() (
 
 main() {
   cargo clippy --all -- -D clippy::all -D clippy::pedantic -D warnings -A clippy::blanket-clippy-restriction-lints || return 1
+  cargo msrv verify || return 1
   build || return 1
   if [ "${1}" = "zip" ]; then
     zip || return 1
@@ -95,6 +96,8 @@ main "$@" || echo "error"
 # cd osxcross/
 # cp ../MacOSX12.3.sdk.tar.xz tarballs/
 # ./build.sh
+# [Preparations:msrv]
+# yay -S cargo-msrv
 
 # [PGO template] Doesn't improve anything for this project.
 #
