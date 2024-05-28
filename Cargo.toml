@@ -1,6 +1,6 @@
 [package]
 name = "habasi"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
 rust-version = "1.74.1"
@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 [dependencies.tes3]
 # path = "../tes3"
 git = "https://github.com/Greatness7/tes3"
-rev = "8512f3b"
+rev = "2aced3d"
 # branch = "dev"
 default-features = false
 features = ["esp"]
@@ -30,7 +30,7 @@ clap = { version = "~4.5.4", features = ["derive", "suggestions", "wrap_help"] }
 # settings file
 confique = { version = "~0.2.5", default-features = false, features = ["toml"] }
 # required by confique
-serde = "~1.0.202"
+serde = "~1.0.203"
 # error management
 anyhow = "~1.0.86"
 # find openmw.cfg

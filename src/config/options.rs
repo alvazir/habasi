@@ -1,7 +1,11 @@
 use anyhow::{anyhow, Context, Result};
 use clap::{builder::StyledStr, Arg, CommandFactory, Parser};
 
-#[allow(clippy::doc_markdown, clippy::struct_excessive_bools)]
+#[allow(
+    clippy::doc_markdown,
+    clippy::struct_excessive_bools,
+    clippy::doc_link_with_quotes
+)]
 #[derive(Parser)]
 #[command(
     author,
@@ -21,7 +25,7 @@ use clap::{builder::StyledStr, Arg, CommandFactory, Parser};
 pub(in crate::config) struct Options {
     /// List(s) of plugins to merge. This option is handy for one-shot merges. Settings file should be more convenient for "permanent" or longer lists , see --settings. There are 2 variants of --merge argument, primary(1) and secondary(2).
     ///
-    /// (1) Each list is a double-quoted(4) string that consists of output plugin name, optional list options("replace" in second example) and comma-separated list of plugins or plugin name patterns(3) to merge. Ouput plugin's name should come first. Examples:
+    /// (1) Each list is a double-quoted(4) string that consists of output plugin name, optional list options("replace" in second example) and comma-separated(5) list of plugins or plugin name patterns(3) to merge. Ouput plugin's name should come first. Examples:
     ///   "MergedGhostRevenge.esp, GhostRevenge.ESP, GhostRevenge_TR1912.esp"
     ///   "MergedPlugin01.esp, replace, Frozen in Time.esp, The Minotaurs Ring.esp, Cure all the Kwama Queens.ESP"
     ///
@@ -57,6 +61,12 @@ pub(in crate::config) struct Options {
     ///   Examples:
     ///     - "D:/Data Files" = "D:\\Data Files" = 'D:\Data Files' = '''D:\Data Files'''
     ///     - "C:/mods/mod with quote'.esp" = "C:\\mods\\mod with quote'.esp" = '''C:\mods\mod with quote'.esp'''
+    ///
+    /// (5) Plugin names with comma require special care. You may:
+    ///   - Prepend comma with backslash, e.g. ',' => '\,' (-m "out.esp, Umbra\, Blademaster.ESP")
+    ///   - Use settings file (merge = [["out.esp", "Umbra, Blademaster.ESP"]])
+    ///   - Use alternative variant of --merge option (-m out.esp "Umbra, Blademaster.ESP")
+    ///   - Use glob/regex pattern (-m "out.esp, regex:Umbra. Blademaster.ESP")
     #[arg(
         conflicts_with = "settings_write",
         short,

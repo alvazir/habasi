@@ -113,24 +113,70 @@ pub fn get_lists(
     opt: Option<Vec<String>>,
     set: Vec<Vec<String>>,
     arguments_tail: Vec<String>,
-) -> Vec<Vec<String>> {
-    opt.map_or(set, |list_strings| {
-        let mut lists = Vec::new();
+) -> Result<Vec<Vec<String>>> {
+    opt.map_or(Ok(set), |list_strings| {
+        let mut lists: Vec<Vec<String>> = Vec::new();
+        let escape = '\\';
+        let separator = ',';
+        let separator_str_length = separator.len_utf8();
+        let mut escaped_list_element = String::new();
+        let mut string_slice: &str;
+        let mut slice_start_offset: usize;
+        #[allow(clippy::string_slice)]
         for string in list_strings {
-            lists.push(
-                string
-                    .split(',')
-                    .map(|element| element.trim().to_owned())
-                    .collect::<Vec<String>>(),
-            );
+            let mut list = Vec::new();
+            slice_start_offset = 0;
+            for (char_byte_offset, character) in string.char_indices() {
+                if character == separator {
+                    string_slice = string
+                        .get(slice_start_offset..char_byte_offset)
+                        .with_context(|| format!(
+                                "Bug: indexing slicing string[{slice_start_offset}..{char_byte_offset}] in string = \"{string}\""
+                                ))?;
+                    if let Some(stripped_slice) = string_slice.strip_suffix(escape) {
+                        if escaped_list_element.is_empty() {
+                            escaped_list_element.push_str(stripped_slice.trim_start());
+                        } else {
+                            escaped_list_element.push_str(stripped_slice);
+                        }
+                        escaped_list_element.push(',');
+                    } else {
+                        push_list_element(string_slice, &mut escaped_list_element, &mut list);
+                    }
+                    slice_start_offset = char_byte_offset.checked_add(separator_str_length).with_context(|| {
+                        format!(
+                            "Bug: overflow adding separator_str_length = \"{separator_str_length}\" to char_byte_offset = \"{char_byte_offset}\" in string = \"{string}\"
+                            ")
+                    })?;
+                }
+            }
+            string_slice = string
+                .get(slice_start_offset..)
+                .with_context(|| format!("Bug: indexing slicing string[{slice_start_offset}..] in string = \"{string}\""))?;
+            push_list_element(string_slice, &mut escaped_list_element, &mut list);
+            lists.push(list);
         }
         if !arguments_tail.is_empty() {
             if let Some(list) = lists.last_mut() {
                 list.extend(arguments_tail);
             }
         }
-        lists
+        Ok(lists)
     })
+}
+
+fn push_list_element(
+    string_slice: &str,
+    escaped_list_element: &mut String,
+    list: &mut Vec<String>,
+) {
+    if escaped_list_element.is_empty() {
+        list.push(string_slice.trim().to_owned());
+    } else {
+        escaped_list_element.push_str(string_slice.trim_end());
+        list.push(escaped_list_element.clone());
+        escaped_list_element.clear();
+    }
 }
 
 pub fn check_mode(mode_str: &str) -> Result<Mode> {

@@ -164,7 +164,8 @@ impl Cfg {
         let preset_merge_load_order = opt_or_set_bool!(preset_merge_load_order);
         let preset_turn_normal_grass = opt_or_set_bool!(preset_turn_normal_grass);
         Ok(Self {
-            merge: get_lists(opt.merge, set.options.merge, opt.arguments_tail),
+            merge: get_lists(opt.merge, set.options.merge, opt.arguments_tail)
+                .with_context(|| "Failed to parse --merge lists")?,
             grass: opt_or_set_bool!(grass),
             no_log,
             log: get_log_file(no_log, &opt_or_set_some!(log), exe, dir)?,

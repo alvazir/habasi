@@ -3,7 +3,11 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
-## TBD
+## 0.3.2 (2024-05-28)
+
+Fixes
+
+* Allow specifying plugin names with comma in their name by escaping(prepending with backspace) in --merge option thanks to Lucius Martius' report(resolve [Issue-6](https://github.com/alvazir/habasi/issues/6)).
 
 Miscellaneous
 
