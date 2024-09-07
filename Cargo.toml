@@ -1,9 +1,9 @@
 [package]
 name = "habasi"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
-rust-version = "1.74.1"
+rust-version = "1.75.0"
 description = "Habasi - TES3 plugin merging and utility tool"
 readme = "README.md"
 homepage = "https://www.nexusmods.com/morrowind/mods/53002"
@@ -19,20 +19,20 @@ maintenance = { status = "actively-developed" }
 [dependencies.tes3]
 # path = "../tes3"
 git = "https://github.com/Greatness7/tes3"
-rev = "2aced3d"
+rev = "6f0843e"
 # branch = "dev"
 default-features = false
 features = ["esp"]
 
 [dependencies]
 # CLI
-clap = { version = "~4.5.4", features = ["derive", "suggestions", "wrap_help"] }
+clap = { version = "~4.5.17", features = ["derive", "suggestions", "wrap_help"] }
 # settings file
 confique = { version = "~0.2.5", default-features = false, features = ["toml"] }
 # required by confique
-serde = "~1.0.203"
+serde = "~1.0.210"
 # error management
-anyhow = "~1.0.86"
+anyhow = "~1.0.87"
 # find openmw.cfg
 dirs = "~5.0.1"
 # find files in parallel
@@ -46,7 +46,7 @@ walkdir = "~2.5.0"
 # create id for sscr with empty id
 crc = "~3.2.1"
 # provide list of plugins via regex
-regex = { version = "~1.10.4", default-features = false, features = ["std", "unicode-case"] }
+regex = { version = "~1.10.6", default-features = false, features = ["std", "unicode-case"] }
 # provide list of plugins via glob
 glob = "~0.3.1"
 # provide list of plugins via wildcards
@@ -66,7 +66,7 @@ codegen-units = 1
 
 [profile.release-lto-darwin]
 inherits = "release"
-# strip = true
+strip = false
 lto = true
 panic = "abort"
 codegen-units = 1
@@ -103,3 +103,4 @@ std_instead_of_alloc = { level = "allow", priority = 1 } # I don't need no_std i
 ref_patterns = { level = "allow", priority = 1 } # Matter of preference
 separated_literal_suffix = { level = "allow", priority = 1 } # I prefer separated
 pub_with_shorthand = { level = "allow", priority = 1 } # I prefer 'super' to 'in super'
+field_scoped_visibility_modifiers = { level = "allow", priority = 1 } # Scoped visibility methods are not needed in this project

@@ -16,7 +16,7 @@ Miscellaneous
 * Slightly improve logging:
   * Compact TNG two-line logs into one-liners.
   * Make TNG meshes log lines order consistent between runs by sorting.
-* State proper MSRV in Cargo.toml and README instead of current rust version.
+* State proper MSRV in Cargo.toml and README instead of current Rust version.
 * Binary downloads page:
   * Add `Win7` Windows build to be used with Windows 7+ because Rust [1.78+ requires Windows 10+](https://releases.rs/docs/1.78.0/#compiler).
   * Drop `GNU` Windows build because it's not needed.

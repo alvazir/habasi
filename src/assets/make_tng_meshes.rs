@@ -194,7 +194,7 @@ fn read_meshes(h: &mut Helper, idx: usize) -> Result<()> {
             }
             Ok(())
         })
-        .collect::<Result<_>>()?;
+        .collect::<Result<Vec<_>>>()?;
     Ok(())
 }
 

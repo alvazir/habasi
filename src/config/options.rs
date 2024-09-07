@@ -58,6 +58,7 @@ pub(in crate::config) struct Options {
     ///   - Replace backslash with slash, e.g. '\' => '/'
     ///   - Prepend backslash with another backslash(so-called escaping), e.g. '\' => '\\'
     ///   - Enclose string into single quotes instead of double quotes. If path contains single quote itself, then enclose string into triple single quotes
+    ///
     ///   Examples:
     ///     - "D:/Data Files" = "D:\\Data Files" = 'D:\Data Files' = '''D:\Data Files'''
     ///     - "C:/mods/mod with quote'.esp" = "C:\\mods\\mod with quote'.esp" = '''C:\mods\mod with quote'.esp'''
@@ -172,6 +173,7 @@ pub(in crate::config) struct Options {
     ///   2. Get load order from it
     ///   3. Scan only cell references and statics
     ///   4. Produce 2 output plugins:
+    ///
     ///     - "TurnNormalGrass-CONTENT.esp" with deleted references
     ///     - "TurnNormalGrass-GROUNDCOVER.esp" with new grass
     ///     - meshes folder with grass meshes(same meshes that were used for "normal" grass in your setup)
@@ -204,9 +206,9 @@ pub(in crate::config) struct Options {
     ///   2. Get load order from it
     ///   3. Merge plugins and report missing references.
     ///   4. Produce merged plugin "MergedLoadOrder.esp".
-    ///   4.1. (combined with preset-turn-normal-grass) Produce and merge -CONTENT into "MergedLoadOrder.esp".
+    ///      (combined with preset-turn-normal-grass) Produce and merge -CONTENT into "MergedLoadOrder.esp".
     ///   5. (if you use grass) Produce merged grass plugin "MergedLoadOrderGrass.esp".
-    ///   5.1. (combined with preset-turn-normal-grass) Produce and merge -GROUNDCOVER into "MergedLoadOrderGrass.esp".
+    ///      (combined with preset-turn-normal-grass) Produce and merge -GROUNDCOVER into "MergedLoadOrderGrass.esp".
     ///
     /// Provide path to a game config file if program fails to find one. See --config.
     ///
@@ -362,6 +364,7 @@ pub(in crate::config) struct Options {
     ///   3. Scan plugin cells for statics that may be converted to groundcover
     ///   4. Scan and retrieve appropriate meshes from loose files or BSAs
     ///   5. Produce 2 additional output plugins:
+    ///
     ///     - "<OUTPUT_PLUGIN_NAME>-CONTENT.esp" with deleted references: load it as a normal plugin in the end of load order
     ///     - "<OUTPUT_PLUGIN_NAME>-GROUNDCOVER.esp" with new grass: load it as a groundcover plugin
     ///     - meshes folder with grass meshes(same meshes that were used for "normal" grass in your setup): these meshes will be used by groundcover plugin

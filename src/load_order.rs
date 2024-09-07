@@ -300,9 +300,8 @@ fn mor_get_plugin(
             res.contents.push(path.to_string_lossy().into_owned());
         } else {
             let text = format!(
-                "Plugin \"{}\" not found at expected location \"{}\"",
-                name,
-                helper.mor_data_files_dir.join(name).display()
+                "Plugin \"{name}\" not found at expected location \"{}\"",
+                path.display()
             );
             err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
         }
@@ -360,9 +359,8 @@ fn mor_get_archive(
             }
         } else {
             let text = format!(
-                "Archive \"{}\" not found at expected location \"{}\"",
-                name,
-                helper.mor_data_files_dir.join(name).display()
+                "Archive \"{name}\" not found at expected location \"{}\"",
+                path.display()
             );
             err_or_ignore(text, ignore_important_errors, false, cfg, log)?;
         }
