@@ -152,7 +152,12 @@ impl ListOptions {
         Ok(text)
     }
 
-    pub(crate) fn get_list_options(
+    // COMMENT: used for passing config path, ignore_errors, base_dir to scan in use_load_order/preset
+    pub(crate) fn get_pristine(&self) -> Self {
+        self.clone()
+    }
+
+    pub(crate) fn get_mutated(
         &self,
         plugin_list: &[String],
         cfg: &Cfg,

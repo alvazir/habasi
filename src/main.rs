@@ -134,7 +134,7 @@ fn process_list(
         list.first()
             .with_context(|| "Bug: failed to get name from list")?
     };
-    let (index, list_options) = cfg.list_options.get_list_options(list, cfg, log)?;
+    let (index, list_options) = cfg.list_options.get_mutated(list, cfg, log)?;
     let expanded_plugin_list = get_expanded_plugin_list(list, index, &list_options, h, cfg, log)
         .with_context(|| "Failed to expand plugin list by scanning load order")?;
     #[allow(clippy::shadow_same)]

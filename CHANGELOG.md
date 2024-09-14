@@ -3,6 +3,12 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.3.3 (TBD)
+
+Fixes
+
+* Fix passing options to presets and merge lists with --use-load-order.
+
 ## 0.3.2 (2024-05-28)
 
 Fixes

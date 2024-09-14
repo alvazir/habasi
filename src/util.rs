@@ -418,10 +418,7 @@ pub fn show_global_list_options(cfg: &Cfg, log: &mut Log) -> Result<()> {
 pub fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Vec<Vec<String>>> {
     let mut merge_override: Vec<Vec<String>> = Vec::new();
     if cfg.presets.present {
-        h.g.list_options = cfg
-            .list_options
-            .get_list_options(&[String::new()], cfg, log)?
-            .1;
+        h.g.list_options = cfg.list_options.get_pristine();
         if cfg.presets.check_references {
             merge_override = vec![cfg.guts.preset_config_check_references.clone()];
         };
@@ -506,6 +503,7 @@ pub fn get_expanded_plugin_list(
     log: &mut Log,
 ) -> Result<Vec<String>> {
     let expanded_plugin_list = if list_options.use_load_order {
+        h.g.list_options = list_options.get_pristine();
         load_order::scan(h, cfg, log)?;
         let is_grass = matches!(list_options.mode, Mode::Grass);
         if plugin_list.len() > index {
