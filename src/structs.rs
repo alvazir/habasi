@@ -271,13 +271,14 @@ impl ListOptions {
     }
 
     fn mutate(&mut self, cfg: &Cfg, log: &mut Log) -> Result<()> {
-        let mut text = Vec::new();
+        let mut text = String::new();
+        let prefix = "List options: Implicitly";
         if self.exclude_deleted_records && !self.use_load_order {
-            text.push("List options: Implicitly set \"use_load_order\" due to \"exclude_deleted_records\"");
+            writeln!(&mut text, "{prefix} set \"use_load_order\" due to \"exclude_deleted_records\"")?;
             self.use_load_order = true;
         }
         if self.force_base_dir && !self.use_load_order {
-            text.push("List options: Implicitly unset \"force_base_dir\" due to lack of \"use_load_order\"");
+            writeln!(&mut text, "{prefix} unset \"force_base_dir\" due to lack of \"use_load_order\"")?;
             self.force_base_dir = false;
         }
         if self.base_dir_indirect != PathBuf::new() {
@@ -285,9 +286,9 @@ impl ListOptions {
                 if self.force_base_dir {
                     self.indirect.base_dir_load_order = self.base_dir_indirect.clone();
                 } else {
-                    text.push(
-                    "List options: Implicitly set \"base_dir:\"(empty) due to \"use_load_order\" and lack of \"force_base_dir\"",
-                );
+                    writeln!(&mut text, 
+                    "{prefix} set \"base_dir:\"(empty) due to \"use_load_order\" and lack of \"force_base_dir\"",
+                )?;
                     self.base_dir_indirect = PathBuf::new();
                 }
             } else {
@@ -296,20 +297,16 @@ impl ListOptions {
         }
         if matches!(self.mode, Mode::Grass) {
             if self.turn_normal_grass {
-                text.push(
-                    "List options: Implicitly unset \"turn_normal_grass\" due to \"grass\" mode",
-                );
+                writeln!(&mut text, "{prefix} unset \"turn_normal_grass\" due to \"grass\" mode")?;
                 self.turn_normal_grass = false;
             };
             if !self.insufficient_merge {
-                text.push(
-                    "List options: Implicitly set \"insufficient_merge\" due to \"grass\" mode",
-                );
+                writeln!(&mut text, "{prefix} set \"insufficient_merge\" due to \"grass\" mode")?;
                 self.insufficient_merge = true;
             }
         }
         if !text.is_empty() {
-            msg(text.join("\n"), 1, cfg, log)?;
+            msg(text, 1, cfg, log)?;
         }
         Ok(())
     }
