@@ -42,10 +42,10 @@ use output::{
 use stats::{Stats, StatsUpdateKind};
 use structs::{
     Assets, CellExtGrid, CellMeta, Dial, DialMeta, FallbackStatics, FileInBsa, GlobalMaster,
-    GlobalVtexId, HeaderText, Helper, IgnoredRefError, ListOptions, LoadOrder, LocalMaster,
-    LocalMergedMaster, LocalVtexId, MastId, MasterNameLow, MergedPluginMeta, MergedPluginRefr,
-    Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, PluginInfo, PluginName,
-    RefSources, RefrId, RegexPluginInfo, TurnNormalGrass,
+    GlobalVtexId, HeaderText, Helper, IgnoredRefError, IndirectListOptions, ListOptions, LoadOrder,
+    LocalMaster, LocalMergedMaster, LocalVtexId, MastId, MasterNameLow, MergedPluginMeta,
+    MergedPluginRefr, Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, PluginInfo,
+    PluginName, RefSources, RefrId, RegexPluginInfo, TurnNormalGrass,
 };
 use util::{
     check_presets, create_dir_early, err_or_ignore, err_or_ignore_thread_safe,

@@ -258,7 +258,7 @@ pub(in crate::config) struct Options {
     ///     - Same as replace, but designed for grass. Allows excluding instances that you don't like. By default it excludes "UNKNOWN GRASS" records from Remiros' Groundcover. Check "advanced.grass_filter" option in settings file if you want to exclude anything else(i.e. mushrooms).
     ///     - This mode automatically excludes non-grass statics, interior or empty cells.
     ///     - This mode implicitly sets --insufficient_merge, thus only scans for cell and static records.
-    ///     - This mode implicitly sets --no-turn-normal-grass.
+    ///     - This mode implicitly unsets --turn-normal-grass.
     ///
     /// Note about DeltaPlugin:
     ///   DeltaPlugin processes records the same way as both engines, e.g. discards different variants of mergeable records except the last one. Possible way to use both utilities is to make additional openmw.cfg file with paths to unmerged plugins, then run "delta_plugin -c openmw.cfg", then run "habasi".
@@ -278,7 +278,7 @@ pub(in crate::config) struct Options {
     /// By default program uses current directory("") as a base for plugin's relative paths. Plugin's absolute paths ignore this option.
     ///
     /// Examples(same result, second example show per list option instead of global):
-    ///   -B "mods/Patches/BTBGIsation/03 Modular - Secondary" -m "BTBGIsation - Custom Merged.esp, BTBGIsation - Magical Missions.esp, BTBGIsation - Weapons Expansion Morrowind.esp"
+    ///   -b "mods/Patches/BTBGIsation/03 Modular - Secondary" -m "BTBGIsation - Custom Merged.esp, BTBGIsation - Magical Missions.esp, BTBGIsation - Weapons Expansion Morrowind.esp"
     ///   -m "BTBGIsation - Custom Merged.esp, base_dir:mods/Patches/BTBGIsation/03 Modular - Secondary, BTBGIsation - Magical Missions.esp, BTBGIsation - Weapons Expansion Morrowind.esp"
     ///
     /// Default value: "".
@@ -437,6 +437,26 @@ pub(in crate::config) struct Options {
         help = "Strip masters when possible"
     )]
     pub(super) strip_masters: bool,
+    /// Force --base-dir usage with --use-load-order.
+    ///
+    /// This option allows to define single custom directory with plugins for both Morrowind and OpenMW(and ignore "data=" entries completely). It may be useful for MO2's "Use profile-specific Game INI files" or testing playground.
+    ///
+    /// By default program doesn't use --base-dir combined with --use-load-order because:
+    ///   - Morrowind's "Data Files" directory is expected to be adjacent to the game config.
+    ///   - OpenMW's game config contains absolute paths to the directories.
+    ///
+    /// This option is implicitly unset without --use-load-order.
+    ///
+    /// Corresponding per list options: "force_base_dir", "no_force_base_dir".
+    #[arg(
+        help_heading = "List options",
+        conflicts_with = "settings_write",
+        short = 'B',
+        long,
+        alias = "force_base_dir",
+        help = "Force --base-dir usage with --use-load-order"
+    )]
+    pub(super) force_base_dir: bool,
     /// Exclude deleted records with --use-load-order.
     ///
     /// Records with DELETED flag are excluded from the output plugin with this option.

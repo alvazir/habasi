@@ -5,6 +5,11 @@
 
 ## 0.3.3 (TBD)
 
+New features
+
+* Add `--force-base-dir`(`-B`) to override directory with plugins when using game configuration files with `--use-load-order`(`-u`). It may be useful for MO2's "Use profile-specific Game INI files" or testing playground. Use together with `--base-dir`(`-b`):
+  * `habasi -m out.esp -uBb another_dir`
+
 Fixes
 
 * Fix passing options to presets and merge lists with --use-load-order.

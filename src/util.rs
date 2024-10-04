@@ -9,7 +9,7 @@ use glob::{glob_with, MatchOptions};
 use regex::RegexBuilder;
 use std::{
     fmt::Write as _,
-    io::{self, BufRead, BufWriter, Write},
+    io::{self, BufRead, BufReader, BufWriter, Lines, Write},
     path::{Path, PathBuf, MAIN_SEPARATOR},
     time::SystemTime,
 };
@@ -625,7 +625,7 @@ pub fn process_plugin(
 }
 
 fn get_plugin_pathbuf_pathstring(plugin_name: &str, h: &Helper) -> (PathBuf, String) {
-    let mut plugin_pathbuf = h.g.list_options.base_dir.clone();
+    let mut plugin_pathbuf = h.g.list_options.indirect.base_dir.clone();
     plugin_pathbuf.push(plugin_name);
     let plugin_path = plugin_pathbuf.to_string_lossy().into_owned();
     (plugin_pathbuf, plugin_path)
@@ -705,10 +705,10 @@ pub fn get_tng_dir_and_plugin_names(name: &str, cfg: &Cfg) -> Result<(PathBuf, S
     Ok((dir, plugin_deleted_content_name, plugin_grass_name))
 }
 
-pub fn read_lines(filename: &Path) -> Result<io::Lines<io::BufReader<File>>> {
+pub fn read_lines(filename: &Path) -> Result<Lines<BufReader<File>>> {
     let file = File::open(filename)
         .with_context(|| format!("Failed to open file \"{}\"", filename.display()))?;
-    Ok(io::BufReader::new(file).lines())
+    Ok(BufReader::new(file).lines())
 }
 
 pub fn show_settings_version_message(cfg: &Cfg, log: &mut Log) -> Result<()> {
@@ -952,7 +952,7 @@ fn get_regex_sublists(
             continue;
         }
         let mut sort_by_name = list_options.regex_sort_by_name;
-        let mut plugin_pathbuf = list_options.base_dir.clone();
+        let mut plugin_pathbuf = list_options.indirect.base_dir.clone();
         plugin_pathbuf.push(pattern);
         let mut remove_leading_dot = false;
         sublist.clear();
@@ -1024,10 +1024,10 @@ fn get_regex_sublist(
 ) -> Vec<String> {
     let prefix = if remove_leading_dot {
         format!(".{MAIN_SEPARATOR}")
-    } else if list_options.base_dir != PathBuf::new() {
+    } else if list_options.indirect.base_dir != PathBuf::new() {
         format!(
             "{}{MAIN_SEPARATOR}",
-            list_options.base_dir.to_string_lossy()
+            list_options.indirect.base_dir.to_string_lossy()
         )
     } else {
         String::new()

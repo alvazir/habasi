@@ -69,11 +69,17 @@ pub type RefSources = HashMap<(MastId, RefrId), ((MastId, RefrId), IsExternalRef
 pub type OldRefSources = HashMap<(MastId, RefrId), ((MastId, RefrId), Reference)>;
 pub type FallbackStatics = HashMap<String, (HashMap<RecordNameLow, GlobalRecordId>, Vec<Static>)>;
 
+#[derive(Clone, Default)]
+pub struct IndirectListOptions {
+    pub(crate) base_dir: PathBuf,
+    pub(crate) base_dir_load_order: PathBuf,
+}
+
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Default)]
 pub struct ListOptions {
     pub(crate) mode: Mode,
-    pub(crate) base_dir: PathBuf,
+    pub(crate) base_dir_indirect: PathBuf,
     pub(crate) dry_run: bool,
     pub(crate) use_load_order: bool,
     pub(crate) config: String,
@@ -82,6 +88,7 @@ pub struct ListOptions {
     pub(crate) prefer_loose_over_bsa: bool,
     pub(crate) reindex: bool,
     pub(crate) strip_masters: bool,
+    pub(crate) force_base_dir: bool,
     pub(crate) exclude_deleted_records: bool,
     pub(crate) no_show_missing_refs: bool,
     pub(crate) debug: bool,
@@ -96,28 +103,33 @@ pub struct ListOptions {
     pub(crate) insufficient_merge: bool,
     pub(crate) append_to_use_load_order: String,
     pub(crate) skip_from_use_load_order: String,
+    pub(crate) indirect: IndirectListOptions,
 }
 
 impl ListOptions {
     pub(crate) fn show(&self) -> Result<String> {
         let mut text = format!("mode = {}", self.mode);
-        if self.base_dir != PathBuf::new() {
-            write!(text, ", base_dir = {}", self.base_dir.display())?;
+        if self.base_dir_indirect != PathBuf::new() {
+            write!(
+                text,
+                ", base_dir = \"{}\"",
+                self.base_dir_indirect.display()
+            )?;
         };
         if self.config != String::new() {
-            write!(text, ", config = {}", self.config)?;
+            write!(text, ", config = \"{}\"", self.config)?;
         };
         if self.append_to_use_load_order != String::new() {
             write!(
                 text,
-                ", append_to_use_load_order = {}",
+                ", append_to_use_load_order = \"{}\"",
                 self.append_to_use_load_order
             )?;
         };
         if self.skip_from_use_load_order != String::new() {
             write!(
                 text,
-                ", skip_from_use_load_order = {}",
+                ", skip_from_use_load_order = \"{}\"",
                 self.skip_from_use_load_order
             )?;
         };
@@ -136,6 +148,7 @@ impl ListOptions {
             prefer_loose_over_bsa,
             reindex,
             strip_masters,
+            force_base_dir,
             exclude_deleted_records,
             no_show_missing_refs,
             debug,
@@ -178,7 +191,7 @@ impl ListOptions {
                 arg_low = stripped;
             }
             if arg_low.starts_with(&cfg.guts.list_options_prefix_base_dir) {
-                list_options.base_dir = get_base_dir_path(arg, cfg)
+                list_options.base_dir_indirect = get_base_dir_path(arg, cfg)
                     .with_context(|| format!("Failed to get list base_dir from {arg:?}"))?;
             } else if arg_low.starts_with(&cfg.guts.list_options_prefix_config) {
                 list_options.config = get_game_config_string(arg, cfg)
@@ -220,6 +233,8 @@ impl ListOptions {
                     "no_reindex" => list_options.reindex = false,
                     "strip_masters" => list_options.strip_masters = true,
                     "no_strip_masters" => list_options.strip_masters = false,
+                    "force_base_dir" => list_options.force_base_dir = true,
+                    "no_force_base_dir" => list_options.force_base_dir = false,
                     "exclude_deleted_records" => list_options.exclude_deleted_records = true,
                     "no_exclude_deleted_records" => list_options.exclude_deleted_records = false,
                     "no_show_missing_refs" => list_options.no_show_missing_refs = true,
@@ -251,8 +266,52 @@ impl ListOptions {
                 .checked_add(1)
                 .with_context(|| format!("Bug: overflow incrementing index = \"{index}\""))?;
         }
-        mutate_list_options(&mut list_options, cfg, log)?;
+        list_options.mutate(cfg, log)?;
         Ok((index, list_options))
+    }
+
+    fn mutate(&mut self, cfg: &Cfg, log: &mut Log) -> Result<()> {
+        let mut text = Vec::new();
+        if self.exclude_deleted_records && !self.use_load_order {
+            text.push("List options: Implicitly set \"use_load_order\" due to \"exclude_deleted_records\"");
+            self.use_load_order = true;
+        }
+        if self.force_base_dir && !self.use_load_order {
+            text.push("List options: Implicitly unset \"force_base_dir\" due to lack of \"use_load_order\"");
+            self.force_base_dir = false;
+        }
+        if self.base_dir_indirect != PathBuf::new() {
+            if self.use_load_order {
+                if self.force_base_dir {
+                    self.indirect.base_dir_load_order = self.base_dir_indirect.clone();
+                } else {
+                    text.push(
+                    "List options: Implicitly set \"base_dir:\"(empty) due to \"use_load_order\" and lack of \"force_base_dir\"",
+                );
+                    self.base_dir_indirect = PathBuf::new();
+                }
+            } else {
+                self.indirect.base_dir = self.base_dir_indirect.clone();
+            }
+        }
+        if matches!(self.mode, Mode::Grass) {
+            if self.turn_normal_grass {
+                text.push(
+                    "List options: Implicitly unset \"turn_normal_grass\" due to \"grass\" mode",
+                );
+                self.turn_normal_grass = false;
+            };
+            if !self.insufficient_merge {
+                text.push(
+                    "List options: Implicitly set \"insufficient_merge\" due to \"grass\" mode",
+                );
+                self.insufficient_merge = true;
+            }
+        }
+        if !text.is_empty() {
+            msg(text.join("\n"), 1, cfg, log)?;
+        }
+        Ok(())
     }
 }
 
@@ -727,36 +786,6 @@ fn get_plugin_info(path: PathBuf, id: usize) -> Result<PluginInfo> {
             path.display()
         )),
     }
-}
-
-fn mutate_list_options(list_options: &mut ListOptions, cfg: &Cfg, log: &mut Log) -> Result<()> {
-    let mut text = Vec::new();
-    if list_options.exclude_deleted_records && !list_options.use_load_order {
-        text.push("List options mutation: Implicitly set \"use_load_order\" due to \"exclude_deleted_records\"");
-        list_options.use_load_order = true;
-    }
-    if list_options.use_load_order && list_options.base_dir != PathBuf::new() {
-        text.push(
-            "List options mutation: Implicitly set \"base_dir:\"(empty) due to \"use_load_order\"",
-        );
-        list_options.base_dir = PathBuf::new();
-    }
-    if matches!(list_options.mode, Mode::Grass) && list_options.turn_normal_grass {
-        text.push(
-            "List options mutation: Implicitly set \"no_turn_normal_grass\" due to \"grass\" mode",
-        );
-        list_options.turn_normal_grass = false;
-    }
-    if matches!(list_options.mode, Mode::Grass) && !list_options.insufficient_merge {
-        text.push(
-            "List options mutation: Implicitly set \"insufficient_merge\" due to \"grass\" mode",
-        );
-        list_options.insufficient_merge = true;
-    }
-    if !text.is_empty() {
-        msg(text.join("\n"), 1, cfg, log)?;
-    }
-    Ok(())
 }
 
 macro_rules! make_out {

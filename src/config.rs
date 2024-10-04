@@ -1,4 +1,4 @@
-use crate::{create_dir_early, ListOptions};
+use crate::{create_dir_early, IndirectListOptions, ListOptions};
 use anyhow::{Context, Result};
 use fs_err::write;
 use hashbrown::{HashMap, HashSet};
@@ -176,7 +176,7 @@ impl Cfg {
                 dry_run: opt_or_set_bool!(dry_run),
                 dry_run_secondary: opt_or_set_bool!(dry_run_secondary),
                 mode: check_mode(&mode)?,
-                base_dir: check_base_dir(&base_dir_string)
+                base_dir_indirect: check_base_dir(&base_dir_string)
                     .with_context(|| "Failed to get default base_dir")?,
                 no_ignore_errors: opt_or_set_bool!(no_ignore_errors),
                 strip_masters: opt_or_set_bool!(strip_masters),
@@ -186,6 +186,7 @@ impl Cfg {
                 no_show_missing_refs: opt_or_set_bool!(no_show_missing_refs),
                 ignore_important_errors: opt_or_set_bool!(ignore_important_errors),
                 config: opt_or_set_some!(config),
+                force_base_dir: opt_or_set_bool!(force_base_dir),
                 exclude_deleted_records: opt_or_set_bool!(exclude_deleted_records),
                 use_load_order: opt_or_set_bool!(use_load_order),
                 turn_normal_grass: opt_or_set_bool!(turn_normal_grass),
@@ -196,6 +197,7 @@ impl Cfg {
                 dry_run_dismiss_stats: opt_or_set_bool!(dry_run_dismiss_stats),
                 append_to_use_load_order: opt_or_set_some!(append_to_use_load_order),
                 skip_from_use_load_order: opt_or_set_some!(skip_from_use_load_order),
+                indirect: IndirectListOptions::default(),
             },
             verbose: if opt.verbose == 0 {
                 set.options.verbose

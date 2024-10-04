@@ -51,6 +51,8 @@ regex = { version = "~1.10.6", default-features = false, features = ["std", "uni
 glob = "~0.3.1"
 # provide list of plugins via wildcards
 wild = "~2.2.1"
+# QOL for DRY
+paste = "~1.0.15"
 # memory usage
 # peak_alloc = "~0.2.0" # disabled due to slowing down the program
 
@@ -104,3 +106,4 @@ ref_patterns = { level = "allow", priority = 1 } # Matter of preference
 separated_literal_suffix = { level = "allow", priority = 1 } # I prefer separated
 pub_with_shorthand = { level = "allow", priority = 1 } # I prefer 'super' to 'in super'
 field_scoped_visibility_modifiers = { level = "allow", priority = 1 } # Scoped visibility methods are not needed in this project
+single_char_lifetime_names = { level = "allow", priority = 1 } # Lifetimes are obvious in this project

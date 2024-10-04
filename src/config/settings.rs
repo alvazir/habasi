@@ -113,6 +113,8 @@ pub(super) struct Options {
     #[config(default = false)]
     pub(super) strip_masters: bool,
     #[config(default = false)]
+    pub(super) force_base_dir: bool,
+    #[config(default = false)]
     pub(super) exclude_deleted_records: bool,
     #[config(default = false)]
     pub(super) no_show_missing_refs: bool,
