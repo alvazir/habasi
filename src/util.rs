@@ -611,10 +611,8 @@ pub fn process_plugin(
     )?;
     h.local_init(plugin_pathbuf, h.g.plugins_processed.len())
         .with_context(|| "Failed to start processing plugin")?;
-    let mut plugin = Plugin::new();
-    plugin
-        .load_path(&plugin_pathstring)
-        .with_context(|| format!("Failed to load plugin \"{}\"", &plugin_pathstring))?;
+    let plugin = Plugin::from_path(&plugin_pathstring)
+        .with_context(|| format!("Failed to read plugin \"{plugin_pathstring}\""))?;
     input::process_records(plugin, out, name, h, cfg, log).with_context(|| {
         format!(
             "Failed to process records from plugin \"{}\"",

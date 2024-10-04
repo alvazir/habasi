@@ -400,10 +400,8 @@ fn get_fallback_statics(
 ) -> Result<bool> {
     let text = format!("Reading plugin \"{plugin_name}\" to get missing STAT \"{stat_id}\"");
     msg(text, 0, cfg, log)?;
-    let mut plugin = Plugin::new();
-    plugin
-        .load_path(plugin_name)
-        .with_context(|| format!("Failed to read plugin {plugin_name:?}"))?;
+    let plugin = Plugin::from_path(plugin_name)
+        .with_context(|| format!("Failed to read plugin \"{plugin_name}\""))?;
     let mut statics_index = HashMap::new();
     let mut statics = Vec::new();
     for record in plugin.objects_of_type::<Static>() {
