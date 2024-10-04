@@ -14,6 +14,10 @@ Fixes
 
 * Fix passing options to presets and merge lists with --use-load-order.
 
+Miscellaneous
+
+* Improve log messages
+
 ## 0.3.2 (2024-05-28)
 
 Fixes

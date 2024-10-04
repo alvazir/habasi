@@ -350,7 +350,7 @@ pub(super) struct Guts {
     /// [Section: Messages] Unsorted parts of messages used in multiple places.
     #[config(default = "Combined plugin lists stats:")]
     pub(super) prefix_combined_stats: String,
-    #[config(default = ". Stats:")]
+    #[config(default = "Stats:")]
     pub(super) prefix_list_stats: String,
     #[config(default = "Ignored important error: ")]
     pub(super) prefix_ignored_important_error_message: String,

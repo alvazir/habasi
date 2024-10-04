@@ -34,7 +34,7 @@ pub fn write_output_plugin(
                 if cfg.verbose < 1 {
                     msg_no_log(&text, 0, cfg);
                 }
-                text = format!("{}{}", text, cfg.guts.prefix_list_stats);
+                text = format!("{}. {}", text, cfg.guts.prefix_list_stats);
                 msg(text, 1, cfg, log)?;
                 add_missing_plugin_stats(level, &plugin.objects, h)?;
                 return Ok(());
@@ -108,7 +108,7 @@ pub fn write_output_plugin(
         if cfg.verbose < 1 {
             msg_no_log(&text, 0, cfg);
         }
-        text = format!("{}{}", text, cfg.guts.prefix_list_stats);
+        text = format!("{} {}", text, cfg.guts.prefix_list_stats);
         msg(text, 1, cfg, log)?;
     }
     Ok(())
