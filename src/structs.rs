@@ -116,17 +116,17 @@ impl ListOptions {
                 self.base_dir_indirect.display()
             )?;
         };
-        if self.config != String::new() {
+        if !self.config.is_empty() {
             write!(text, ", config = \"{}\"", self.config)?;
         };
-        if self.append_to_use_load_order != String::new() {
+        if !self.append_to_use_load_order.is_empty() {
             write!(
                 text,
                 ", append_to_use_load_order = \"{}\"",
                 self.append_to_use_load_order
             )?;
         };
-        if self.skip_from_use_load_order != String::new() {
+        if !self.skip_from_use_load_order.is_empty() {
             write!(
                 text,
                 ", skip_from_use_load_order = \"{}\"",
