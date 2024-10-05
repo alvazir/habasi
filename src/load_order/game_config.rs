@@ -78,7 +78,7 @@ fn find_config(h: &Helper, cfg: &Cfg, log: &mut Log) -> Result<PathBuf> {
 
 fn check_config(config: &str) -> Result<PathBuf> {
     let config_path = PathBuf::from(&config);
-    if config_path != PathBuf::new() && config_path.exists() {
+    if !config_path.as_os_str().is_empty() && config_path.exists() {
         Ok(config_path)
     } else {
         Err(anyhow!(

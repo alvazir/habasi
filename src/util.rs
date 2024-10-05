@@ -226,7 +226,7 @@ pub fn get_base_dir_path(raw: &str, cfg: &Cfg) -> Result<PathBuf> {
         &cfg.guts.list_options_prefix_base_dir,
         "base_dir",
     )?);
-    if base_dir != PathBuf::new() && !base_dir.exists() {
+    if !base_dir.as_os_str().is_empty() && !base_dir.exists() {
         Err(anyhow!(
             "Error: failed to find base_dir \"{}\"",
             base_dir.display()
@@ -1022,7 +1022,7 @@ fn get_regex_sublist(
 ) -> Vec<String> {
     let prefix = if remove_leading_dot {
         format!(".{MAIN_SEPARATOR}")
-    } else if list_options.indirect.base_dir != PathBuf::new() {
+    } else if !list_options.indirect.base_dir.as_os_str().is_empty() {
         format!(
             "{}{MAIN_SEPARATOR}",
             list_options.indirect.base_dir.to_string_lossy()

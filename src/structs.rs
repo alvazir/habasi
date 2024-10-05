@@ -109,7 +109,7 @@ pub struct ListOptions {
 impl ListOptions {
     pub(crate) fn show(&self) -> Result<String> {
         let mut text = format!("mode = {}", self.mode);
-        if self.base_dir_indirect != PathBuf::new() {
+        if !self.base_dir_indirect.as_os_str().is_empty() {
             write!(
                 text,
                 ", base_dir = \"{}\"",
@@ -281,7 +281,7 @@ impl ListOptions {
             writeln!(&mut text, "{prefix} unset \"force_base_dir\" due to lack of \"use_load_order\"")?;
             self.force_base_dir = false;
         }
-        if self.base_dir_indirect != PathBuf::new() {
+        if !self.base_dir_indirect.as_os_str().is_empty() {
             if self.use_load_order {
                 if self.force_base_dir {
                     self.indirect.base_dir_load_order = self.base_dir_indirect.clone();
