@@ -128,6 +128,20 @@ impl Log {
     }
 }
 
+macro_rules! increment {
+    ($($field:ident).+) => {
+        $($field.)+checked_add(1).with_context(|| {
+            format!(
+                "Bug: overflow incrementing {} = \"{}\"",
+                stringify!($($field).+),
+                $($field).+
+            )
+        })?
+    };
+}
+
+pub(crate) use increment;
+
 pub fn show_log_path(cfg: &Cfg, log: &mut Log) -> Result<()> {
     if cfg.no_log {
         Ok(())
@@ -898,9 +912,7 @@ pub fn get_regex_plugin_list(
             if !sublist.is_empty() {
                 regex_plugin_list.extend(sublist.into_iter());
             }
-            new_index = new_index.checked_add(1).with_context(|| {
-                format!("Bug: overflow incrementing new_index = \"{new_index}\"")
-            })?;
+            new_index = increment!(new_index);
         }
         if new_index < plugin_list.len() {
             regex_plugin_list.extend(

@@ -1,7 +1,7 @@
 use crate::{
     get_append_to_use_load_order_string, get_base_dir_path, get_game_config_string,
     get_skip_from_use_load_order_string, msg, msg_no_log, show_ignored_ref_errors,
-    truncate_header_text, Bsa, Cfg, Log, Stats, StatsUpdateKind,
+    truncate_header_text, Bsa, Cfg, Log, Stats, StatsUpdateKind, increment
 };
 use anyhow::{anyhow, Context, Result};
 use fs_err::read;
@@ -179,9 +179,7 @@ impl ListOptions {
         let mut index: usize = 1;
         let mut list_options = self.clone();
         while plugin_list.len()
-            >= index
-                .checked_add(1)
-                .with_context(|| format!("Bug: overflow incrementing index = \"{index}\""))?
+            >= increment!(index)
         {
             let arg = &plugin_list
                 .get(index)
@@ -262,9 +260,7 @@ impl ListOptions {
                     _ => break,
                 }
             }
-            index = index
-                .checked_add(1)
-                .with_context(|| format!("Bug: overflow incrementing index = \"{index}\""))?;
+            index = increment!(index);
         }
         list_options.mutate(cfg, log)?;
         Ok((index, list_options))

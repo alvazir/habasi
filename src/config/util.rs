@@ -1,5 +1,5 @@
 use super::{Options, SettingsFile, StringOsPath, TngStatIds};
-use crate::{read_lines, Mode};
+use crate::{increment, read_lines, Mode};
 use anyhow::{anyhow, Context, Result};
 use fs_err::rename;
 use hashbrown::{hash_map::Entry, HashMap, HashSet};
@@ -427,9 +427,7 @@ fn make_keep_only_last_info_ids_err_text(
 ) -> Result<String> {
     Ok(format!(
         "Error: settings.advanced.keep_only_last_info_ids element \"{}\" is incorrect\nDescription: {description}\nElement: [{}]",
-        line_num
-            .checked_add(1)
-            .with_context(|| format!("Bug: overflow incrementing line_num = \"{line_num}\""))?,
+        increment!(line_num),
         line.iter().map(|x| format!("\"{x}\"")).collect::<Vec<_>>().join(", ")
     ))
 }

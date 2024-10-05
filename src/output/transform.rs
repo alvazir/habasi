@@ -1,6 +1,6 @@
 use crate::{
-    get_cell_name, msg, references_sorted, show_removed_record_ids, CellExtGrid, Cfg, Helper, Log,
-    Mode, OldRefSources, Out, RefSources, StatsUpdateKind,
+    get_cell_name, increment, msg, references_sorted, show_removed_record_ids, CellExtGrid, Cfg,
+    Helper, Log, Mode, OldRefSources, Out, RefSources, StatsUpdateKind,
 };
 use anyhow::{anyhow, Context, Result};
 use hashbrown::HashMap;
@@ -196,9 +196,7 @@ fn reindex_references(
                         },
                     }
                 }
-                refr = refr
-                    .checked_add(1)
-                    .with_context(|| format!("Bug: overflow incrementing refr = \"{refr}\""))?;
+                refr = increment!(refr);
             } else {
                 new_refs.insert(
                     (reference.mast_index, reference.refr_index),

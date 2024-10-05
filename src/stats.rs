@@ -1,3 +1,4 @@
+use crate::increment;
 use anyhow::{Context, Result};
 use std::{fmt, time::Instant};
 
@@ -206,11 +207,13 @@ macro_rules! make_stats {
             }
 
             pub(crate) fn add_merged_plugin(&mut self) -> Result<()> {
-                Ok(self.$total.merged_plugins = self.$total.merged_plugins.checked_add(1).with_context(|| "Bug: overflow incrementing merged_plugins")?)
+                self.$total.merged_plugins = increment!(self.$total.merged_plugins);
+                Ok(())
             }
 
             pub(crate) fn add_result_plugin(&mut self) -> Result<()> {
-                Ok(self.$total.result_plugins = self.$total.result_plugins.checked_add(1).with_context(|| "Bug: overflow incrementing result_plugins")?)
+                self.$total.result_plugins = increment!(self.$total.result_plugins);
+                Ok(())
             }
 
             pub(crate) fn grass_filtered(&mut self, count: usize) -> Result<()> {

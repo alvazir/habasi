@@ -1,8 +1,8 @@
 use super::make_header;
 use crate::{
-    get_tng_dir_and_plugin_names, load_order, make_tng_meshes, msg, msg_no_log, references_sorted,
-    CellExtGrid, Cfg, HeaderText, Helper, Log, MastId, OldRefSources, Out, PluginInfo, RefSources,
-    RefrId, TurnNormalGrass,
+    get_tng_dir_and_plugin_names, increment, load_order, make_tng_meshes, msg, msg_no_log,
+    references_sorted, CellExtGrid, Cfg, HeaderText, Helper, Log, MastId, OldRefSources, Out,
+    PluginInfo, RefSources, RefrId, TurnNormalGrass,
 };
 use anyhow::{anyhow, Context, Result};
 use hashbrown::{HashMap, HashSet};
@@ -312,16 +312,13 @@ fn make_master_remap_table(
 ) -> Result<MasterRemapTable> {
     let mut master_remap_table = HashMap::new();
     for (id, plugin_id) in new_master_ids.iter().enumerate() {
-        let remap = u32::try_from(id)
+        let mut remap = u32::try_from(id)
             .with_context(|| format!("Bug: failed to cast {id:?}(id, usize) to u32"))?
             .checked_add(masters_len)
             .with_context(|| {
                 format!("Bug: overflow adding id = \"{id}\" to masters_len = \"{masters_len}\"")
-            })?
-            .checked_add(1)
-            .with_context(|| {
-                format!("Bug: overflow incrementing remap = \"{id} + {masters_len}\"")
             })?;
+        remap = increment!(remap);
         if master_remap_table
             .insert(
                 plugin_id
@@ -437,9 +434,7 @@ fn make_grass_cells(del_ref_master_renum_num_cells: &NumCellsRefCounted) -> Resu
             let mut local_references: Vec<&Reference> = cell.references.values().collect();
             references_sorted(&mut local_references);
             for reference in local_references {
-                refr_index = refr_index.checked_add(1).with_context(|| {
-                    format!("Bug: overflow incrementing refr_index = \"{refr_index}\"")
-                })?;
+                refr_index = increment!(refr_index);
                 grass_references.insert(
                     (0, refr_index),
                     Reference {

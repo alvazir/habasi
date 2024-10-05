@@ -1,7 +1,8 @@
 use crate::{
-    msg, references_sorted, CellExtGrid, CellMeta, Cfg, Helper, IgnoredRefError, ListOptions,
-    LocalMaster, LocalMergedMaster, Log, MastId, MergedPluginMeta, MergedPluginRefr, Mode,
-    MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, RefSources, RefrId, StatsUpdateKind,
+    increment, msg, references_sorted, CellExtGrid, CellMeta, Cfg, Helper, IgnoredRefError,
+    ListOptions, LocalMaster, LocalMergedMaster, Log, MastId, MergedPluginMeta, MergedPluginRefr,
+    Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, RefSources, RefrId,
+    StatsUpdateKind,
 };
 use anyhow::{anyhow, Context, Result};
 use hashbrown::{hash_map::Entry, HashMap};
@@ -57,8 +58,7 @@ pub fn process(
                     for local_reference in local_references {
                         if local_reference.mast_index == 0 {
                             if h.g.refr < u32::MAX {
-                                h.g.refr = h.g.refr.checked_add(1)
-                                    .with_context(|| format!("Bug: overflow incrementing h.g.refr = \"{}\"", h.g.refr))?;
+                                h.g.refr = increment!(h.g.refr);
                             } else {
                                 return Err(anyhow!("Error: limit of {} references per plugin reached. Split the list into smaller parts.", u32::MAX));
                             }
@@ -180,8 +180,7 @@ pub fn process(
                     for local_reference in local_references {
                         if local_reference.mast_index == 0 {
                             if h.g.refr < u32::MAX {
-                                h.g.refr = h.g.refr.checked_add(1)
-                                    .with_context(|| format!("Bug: overflow incrementing h.g.refr = \"{}\"", h.g.refr))?;
+                                h.g.refr = increment!(h.g.refr);
                             } else {
                                 return Err(anyhow!("Error: limit of {} references per plugin reached. Split the list into smaller parts.", u32::MAX));
                             }
@@ -464,15 +463,7 @@ fn missing_ref_append(
         .find(|x| x.master == merged_master.name_low)
     {
         if !*flag {
-            ignored_ref_error.cell_counter = ignored_ref_error
-                .cell_counter
-                .checked_add(1)
-                .with_context(|| {
-                    format!(
-                        "Bug: overflow incrementing ignored_ref_error.cell_counter = \"{}\"",
-                        ignored_ref_error.cell_counter
-                    )
-                })?;
+            ignored_ref_error.cell_counter = increment!(ignored_ref_error.cell_counter);
             if !list_options.no_show_missing_refs {
                 msg(&text, 2, cfg, log)?;
             }
@@ -481,16 +472,7 @@ fn missing_ref_append(
             msg(&text, 2, cfg, log)?;
         } else { //
         }
-        ignored_ref_error.ref_counter =
-            ignored_ref_error
-                .ref_counter
-                .checked_add(1)
-                .with_context(|| {
-                    format!(
-                        "Bug: overflow incrementing ignored_ref_error.ref_counter = \"{}\"",
-                        ignored_ref_error.ref_counter
-                    )
-                })?;
+        ignored_ref_error.ref_counter = increment!(ignored_ref_error.ref_counter);
     } else {
         if !list_options.no_show_missing_refs {
             msg(&text, 2, cfg, log)?;

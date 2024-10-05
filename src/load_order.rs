@@ -1,6 +1,6 @@
 use crate::{
-    err_or_ignore, err_or_ignore_thread_safe, msg, read_lines, Cfg, Helper, ListOptions, LoadOrder,
-    Log,
+    err_or_ignore, err_or_ignore_thread_safe, increment, msg, read_lines, Cfg, Helper, ListOptions,
+    LoadOrder, Log,
 };
 use anyhow::{anyhow, Context, Result};
 use dirs::{data_dir, document_dir};
@@ -73,23 +73,6 @@ struct LocalGetPluginsHelper {
     omw_all_plugins_found: bool,
 }
 
-macro_rules! increment_counter {
-    ($($field:ident),+) => {
-        $(paste!(
-            fn [<increment_ $field>](&mut self) -> Result<()> {
-                self.$field = self.$field.checked_add(1).with_context(|| {
-                    format!(
-                        "Bug: overflow incrementing {} = \"{}\"",
-                        stringify!($field),
-                        self.$field
-                    )
-                })?;
-                Ok(())
-            }
-        );)+
-    };
-}
-
 macro_rules! set_true_if_false {
     ($($field:ident),+) => {
         $(paste!(
@@ -104,7 +87,6 @@ macro_rules! set_true_if_false {
 
 impl LocalGetPluginsHelper {
     set_true_if_false!(mor_found, omw_found);
-    increment_counter!(omw_data_counter, omw_data_line_counter);
 }
 
 #[allow(clippy::too_many_lines)]
@@ -157,7 +139,7 @@ fn get_load_order(
             if line.starts_with(&cfg.guts.omw_line_beginning_data) {
                 lcl_h.set_omw_found();
                 if glb_h.force_base_dir {
-                    lcl_h.increment_omw_data_line_counter()?;
+                    lcl_h.omw_data_line_counter = increment!(lcl_h.omw_data_line_counter);
                 } else {
                     omw_get_data_dir(&line, &mut omw_data_dirs, &mut lcl_h, glb_h, cfg, log)
                         .with_context(|| "Failed to get OpenMW's data directory")?;
@@ -417,9 +399,7 @@ fn mor_get_archive(
                     .any(|x| x.1 == path_str.to_lowercase())
                 {
                     for &mut (ref mut id, _, _) in &mut load_order.fallback_archives {
-                        *id = id
-                            .checked_add(1)
-                            .with_context(|| format!("Bug: overflow incrementing id = \"{id}\""))?;
+                        *id = increment!(id);
                     }
                     load_order
                         .fallback_archives
@@ -471,7 +451,7 @@ fn omw_get_data_dir(
             raw_data
         });
         omw_data_dirs.push((lcl_h.omw_data_counter, data));
-        lcl_h.increment_omw_data_counter()?;
+        lcl_h.omw_data_counter = increment!(lcl_h.omw_data_counter);
     } else {
         let text = format!("Failed to parse line \"{line}\"");
         err_or_ignore(text, glb_h.ignore, false, cfg, log)?;
@@ -535,7 +515,7 @@ fn omw_get_cs_data_dir(
         ($omw_cs_data_path:expr) => {
             if $omw_cs_data_path.exists() {
                 omw_data_dirs.push((lcl_h.omw_data_counter, $omw_cs_data_path));
-                lcl_h.increment_omw_data_counter()?;
+                lcl_h.omw_data_counter = increment!(lcl_h.omw_data_counter);
                 let text = format!(
                     "Added \"hidden\" OpenMW-CS data path \"{}\" to the list of directories",
                     $omw_cs_data_path.display()

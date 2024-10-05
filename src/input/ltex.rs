@@ -1,4 +1,4 @@
-use crate::{Helper, Out, StatsUpdateKind};
+use crate::{increment, Helper, Out, StatsUpdateKind};
 use anyhow::{anyhow, Context, Result};
 use hashbrown::hash_map::Entry;
 use tes3::esp::LandscapeTexture;
@@ -30,14 +30,7 @@ pub fn process(
             })?;
             if h.l
                 .vtex
-                .insert(
-                    ltex_index.checked_add(1).with_context(|| {
-                        format!("Bug: overflow incrementing ltex_index = \"{ltex_index}\"")
-                    })?,
-                    ltex_len.checked_add(1).with_context(|| {
-                        format!("Bug: overflow incrementing ltex_len = \"{ltex_len}\"")
-                    })?,
-                )
+                .insert(increment!(ltex_index), increment!(ltex_len))
                 .is_some()
             {
                 return Err(anyhow!("Error: there is already vtex pair for this plugin"));
@@ -55,15 +48,11 @@ pub fn process(
         Entry::Occupied(o) => {
             let mut replaced = false;
             let ltex_global_id = *o.get();
-            let ltex_global_id_incremented = ltex_global_id.checked_add(1).with_context(|| {
-                format!("Bug: overflow incrementing ltex_global_id = \"{ltex_global_id}\"")
-            })?;
+            let ltex_global_id_incremented = increment!(ltex_global_id);
             if h.l
                 .vtex
                 .insert(
-                    ltex_index
-                        .checked_add(1)
-                        .with_context(|| format!("Bug: overflow incrementing ltex_index = \"{ltex_index}\""))?,
+                    increment!(ltex_index),
                     u16::try_from(ltex_global_id_incremented).with_context(|| {
                         format!("Bug: failed to cast \"{ltex_global_id_incremented}\"(ltex_global_id_incremented, usize) to u16")
                     })?,
