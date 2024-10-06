@@ -374,38 +374,21 @@ fn modify_global_reference(
     grid: Option<CellExtGrid>,
 ) -> Result<()> {
     match references.entry((0, refr_index)) {
-        Entry::Vacant(_) => {
-            return Err(anyhow!(
-                "Error: there is no already merged reference with refr_index \"{}\"",
-                refr_index
-            ));
-        }
+        Entry::Vacant(_) => Err(anyhow!(
+            "Error: there is no already merged reference with refr_index \"{refr_index}\"",
+        )),
         Entry::Occupied(mut o) => {
-            let value = o.get_mut();
-            match local_reference.moved_cell {
-                None => {
-                    moved_instances.remove(&(0, refr_index));
-                }
-                Some(new_grid) => {
-                    let old_grid = match grid {
-                        None => {
-                            return Err(anyhow!(
-                                "Error: interior cell should not contain moved records"
-                            ))
-                        }
-                        Some(old_grid) => old_grid,
-                    };
-                    match moved_instances.entry((0, refr_index)) {
-                        Entry::Vacant(v) => {
-                            v.insert(MovedInstanceGrids { old_grid, new_grid });
-                        }
-                        Entry::Occupied(mut moved) => {
-                            *moved.get_mut() = MovedInstanceGrids { old_grid, new_grid }
-                        }
-                    }
-                }
+            if let Some(new_grid) = local_reference.moved_cell {
+                let Some(old_grid) = grid else {
+                    return Err(anyhow!(
+                        "Error: interior cell should not contain moved records"
+                    ));
+                };
+                moved_instances.insert((0, refr_index), MovedInstanceGrids { old_grid, new_grid });
+            } else {
+                moved_instances.remove(&(0, refr_index));
             }
-            *value = Reference {
+            *o.get_mut() = Reference {
                 mast_index: 0,
                 refr_index,
                 object_count: if local_reference.object_count == Some(1) {
@@ -425,9 +408,9 @@ fn modify_global_reference(
                 },
                 ..local_reference.clone()
             };
+            Ok(())
         }
-    };
-    Ok(())
+    }
 }
 
 fn missing_ref_text(cell: &Cell, master_name_low: &String, refr_index: u32) -> String {
