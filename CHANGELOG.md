@@ -17,7 +17,7 @@ Fixes
 Miscellaneous
 
 * Improve log messages.
-* Update versions of rust and dependencies, minor code refactoring.
+* Update versions of rust and dependencies, code refactoring.
 
 ## 0.3.2 (2024-05-28)
 

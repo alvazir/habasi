@@ -6,6 +6,7 @@ use crate::{
 };
 use anyhow::{anyhow, Context, Result};
 use hashbrown::{hash_map::Entry, HashMap};
+use std::fmt::Write as _;
 use tes3::esp::{Cell, CellFlags, Reference};
 
 #[allow(clippy::too_many_lines, clippy::cognitive_complexity)]
@@ -69,12 +70,25 @@ pub fn process(
                         } else {
                             match h.l.merged_masters.iter().find(|x| x.local_id == local_reference.mast_index) {
                                 Some(merged_master) => {
-                                    let text = missing_ref_text(&cell, &merged_master.name_low, 0);
+                                    missing_ref_text(
+                                        &mut h.t.missing_ref_text,
+                                        h.g.list_options.no_ignore_errors,
+                                        &cell,
+                                        &merged_master.name_low,
+                                        0
+                                    )?;
                                     if h.g.list_options.no_ignore_errors {
-                                        return Err(anyhow!("Merged {}", text));
+                                        return Err(anyhow!("{}", h.t.missing_ref_text));
                                     }
-                                    missing_ref_append(&text, &mut h.l.ignored_cell_errors, &merged_master, &mut missing_cell_in_merged_master_shown, &h.g.list_options, cfg, log)?;
-                                    continue;
+                                    missing_ref_append(
+                                        &h.t.missing_ref_text,
+                                        &mut h.l.ignored_cell_errors,
+                                        &merged_master,
+                                        &mut missing_cell_in_merged_master_shown,
+                                        &h.g.list_options,
+                                        cfg,
+                                        log
+                                    )?;
                                 }
                                 None => {
                                     if h.g.list_options.strip_masters {
@@ -201,12 +215,25 @@ pub fn process(
                                         )
                                         .with_context(|| format!("Failed to modify global reference"))?,
                                         Err(err) => {
-                                            let text = missing_ref_text(&o_cell.0, &local_merged_master.name_low, local_reference.refr_index);
+                                            missing_ref_text(
+                                                &mut h.t.missing_ref_text,
+                                                h.g.list_options.no_ignore_errors,
+                                                &o_cell.0,
+                                                &local_merged_master.name_low,
+                                                local_reference.refr_index
+                                            )?;
                                             if h.g.list_options.no_ignore_errors {
-                                                return Err(anyhow!("Merged {}\n{:#}", text, err));
+                                                return Err(anyhow!("{}\n{err:#}", h.t.missing_ref_text));
                                             }
-                                            missing_ref_append(&text, &mut h.l.ignored_ref_errors, &local_merged_master, &mut missing_ref_in_merged_master_shown, &h.g.list_options, cfg, log)?;
-                                            continue;
+                                            missing_ref_append(
+                                                &h.t.missing_ref_text,
+                                                &mut h.l.ignored_ref_errors,
+                                                &local_merged_master,
+                                                &mut missing_ref_in_merged_master_shown,
+                                                &h.g.list_options,
+                                                cfg,
+                                                log
+                                            )?;
                                         }
                                     };
                                 }
@@ -413,26 +440,40 @@ fn modify_global_reference(
     }
 }
 
-fn missing_ref_text(cell: &Cell, master_name_low: &String, refr_index: u32) -> String {
-    let cell_name = if cell.data.flags.contains(CellFlags::IS_INTERIOR) {
-        cell.name.clone()
-    } else {
-        format!("({}, {})", cell.data.grid.0, cell.data.grid.1)
-    };
-    format!(
-        "master \"{}\" doesn't contain {}cell \"{}\"",
-        master_name_low,
-        if refr_index == 0 {
-            String::new()
+fn missing_ref_text(
+    text: &mut String,
+    is_error: bool,
+    cell: &Cell,
+    master_name_low: &String,
+    refr_index: u32,
+) -> Result<()> {
+    text.clear();
+    write!(
+        text,
+        "{} master \"{master_name_low}\" doesn't contain ",
+        if is_error {
+            "Merged"
         } else {
-            format!("reference \"{refr_index}\" in ")
-        },
-        cell_name
-    )
+            "    Ignored error: merged"
+        }
+    )?;
+    if refr_index != 0 {
+        write!(text, "reference \"{refr_index}\" in ")?;
+    }
+    if cell.data.flags.contains(CellFlags::IS_INTERIOR) {
+        write!(text, "cell \"{}\"", cell.name)?;
+    } else {
+        write!(
+            text,
+            "cell \"({}, {})\"",
+            cell.data.grid.0, cell.data.grid.1
+        )?;
+    }
+    Ok(())
 }
 
 fn missing_ref_append(
-    text1: &str,
+    text: &str,
     ignored_ref_errors: &mut Vec<IgnoredRefError>,
     merged_master: &LocalMergedMaster,
     flag: &mut bool,
@@ -440,7 +481,6 @@ fn missing_ref_append(
     cfg: &Cfg,
     log: &mut Log,
 ) -> Result<()> {
-    let text = format!("    Ignored error: merged {text1}");
     if let Some(ignored_ref_error) = ignored_ref_errors
         .iter_mut()
         .find(|x| x.master == merged_master.name_low)
@@ -448,22 +488,22 @@ fn missing_ref_append(
         if !*flag {
             ignored_ref_error.cell_counter = increment!(ignored_ref_error.cell_counter);
             if !list_options.no_show_missing_refs {
-                msg(&text, 2, cfg, log)?;
+                msg(text, 2, cfg, log)?;
             }
             *flag = true;
         } else if !list_options.no_show_missing_refs && list_options.show_all_missing_refs {
-            msg(&text, 2, cfg, log)?;
+            msg(text, 2, cfg, log)?;
         } else { //
         }
         ignored_ref_error.ref_counter = increment!(ignored_ref_error.ref_counter);
     } else {
         if !list_options.no_show_missing_refs {
-            msg(&text, 2, cfg, log)?;
+            msg(text, 2, cfg, log)?;
         }
         *flag = true;
         ignored_ref_errors.push(IgnoredRefError {
             master: merged_master.name_low.clone(),
-            first_encounter: text,
+            first_encounter: text.to_owned(),
             cell_counter: 1,
             ref_counter: 1,
         });

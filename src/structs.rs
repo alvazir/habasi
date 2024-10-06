@@ -394,6 +394,7 @@ pub struct HelperTotal {
     pub(crate) assets: Vec<Assets>,
     pub(crate) fallback_statics: Vec<FallbackStatics>,
     pub(crate) skipped_processing_plugins: Vec<String>,
+    pub(crate) missing_ref_text: String,
 }
 
 #[derive(Default)]
@@ -616,6 +617,7 @@ pub struct HelperLocal {
 impl Helper {
     pub(crate) fn new() -> Self {
         let mut helper = Self::default();
+        helper.t.missing_ref_text.reserve(256);
         helper.g.config_index = usize::MAX;
         helper
     }
