@@ -41,11 +41,12 @@ use output::{
 // use peak_alloc::PeakAlloc; // slows down the program too much
 use stats::{Stats, StatsUpdateKind};
 use structs::{
-    Assets, CellExtGrid, CellMeta, Dial, DialMeta, FallbackStatics, FileInBsa, GlobalMaster,
-    GlobalVtexId, HeaderText, Helper, IgnoredRefError, IndirectListOptions, ListOptions, LoadOrder,
+    helper::Helper, list_options::IndirectListOptions, list_options::ListOptions, mode::Mode,
+    out::Out, turn_normal_grass::TurnNormalGrass, Assets, CellExtGrid, CellMeta, Dial, DialMeta,
+    FallbackStatics, FileInBsa, GlobalMaster, GlobalVtexId, HeaderText, IgnoredRefError, LoadOrder,
     LocalMaster, LocalMergedMaster, LocalVtexId, MastId, MasterNameLow, MergedPluginMeta,
-    MergedPluginRefr, Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, PluginInfo,
-    PluginName, RefSources, RefrId, RegexPluginInfo, TurnNormalGrass,
+    MergedPluginRefr, MovedInstanceGrids, MovedInstanceId, OldRefSources, PluginInfo, PluginName,
+    RefSources, RefrId, RegexPluginInfo,
 };
 use util::{
     check_presets, create_dir_early, err_or_ignore, err_or_ignore_thread_safe,
