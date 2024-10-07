@@ -17,7 +17,8 @@ Fixes
 Miscellaneous
 
 * Improve log messages.
-* Update versions of rust and dependencies, code refactoring.
+* Update dependencies, settings version, MSRV to 1.75.0.
+* Code refactoring.
 
 ## 0.3.2 (2024-05-28)
 

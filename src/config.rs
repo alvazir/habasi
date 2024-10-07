@@ -10,8 +10,8 @@ use confique::toml::{template, FormatOptions};
 use options::{get_options, Options};
 use settings::{get_settings, Settings};
 use util::{
-    backup_settings_file, check_base_dir, check_mode, check_settings_version, get_exe_name_and_dir,
-    get_lists, get_log_file, get_settings_file, make_keep_only_last_info_ids, make_tng_stat_ids,
+    backup_settings_file, check_base_dir, check_mode, get_exe_name_and_dir, get_lists,
+    get_log_file, get_settings_file, make_keep_only_last_info_ids, make_tng_stat_ids,
     prepare_plugin_extensions_to_ignore, set_low_string_osstring, set_new_name_retries,
 };
 
