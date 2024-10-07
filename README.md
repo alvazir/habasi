@@ -50,9 +50,9 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
 
   ```text
   Habasi - TES3 plugin merging and utility tool
-  
+
   Usage: habasi [OPTIONS]
-  
+
   Options:
     -m, --merge <OUTPUT[, OPTIONS], LIST>  List(s) of plugins to merge
     -l, --log <PATH>                       Name of the log file
@@ -63,12 +63,12 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
     -?, --help-option <OPTION>             Print help for specific option
     -h, --help                             Print help (see more with '--help')
     -V, --version                          Print version
-  
+
   Presets:
     -C, --preset-check-references   Check for missing references in the whole load order [aliases: check]
     -T, --preset-turn-normal-grass  Turn Normal Grass and Kelp into Groundcover for the whole load order
     -O, --preset-merge-load-order   Merge the whole load order
-  
+
   List options:
     -M, --mode <MODE>                      How to process possibly mergeable records
     -b, --base-dir <PATH>                  Base directory for plugin lists
@@ -80,6 +80,7 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
     -p, --prefer-loose-over-bsa            Get mesh from BSA only when loose mesh not available
     -r, --reindex                          Reindex references twice
     -S, --strip-masters                    Strip masters when possible
+    -B, --force-base-dir                   Force --base-dir usage with --use-load-order
     -E, --exclude-deleted-records          Exclude deleted records with --use-load-order
     -A, --no-show-missing-refs             Do not show missing references
     -D, --debug                            Enable additional debug mode
@@ -94,7 +95,7 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
         --insufficient-merge               Process only cell references(and statics with '-M grass' or '-t')
         --append-to-use-load-order <PATH>  Append plugin path to --use-load-order list
         --skip-from-use-load-order <NAME>  Skip plugin name from --use-load-order list
-  
+
   Display output:
     -v, --verbose...    Show more information
     -q, --quiet         Do not show anything
@@ -170,7 +171,7 @@ The most extreme cases of merging everything:
 
 <details>
 
-<summary>Habasi is written in Rust, so you'll need to grab a https://www.rust-lang.org in order to compile it. Habasi compiles with Rust 1.74.1 or newer</summary>
+<summary>Habasi is written in Rust, so you'll need to grab a https://www.rust-lang.org in order to compile it. Habasi compiles with Rust 1.75.0 or newer</summary>
 
 ```shell
 git clone https://github.com/alvazir/habasi
