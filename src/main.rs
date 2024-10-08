@@ -49,15 +49,23 @@ use structs::{
     RefSources, RefrId, RegexPluginInfo,
 };
 use util::{
-    check_presets, create_dir_early, err_or_ignore, err_or_ignore_thread_safe,
-    get_append_to_use_load_order_string, get_base_dir_path, get_cell_name,
-    get_expanded_plugin_list, get_game_config_string, get_regex_plugin_list,
-    get_skip_from_use_load_order_string, get_skip_plugin_name_low, get_tng_content_name_low,
-    get_tng_dir_and_plugin_names, increment, msg, msg_no_log, process_moved_instances,
-    process_plugin, process_turn_normal_grass, read_lines, references_sorted,
-    select_header_description, should_skip_list, show_global_list_options, show_ignored_ref_errors,
-    show_log_path, show_removed_record_ids, show_settings_version_message, show_settings_written,
-    truncate_header_text, Log, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG,
+    create_dir_early, get_base_dir_path, get_cell_name, get_game_config_string,
+    header::{select_header_description, truncate_header_text},
+    increment,
+    load_order::{
+        get_append_to_use_load_order_string, get_expanded_plugin_list,
+        get_skip_from_use_load_order_string, get_skip_plugin_name_low,
+    },
+    log::{show_log_path, Log},
+    msg::{err_or_ignore, err_or_ignore_thread_safe, msg, msg_no_log},
+    patterns::get_regex_plugin_list,
+    presets::check_presets,
+    process_plugin, read_lines,
+    references::{process_moved_instances, references_sorted, show_ignored_ref_errors},
+    should_skip_list, show_global_list_options, show_removed_record_ids,
+    show_settings_version_message, show_settings_written,
+    tng::{get_tng_content_name_low, get_tng_dir_and_plugin_names, process_turn_normal_grass},
+    CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN, SNDG_MAX_SOUND_FLAG,
 };
 
 // #[global_allocator]

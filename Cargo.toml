@@ -1,6 +1,6 @@
 [package]
 name = "habasi"
-version = "0.3.3"
+version = "0.3.4"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
 rust-version = "1.75.0"
@@ -26,7 +26,7 @@ features = ["esp"]
 
 [dependencies]
 # CLI
-clap = { version = "~4.5.19", features = ["derive", "suggestions", "wrap_help"] }
+clap = { version = "~4.5.20", features = ["derive", "suggestions", "wrap_help"] }
 # settings file
 confique = { version = "~0.2.5", default-features = false, features = ["toml"] }
 # required by confique
