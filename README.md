@@ -129,7 +129,7 @@ Please see the [CHANGELOG](CHANGELOG.md) for a release history.
 
 ## Releases
 
-[Binary downloads](https://www.nexusmods.com/morrowind/mods/53002) are available for GNU/Linux(x86-64(GLIBC, MUSL)), Android(AArch64), Windows(x86-64(Win10+, Win7+)), macOS(x86-64, AArch64).
+[Binary downloads](https://www.nexusmods.com/morrowind/mods/53002) are available for GNU/Linux(x86-64(GLIBC, MUSL)), Android(AArch64, ARMv7-A), Windows(x86-64(Win10+, Win7+)), macOS(x86-64, AArch64).
 
 ## System requirements
 

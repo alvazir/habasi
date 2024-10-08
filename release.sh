@@ -9,6 +9,7 @@ build() {
   cargo build --target x86_64-unknown-linux-gnu --profile release-lto || return 1
   cargo build --target x86_64-unknown-linux-musl --profile release-lto || return 1
   cargo ndk --target arm64-v8a build --profile release-lto || return 1
+  cargo ndk --target armeabi-v7a build --profile release-lto || return 1
   cargo xwin build --target x86_64-pc-windows-msvc --profile release-lto || return 1
   cargo +1.77.2 xwin build --target x86_64-pc-windows-msvc --profile release-lto --target-dir "target/1.77.2_win7" || return 1
   # cargo build --profile release-lto --target x86_64-pc-windows-gnu || return 1
@@ -38,6 +39,9 @@ zip() (
   mkdir -pv "${release_folder}/android_aarch64" || return 1
   cp    -vt "${release_folder}/android_aarch64"\
     "target/aarch64-linux-android/release-lto/${release_binary}" || return 1
+  mkdir -pv "${release_folder}/android_armv7" || return 1
+  cp    -vt "${release_folder}/android_armv7"\
+    "target/armv7-linux-androideabi/release-lto/${release_binary}" || return 1
   mkdir -pv "${release_folder}/windows_x86-64" || return 1
   cp    -vt "${release_folder}/windows_x86-64"\
     "target/x86_64-pc-windows-msvc/release-lto/${release_binary}.exe" || return 1
@@ -79,8 +83,16 @@ main "$@" || echo "error"
 # RUSTFLAGS="-C target-cpu=native" cargo build --profile release-lto
 
 # [Preparations on arch-linux to build for other platforms]
-#
-# rustup target add x86_64-unknown-linux-gnu x86_64-unknown-linux-musl x86_64-pc-windows-gnu x86_64-pc-windows-gnu x86_64-apple-darwin aarch64-apple-darwin
+# rustup target add \
+#   aarch64-apple-darwin \
+#   aarch64-linux-android \
+#   armv7-linux-androideabi \
+#   x86_64-apple-darwin \
+#   x86_64-pc-windows-msvc \
+#   x86_64-unknown-linux-gnu \
+#   x86_64-unknown-linux-musl
+# No longer used:
+#   x86_64-pc-windows-gnu
 # [Preparations:android]
 # yay -S android-ndk cargo-ndk
 # [Preparations:windows_MSVC]

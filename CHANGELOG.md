@@ -7,6 +7,7 @@
 
 Miscellaneous
 
+* Add `armv7` Android build.
 * Code refactoring.
 
 ## 0.3.3 (2024-10-07)
