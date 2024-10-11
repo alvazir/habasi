@@ -41,12 +41,16 @@ use output::{
 // use peak_alloc::PeakAlloc; // slows down the program too much
 use stats::{Stats, StatsUpdateKind};
 use structs::{
-    helper::Helper, list_options::IndirectListOptions, list_options::ListOptions, mode::Mode,
-    out::Out, turn_normal_grass::TurnNormalGrass, Assets, CellExtGrid, CellMeta, Dial, DialMeta,
-    FallbackStatics, FileInBsa, GlobalMaster, GlobalVtexId, HeaderText, IgnoredRefError, LoadOrder,
-    LocalMaster, LocalMergedMaster, LocalVtexId, MastId, MasterNameLow, MergedPluginMeta,
-    MergedPluginRefr, MovedInstanceGrids, MovedInstanceId, OldRefSources, PluginInfo, PluginName,
-    RefSources, RefrId, RegexPluginInfo,
+    dial::{Dial, DialMeta},
+    helper::Helper,
+    list_options::{IndirectListOptions, ListOptions},
+    mode::Mode,
+    out::Out,
+    turn_normal_grass::TurnNormalGrass,
+    Assets, CellExtGrid, CellMeta, FallbackStatics, FileInBsa, GlobalMaster, GlobalVtexId,
+    HeaderText, IgnoredRefError, LoadOrder, LocalMaster, LocalMergedMaster, LocalVtexId, MastId,
+    MasterNameLow, MergedPluginMeta, MergedPluginRefr, MovedInstanceGrids, MovedInstanceId,
+    OldRefSources, PluginInfo, PluginName, RefSources, RefrId, RegexPluginInfo,
 };
 use util::{
     create_dir_early, get_base_dir_path, get_cell_name, get_game_config_string,

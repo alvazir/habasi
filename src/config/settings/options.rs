@@ -43,18 +43,20 @@ pub struct Options {
     ///   - [prefer_loose_over_bsa] "no_prefer_loose_over_bsa", "prefer_loose_over_bsa"
     ///   - [reindex] "no_reindex", "reindex"
     ///   - [strip_masters] "no_strip_masters", "strip_masters"
+    ///   - [force_base_dir] "no_force_base_dir", "force_base_dir"
     ///   - [exclude_deleted_records] "no_exclude_deleted_records", "exclude_deleted_records"
     ///   - [no_show_missing_refs] "show_missing_refs", "no_show_missing_refs"
     ///   - [debug] "no_debug", "debug"
     ///   - [no_ignore_errors] "ignore_errors", "no_ignore_errors"
     ///   - [no_compare] "compare", "no_compare"
     ///   - [no_compare_secondary] "compare_secondary", "no_compare_secondary"
-    ///   - [dry_run_secondary] "no_dry_run_secondary", "dry_run_secondary".
-    ///   - [dry_run_dismiss_stats] "no_dry_run_dismiss_stats", "dry_run_dismiss_stats".
-    ///   - [ignore_important_errors] "no_ignore_important_errors", "ignore_important_errors".
-    ///   - [regex_case_sensitive] "no_regex_case_sensitive", "regex_case_sensitive".
-    ///   - [regex_sort_by_name] "no_regex_sort_by_name", "regex_sort_by_name".
-    ///   - [insufficient_merge] "no_insufficient_merge", "insufficient_merge".
+    ///   - [dry_run_secondary] "no_dry_run_secondary", "dry_run_secondary"
+    ///   - [dry_run_dismiss_stats] "no_dry_run_dismiss_stats", "dry_run_dismiss_stats"
+    ///   - [regex_case_sensitive] "no_regex_case_sensitive", "regex_case_sensitive"
+    ///   - [regex_sort_by_name] "no_regex_sort_by_name", "regex_sort_by_name"
+    ///   - [force_dial_type] "no_force_dial_type", "force_dial_type"
+    ///   - [ignore_important_errors] "no_ignore_important_errors", "ignore_important_errors"
+    ///   - [insufficient_merge] "no_insufficient_merge", "insufficient_merge"
     ///   - [append_to_use_load_order] "append_to_use_load_order:", "append_to_use_load_order:<PATH>"
     ///   - [skip_from_use_load_order] "skip_from_use_load_order:", "skip_from_use_load_order:<NAME>"
     #[config(default = [])]
@@ -119,11 +121,13 @@ pub struct Options {
     #[config(default = false)]
     pub(crate) dry_run_dismiss_stats: bool,
     #[config(default = false)]
-    pub(crate) ignore_important_errors: bool,
-    #[config(default = false)]
     pub(crate) regex_case_sensitive: bool,
     #[config(default = false)]
     pub(crate) regex_sort_by_name: bool,
+    #[config(default = false)]
+    pub(crate) force_dial_type: bool,
+    #[config(default = false)]
+    pub(crate) ignore_important_errors: bool,
     #[config(default = false)]
     pub(crate) insufficient_merge: bool,
     #[config(default = "")]

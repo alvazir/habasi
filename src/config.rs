@@ -193,6 +193,7 @@ impl Cfg {
                 prefer_loose_over_bsa: opt_or_set_bool!(prefer_loose_over_bsa),
                 regex_case_sensitive: opt_or_set_bool!(regex_case_sensitive),
                 regex_sort_by_name: opt_or_set_bool!(regex_sort_by_name),
+                force_dial_type: opt_or_set_bool!(force_dial_type),
                 insufficient_merge: opt_or_set_bool!(insufficient_merge),
                 dry_run_dismiss_stats: opt_or_set_bool!(dry_run_dismiss_stats),
                 append_to_use_load_order: opt_or_set_some!(append_to_use_load_order),

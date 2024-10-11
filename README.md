@@ -91,6 +91,7 @@ Habasi will steal your precious plugins and stash them. It is a [command line](h
         --dry-run-dismiss-stats            Dismiss stats with --dry-run
         --regex-case-sensitive             Turn glob/regex patterns to case-sensitive mode
         --regex-sort-by-name               Sort plugins from glob/regex patterns by name
+        --force-dial-type                  Set info records' type to dialogue's when they differ
         --ignore-important-errors          Ignore non-critical errors
         --insufficient-merge               Process only cell references(and statics with '-M grass' or '-t')
         --append-to-use-load-order <PATH>  Append plugin path to --use-load-order list

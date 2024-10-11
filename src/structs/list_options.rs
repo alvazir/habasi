@@ -38,9 +38,10 @@ pub struct ListOptions {
     pub(crate) no_compare_secondary: bool,
     pub(crate) dry_run_secondary: bool,
     pub(crate) dry_run_dismiss_stats: bool,
-    pub(crate) ignore_important_errors: bool,
     pub(crate) regex_case_sensitive: bool,
     pub(crate) regex_sort_by_name: bool,
+    pub(crate) force_dial_type: bool,
+    pub(crate) ignore_important_errors: bool,
     pub(crate) insufficient_merge: bool,
     pub(crate) append_to_use_load_order: String,
     pub(crate) skip_from_use_load_order: String,
@@ -48,6 +49,7 @@ pub struct ListOptions {
 }
 
 impl ListOptions {
+    #[allow(clippy::cognitive_complexity)]
     pub(crate) fn show(&self) -> Result<String> {
         let mut text = format!("mode = {}", self.mode);
         if !self.base_dir_indirect.as_os_str().is_empty() {
@@ -98,9 +100,10 @@ impl ListOptions {
             no_compare_secondary,
             dry_run_secondary,
             dry_run_dismiss_stats,
-            ignore_important_errors,
             regex_case_sensitive,
             regex_sort_by_name,
+            force_dial_type,
+            ignore_important_errors,
             insufficient_merge
         );
         Ok(text)
@@ -190,12 +193,14 @@ impl ListOptions {
                     "no_dry_run_secondary" => list_options.dry_run_secondary = false,
                     "dry_run_dismiss_stats" => list_options.dry_run_dismiss_stats = true,
                     "no_dry_run_dismiss_stats" => list_options.dry_run_dismiss_stats = false,
-                    "ignore_important_errors" => list_options.ignore_important_errors = true,
-                    "no_ignore_important_errors" => list_options.ignore_important_errors = false,
                     "regex_case_sensitive" => list_options.regex_case_sensitive = true,
                     "no_regex_case_sensitive" => list_options.regex_case_sensitive = false,
                     "regex_sort_by_name" => list_options.regex_sort_by_name = true,
                     "no_regex_sort_by_name" => list_options.regex_sort_by_name = false,
+                    "force_dial_type" => list_options.force_dial_type = true,
+                    "no_force_dial_type" => list_options.force_dial_type = false,
+                    "ignore_important_errors" => list_options.ignore_important_errors = true,
+                    "no_ignore_important_errors" => list_options.ignore_important_errors = false,
                     "insufficient_merge" => list_options.insufficient_merge = true,
                     "no_insufficient_merge" => list_options.insufficient_merge = false,
                     _ => break,
@@ -231,6 +236,10 @@ impl ListOptions {
             } else {
                 self.indirect.base_dir = self.base_dir_indirect.clone();
             }
+        }
+        if self.force_dial_type && self.insufficient_merge {
+            writeln!(&mut text, "{prefix} unset \"force_dial_type\" due to \"insufficient_merge\"")?;
+            self.force_dial_type = false;
         }
         if matches!(self.mode, Mode::Grass) {
             if self.turn_normal_grass {

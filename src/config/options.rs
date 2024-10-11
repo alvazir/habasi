@@ -595,6 +595,21 @@ pub(in crate::config) struct Options {
         help = "Sort plugins from glob/regex patterns by name"
     )]
     pub(super) regex_sort_by_name: bool,
+    /// Set INFO records' type to DIAL's when they differ.
+    ///
+    /// DIAL's type change is uncommon and may indicate problematic plugin. Hence the program shows warning. Better fix problematic plugin, because this option is not guaranteed to help.
+    ///
+    /// This option is designed to overcome a rare bug(wrong INFO records' type set) in plugins produced by OpenMW-CS version 0.48(and earlier?).
+    ///
+    /// Corresponding per list options: "force_dial_type", "no_force_dial_type".
+    #[arg(
+        help_heading = "List options",
+        conflicts_with = "settings_write",
+        long,
+        alias = "force_dial_type",
+        help = "Set info records' type to dialogue's when they differ"
+    )]
+    pub(super) force_dial_type: bool,
     /// Ignore non-critical errors, e.g. missing or broken plugins.
     ///
     /// It may be useful, though it's better to fix underlying problems. May rarely lead to unexpected behaviour.
@@ -655,7 +670,7 @@ pub(in crate::config) struct Options {
     pub(super) skip_from_use_load_order: Option<String>,
     /// Show more information. May be provided multiple times for extra effect:
     ///
-    ///   -v: Show list options, total stats per list, list of new grass meshes written, count of new static records, list of records excluded(with exclude_deleted_records option), "references reindexed" and "master subrecords stripped" messages.
+    ///   -v: Show list options, total stats per list, list of new grass meshes written, count of new static records, list of records excluded(with exclude_deleted_records option), force dial type messages, "references reindexed" and "master subrecords stripped" messages.
     ///
     ///   -vv: Show detailed total stats, ignored reference errors, list of new grass meshes untouched, list of new static records, list of records excluded(grass mode, INFO records from settings.advanced.keep_only_last_info_ids),"processing plugin" messages.
     ///

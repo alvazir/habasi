@@ -3,12 +3,16 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
-## 0.3.4 (TBD)
+## 0.3.4 (2024-10-11)
+
+New features
+
+* Add `--force-dial-type` to set [INFO](https://en.m.uesp.net/wiki/Morrowind_Mod:Mod_File_Format/INFO)'s dialogue type to parent [DIAL](https://en.m.uesp.net/wiki/Morrowind_Mod:Mod_File_Format/DIAL)'s thanks to [Willtor](https://github.com/Willtor)'s report(resolve [Issue-5](https://github.com/alvazir/habasi/issues/5)). That's designed primarily to overcome rare [bug](https://gitlab.com/OpenMW/openmw/-/issues/7861) in plugins made with OpenMW-CS 0.48(and probably previous versions, [fixed](https://gitlab.com/OpenMW/openmw/-/merge_requests/3998) in 0.49).
 
 Miscellaneous
 
 * Add `armv7` Android build.
-* Code refactoring.
+* Code refactoring, update settings version.
 
 ## 0.3.3 (2024-10-07)
 

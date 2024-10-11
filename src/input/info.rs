@@ -1,17 +1,20 @@
-use crate::{Cfg, Dial, Helper, Out, Stats, StatsUpdateKind};
+use crate::{msg, Cfg, Dial, Helper, Log, Out, Stats, StatsUpdateKind};
 use anyhow::{anyhow, Context, Result};
 use hashbrown::hash_map::Entry;
 use tes3::esp::{DialogueInfo, ObjectFlags};
 
-pub fn process(info: DialogueInfo, out: &mut Out, h: &mut Helper, cfg: &Cfg) -> Result<()> {
-    let active_dial_id = match h.l.active_dial_id {
-        None => {
-            return Err(anyhow!(
-                "Failed to get dialogue id for info record \"{}\"",
-                info.id
-            ))
-        }
-        Some(active_dial_id) => active_dial_id,
+pub fn process(
+    mut info: DialogueInfo,
+    out: &mut Out,
+    h: &mut Helper,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
+    let Some(active_dial_id) = h.l.active_dial_id else {
+        return Err(anyhow!(
+            "Failed to get dialogue id for info record \"{}\"",
+            info.id
+        ));
     };
     let out_dial = &mut out
         .dial
@@ -20,21 +23,14 @@ pub fn process(info: DialogueInfo, out: &mut Out, h: &mut Helper, cfg: &Cfg) -> 
             format!("Bug: out.dial doesn't contain active_dial_id = \"{active_dial_id}\"")
         })?
         .0;
-    #[allow(clippy::as_conversions)]
-    if out_dial.dialogue.dialogue_type as u8
-        != u8::try_from(info.data.dialogue_type as u32).with_context(|| {
-            format!(
-                "Bug: failed to cast {}(info.data.dialogue_type, DialogueType as u32) to u8",
-                info.data.dialogue_type as u32
-            )
-        })?
+    if out_dial.dialogue_type.info != info.data.dialogue_type
         && !info.flags.contains(ObjectFlags::DELETED)
     {
-        return Err(anyhow!(
-            "Error: \"{}\" info record's kind is different to \"{}\" dialogue's",
-            info.id,
-            out_dial.dialogue.id,
-        ));
+        if h.g.list_options.force_dial_type {
+            change_dialogue_type(&mut info, out_dial, cfg, log)?;
+        } else {
+            return Err(error_dialogue_type(&info, out_dial));
+        }
     }
     let next_info_id = out_dial.info.len();
     match h.g.r.dials.get_mut(&h.l.active_dial_name_low) {
@@ -77,4 +73,37 @@ fn exclude_info(id: &str, dial: &mut Dial, stats: &mut Stats) {
             stats.info(StatsUpdateKind::Excluded);
         }
     }
+}
+
+fn change_dialogue_type(
+    info: &mut DialogueInfo,
+    out_dial: &Dial,
+    cfg: &Cfg,
+    log: &mut Log,
+) -> Result<()> {
+    let previous_dialogue_type = info.data.dialogue_type;
+    info.data.dialogue_type = out_dial.dialogue_type.info;
+    let text = format!(
+        "Force dial type: \"{}\" info record's type \"{:?}\" was changed to \"{}\" dialogue's type \"{:?}\"",
+        info.id,
+        previous_dialogue_type,
+        out_dial.dialogue.id,
+        info.data.dialogue_type,
+    );
+    msg(text, 1, cfg, log)
+}
+
+fn error_dialogue_type(info: &DialogueInfo, dial: &Dial) -> anyhow::Error {
+    anyhow!(
+        "\nError: \"{}\" info record's type \"{:?}\" is different to \"{}\" dialogue's type \"{:?}\"\n\tOption \"--force-dial-type\" {}",
+        info.id,
+        info.data.dialogue_type,
+        dial.dialogue.id,
+        dial.dialogue.dialogue_type,
+        if dial.dialogue_type.changed {
+            "may help, though DIAL's type change is a sign of problematic plugin"
+        } else {
+            "should help, because it looks like the bug in plugin caused by OpenMW-CS 0.48-"
+        }
+    )
 }

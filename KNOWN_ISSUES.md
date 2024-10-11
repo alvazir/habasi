@@ -22,3 +22,9 @@
   **Description**: It's a very rare case. It doesn't really have any serious consequences.  
   Both engines process SNDG records identically. Several SNDG records with empty IDs would overwrite each other even if they are for different creatures.
   Solved by assigning IDs to SNDGs with empty IDs. New ID is a creature name(truncated to 28 characters), 000 and id of the sound type data id(0-7). E.g. alit scream would be `alit0006`. Check log for new IDs or run with -vv.  
+
+4. Very rare INFO records' type differ from parent DIAL's type  
+  **Status**: solved  
+  **Description**: OpenMW-CS 0.48(-?) [caused](https://gitlab.com/OpenMW/openmw/-/issues/7861) it, [fixed](https://gitlab.com/OpenMW/openmw/-/merge_requests/3998) in 0.49.  
+  [INFO](https://en.m.uesp.net/wiki/Morrowind_Mod:Mod_File_Format/INFO) records contain redundant dialogue type field that should be equal to parent [DIAL](https://en.m.uesp.net/wiki/Morrowind_Mod:Mod_File_Format/DIAL)'s. The program shows warning when it's not.  
+  Solved by setting DIAL's type to problematic INFO records with `--force-dial-type` option. Check log for details or run with -v.  

@@ -2,12 +2,14 @@ use crate::{truncate_header_text, Bsa, Cfg, Log, Stats};
 use anyhow::{anyhow, Result};
 use hashbrown::{HashMap, HashSet};
 use std::{path::PathBuf, time::SystemTime};
-use tes3::esp::{Dialogue, DialogueInfo, EffectId, Reference, SkillId, Static};
+use tes3::esp::{EffectId, Reference, SkillId, Static};
+pub mod dial;
 pub mod helper;
 pub mod list_options;
 pub mod mode;
 pub mod out;
 pub mod turn_normal_grass;
+use dial::{Dial, DialMeta};
 use list_options::ListOptions;
 use mode::Mode;
 use turn_normal_grass::TurnNormalGrass;
@@ -108,11 +110,6 @@ pub struct MergedPluginRefr {
     pub(crate) global_refr: RefrId,
 }
 
-pub struct DialMeta {
-    pub(crate) global_dial_id: GlobalRecordId,
-    pub(crate) info_metas: HashMap<InfoName, InfoId>,
-}
-
 pub struct CellMeta {
     pub(crate) global_cell_id: GlobalRecordId,
     pub(crate) plugin_metas: Vec<MergedPluginMeta>,
@@ -121,12 +118,6 @@ pub struct CellMeta {
 pub struct MergedPluginMeta {
     pub(crate) plugin_name_low: PluginNameLow,
     pub(crate) plugin_refrs: Vec<MergedPluginRefr>,
-}
-
-pub struct Dial {
-    pub(crate) dialogue: Dialogue,
-    pub(crate) info: Vec<DialogueInfo>,
-    pub(crate) excluded_infos: Vec<usize>,
 }
 
 pub struct IgnoredRefError {
