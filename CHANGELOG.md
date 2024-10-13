@@ -3,6 +3,12 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.3.5 (2024-10-13)
+
+Fixes
+
+* Make `--force-base-dir`(`-B`) work with `--preset-merge-load-order`(`-O`).
+
 ## 0.3.4 (2024-10-11)
 
 New features

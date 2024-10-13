@@ -39,8 +39,14 @@ pub fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Vec<Vec
                         .clone(),
                 );
             }
+            // COMMENT: process options like base_dir earlier than expected for the scan to work
+            h.g.list_options = cfg
+                .list_options
+                .get_mutated(&preset_config_merge_load_order, cfg, log)
+                .with_context(|| "Failed to get list options")?
+                .1;
+            scan(h, cfg, log).with_context(|| "Failed to scan load order")?;
             merge_override = vec![preset_config_merge_load_order];
-            scan(h, cfg, log)?;
             let groundcovers_len =
                 h.t.game_configs
                     .get(h.g.config_index)

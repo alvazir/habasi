@@ -101,7 +101,8 @@ fn run() -> Result<()> {
     show_settings_version_message(&cfg, &mut log)?;
     let mut h = Helper::new();
     show_global_list_options(&cfg, &mut log)?;
-    let merge_override = check_presets(&mut h, &cfg, &mut log)?;
+    let merge_override = check_presets(&mut h, &cfg, &mut log)
+        .with_context(|| "Failed to check and apply presets")?;
     let merge = if merge_override.is_empty() {
         &cfg.merge
     } else {
@@ -147,7 +148,10 @@ fn process_list(
         list.first()
             .with_context(|| "Bug: failed to get name from list")?
     };
-    let (index, list_options) = cfg.list_options.get_mutated(list, cfg, log)?;
+    let (index, list_options) = cfg
+        .list_options
+        .get_mutated(list, cfg, log)
+        .with_context(|| "Failed to get list options")?;
     let expanded_plugin_list = get_expanded_plugin_list(list, index, &list_options, h, cfg, log)
         .with_context(|| "Failed to expand plugin list by scanning load order")?;
     #[allow(clippy::shadow_same)]

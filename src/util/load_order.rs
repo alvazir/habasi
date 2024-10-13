@@ -12,7 +12,7 @@ pub fn get_expanded_plugin_list(
 ) -> Result<Vec<String>> {
     let expanded_plugin_list = if list_options.use_load_order {
         h.g.list_options = list_options.get_pristine();
-        scan(h, cfg, log)?;
+        scan(h, cfg, log).with_context(|| "Failed to scan load order")?;
         let is_grass = matches!(list_options.mode, Mode::Grass);
         if plugin_list.len() > index {
             #[allow(clippy::arithmetic_side_effects)]
