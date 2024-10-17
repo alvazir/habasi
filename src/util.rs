@@ -186,8 +186,7 @@ pub fn process_plugin(
 }
 
 fn get_plugin_pathbuf_pathstring(plugin_name: &str, h: &Helper) -> (PathBuf, String) {
-    let mut plugin_pathbuf = h.g.list_options.indirect.base_dir.clone();
-    plugin_pathbuf.push(plugin_name);
+    let plugin_pathbuf = h.g.list_options.indirect.base_dir.join(plugin_name);
     let plugin_path = plugin_pathbuf.to_string_lossy().into_owned();
     (plugin_pathbuf, plugin_path)
 }

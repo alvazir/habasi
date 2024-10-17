@@ -1,6 +1,6 @@
 [package]
 name = "habasi"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
 rust-version = "1.75.0"

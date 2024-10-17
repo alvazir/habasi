@@ -97,8 +97,7 @@ fn get_regex_sublists(
             continue;
         }
         let mut sort_by_name = list_options.regex_sort_by_name;
-        let mut plugin_pathbuf = list_options.indirect.base_dir.clone();
-        plugin_pathbuf.push(pattern);
+        let plugin_pathbuf = list_options.indirect.base_dir.join(pattern);
         let mut remove_leading_dot = false;
         sublist.clear();
         if let Err(error) = if is_regex {
