@@ -133,9 +133,8 @@ fn get_load_order(
         if !lcl_h.mor_found {
             if line.starts_with(&cfg.guts.omw_line_beginning_data) {
                 lcl_h.set_omw_found();
-                if glb_h.force_base_dir {
-                    lcl_h.omw_data_line_counter = increment!(lcl_h.omw_data_line_counter);
-                } else {
+                lcl_h.omw_data_line_counter = increment!(lcl_h.omw_data_line_counter);
+                if !glb_h.force_base_dir {
                     omw::get_data_dir(&line, &mut omw_data_dirs, &mut lcl_h, glb_h, cfg, log)
                         .with_context(|| "Failed to get OpenMW's data directory")?;
                 }

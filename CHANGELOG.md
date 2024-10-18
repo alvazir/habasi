@@ -5,6 +5,10 @@
 
 ## 0.3.6 (TBD)
 
+Fixes
+
+* Show warning about missing `data=` lines in `openmw.cfg` only when lines are missing :-)
+
 Miscellaneous
 
 * Code refactoring.
