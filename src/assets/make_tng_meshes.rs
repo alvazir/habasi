@@ -219,9 +219,10 @@ fn get_new_mesh_names(
         h.g.turn_normal_grass.iter_mut().collect();
     // COMMENT: sort by path so that logs remain consistent between runs
     h_g_turn_normal_grass.sort_unstable_by_key(|x| x.0);
+    let mut name_path = cfg.guts.grass_subdir.path_buf.join("dummy_file_name");
     for (original_name, tng) in h_g_turn_normal_grass {
         let path = Path::new(&original_name);
-        let mut name_path = cfg.guts.grass_subdir.path_buf.clone();
+        name_path.pop();
         name_path.push(path.file_name().context(format!(
             "Bug: failed to get file_name from \"{original_name}\""
         ))?);
@@ -229,7 +230,7 @@ fn get_new_mesh_names(
         for n in 0..cfg.guts.turn_normal_grass_new_name_retries {
             if n > 0 {
                 if n < cfg.guts.turn_normal_grass_new_name_retries {
-                    name_path.clone_from(&cfg.guts.grass_subdir.path_buf);
+                    name_path.pop();
                     name_path.push(format!(
                         "{}_{:02}.nif",
                         path.file_stem()
