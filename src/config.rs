@@ -68,8 +68,8 @@ pub struct Guts {
     pub(crate) omw_cs_data_paths_list: Vec<String>,
     // [Section: Turn normal grass]
     pub(crate) turn_normal_grass_new_name_retries: u8,
-    pub(crate) turn_normal_grass_plugin_name_suffix_deleted_content: String,
-    pub(crate) turn_normal_grass_plugin_name_suffix_grass: String,
+    pub(crate) turn_normal_grass_plugin_name_suffix_content: String,
+    pub(crate) turn_normal_grass_plugin_name_suffix_groundcover: String,
     pub(crate) turn_normal_grass_header_author_append: String,
     pub(crate) turn_normal_grass_header_description_content: Vec<String>,
     pub(crate) turn_normal_grass_header_description_groundcover: Vec<String>,
@@ -270,12 +270,12 @@ impl Cfg {
                 turn_normal_grass_new_name_retries: set_new_name_retries(
                     set.guts.turn_normal_grass_mesh_new_name_retries,
                 )?,
-                turn_normal_grass_plugin_name_suffix_deleted_content: set
+                turn_normal_grass_plugin_name_suffix_content: set
                     .guts
-                    .turn_normal_grass_plugin_name_suffix_deleted_content,
-                turn_normal_grass_plugin_name_suffix_grass: set
+                    .turn_normal_grass_plugin_name_suffix_content,
+                turn_normal_grass_plugin_name_suffix_groundcover: set
                     .guts
-                    .turn_normal_grass_plugin_name_suffix_grass,
+                    .turn_normal_grass_plugin_name_suffix_groundcover,
                 turn_normal_grass_header_author_append: set
                     .guts
                     .turn_normal_grass_header_author_append,

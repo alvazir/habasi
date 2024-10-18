@@ -62,16 +62,14 @@ pub fn get_tng_dir_and_plugin_names(name: &str, cfg: &Cfg) -> Result<(PathBuf, S
         .map_or_else(PathBuf::new, Path::to_path_buf);
     let plugin_deleted_content_name_pathbuf = dir.join(format!(
         "{}{}",
-        name_stem,
-        &cfg.guts
-            .turn_normal_grass_plugin_name_suffix_deleted_content
+        name_stem, &cfg.guts.turn_normal_grass_plugin_name_suffix_content
     ));
     let plugin_deleted_content_name = plugin_deleted_content_name_pathbuf
         .to_string_lossy()
         .into_owned();
     let plugin_grass_name_pathbuf = dir.join(format!(
         "{}{}",
-        name_stem, &cfg.guts.turn_normal_grass_plugin_name_suffix_grass
+        name_stem, &cfg.guts.turn_normal_grass_plugin_name_suffix_groundcover
     ));
     let plugin_grass_name = plugin_grass_name_pathbuf.to_string_lossy().into_owned();
     Ok((dir, plugin_deleted_content_name, plugin_grass_name))
