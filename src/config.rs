@@ -71,8 +71,8 @@ pub struct Guts {
     pub(crate) turn_normal_grass_plugin_name_suffix_deleted_content: String,
     pub(crate) turn_normal_grass_plugin_name_suffix_grass: String,
     pub(crate) turn_normal_grass_header_author_append: String,
-    pub(crate) turn_normal_grass_header_description_content: String,
-    pub(crate) turn_normal_grass_header_description_groundcover: String,
+    pub(crate) turn_normal_grass_header_description_content: Vec<String>,
+    pub(crate) turn_normal_grass_header_description_groundcover: Vec<String>,
     // [Section: Meshes]
     pub(crate) mesh_extension: StringOsPath,
     pub(crate) meshes_dir: StringOsPath,

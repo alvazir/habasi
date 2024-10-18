@@ -81,20 +81,26 @@ pub struct Guts {
     #[config(default = 100_u8)]
     pub(crate) turn_normal_grass_mesh_new_name_retries: u8,
     #[config(default = "-CONTENT.esp")]
-    pub(crate) turn_normal_grass_plugin_name_suffix_deleted_content: String,
+    pub(crate) turn_normal_grass_plugin_name_suffix_content: String,
     #[config(default = "-GROUNDCOVER.esp")]
-    pub(crate) turn_normal_grass_plugin_name_suffix_grass: String,
+    pub(crate) turn_normal_grass_plugin_name_suffix_groundcover: String,
     #[config(default = ", idea by Hemaris")]
-    /// "\n" is the new line symbol.
     pub(crate) turn_normal_grass_header_author_append: String,
     #[config(
-        default = "ENABLE THIS PLUGIN AS A NORMAL MOD.\nTurns selected plugins' grass-shaped static plants into \"grass\" in the grass mod sense."
+        default = [
+            "ENABLE THIS PLUGIN AS A NORMAL MOD.", 
+            "Turns selected plugins' grass-shaped static plants into \"grass\" in the grass mod sense.",
+        ]
     )]
-    pub(crate) turn_normal_grass_header_description_content: String,
+    pub(crate) turn_normal_grass_header_description_content: Vec<String>,
     #[config(
-        default = "OPENMW PLAYERS: LOAD THIS WITH A GROUNDCOVER= LINE IN OPENMW.CFG.\nMGE XE USERS: ONLY ENABLE THIS WHILE GENERATING DISTANT LAND.\nTurns selected plugins' grass-shaped static plants into \"grass\" in the grass mod sense."
+        default = [
+            "OPENMW PLAYERS: LOAD THIS WITH A GROUNDCOVER= LINE IN OPENMW.CFG.",
+            "MGE XE USERS: ONLY ENABLE THIS WHILE GENERATING DISTANT LAND.",
+            "Turns selected plugins' grass-shaped static plants into \"grass\" in the grass mod sense.",
+        ]
     )]
-    pub(crate) turn_normal_grass_header_description_groundcover: String,
+    pub(crate) turn_normal_grass_header_description_groundcover: Vec<String>,
     /// [Section: Meshes]
     #[config(default = "nif")]
     pub(crate) mesh_extension: String,

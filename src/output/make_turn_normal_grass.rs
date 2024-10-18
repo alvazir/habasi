@@ -58,37 +58,35 @@ pub fn make_turn_normal_grass(
     make_tng_meshes(dir, out, h, cfg, log)?;
     let tng_statics = make_tng_statics(&plugin_grass_name, h, cfg, log)
         .with_context(|| "Failed to process STAT records while trying to turn normal grass")?;
-    let header_author = format!(
+    let author = format!(
         "{}{}",
         &cfg.guts.header_author, &cfg.guts.turn_normal_grass_header_author_append
     );
+    let mut description = cfg
+        .guts
+        .turn_normal_grass_header_description_content
+        .join("\n");
     let plugin_deleted_content = make_tng_plugin(
         &plugin_deleted_content_name,
         del_ref_cells,
         None,
         new_masters.clone(),
-        HeaderText::new(
-            &header_author,
-            &cfg.guts.turn_normal_grass_header_description_content,
-            cfg,
-            log,
-        )?,
+        HeaderText::new(&author, &description, cfg, log)?,
         h,
         cfg,
         log,
     )
     .with_context(|| format!("Failed to make plugin \"{}\"", &plugin_deleted_content_name))?;
+    description = cfg
+        .guts
+        .turn_normal_grass_header_description_groundcover
+        .join("\n");
     let plugin_grass = make_tng_plugin(
         &plugin_grass_name,
         grass_cells,
         Some(tng_statics),
         new_masters,
-        HeaderText::new(
-            &header_author,
-            &cfg.guts.turn_normal_grass_header_description_groundcover,
-            cfg,
-            log,
-        )?,
+        HeaderText::new(&author, &description, cfg, log)?,
         h,
         cfg,
         log,

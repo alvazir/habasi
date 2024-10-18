@@ -8,6 +8,7 @@
 Fixes
 
 * Show warning about missing `data=` lines in `openmw.cfg` only when lines are missing :-)
+* Fix settings file errors caused by libraries update in 0.3.4(confique [0.2.6](https://github.com/LukasKalbertodt/confique/blob/main/CHANGELOG.md#026---2024-10-10) switched to updated toml library 0.5 -> 0.8).
 
 Miscellaneous
 
