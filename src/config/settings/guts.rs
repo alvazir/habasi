@@ -136,14 +136,4 @@ pub struct Guts {
     pub(crate) prefix_combined_stats: String,
     #[config(default = "Stats:")]
     pub(crate) prefix_list_stats: String,
-    #[config(default = "Ignored important error: ")]
-    pub(crate) prefix_ignored_important_error_message: String,
-    #[config(
-        default = "\n\tConsider reporting the error to add this tag to the list of unexpected tags to skip by default"
-    )]
-    pub(crate) infix_add_unexpected_tag_suggestion: String,
-    #[config(
-        default = "\n\tFix the problem or add \"--ignore-important-errors\"(may rarely cause unexpected behaviour) to ignore"
-    )]
-    pub(crate) suffix_add_ignore_important_errors_suggestion: String,
 }
