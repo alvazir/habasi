@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
-## 0.3.6 (TBD)
+## 0.3.6 (2024-10-19)
 
 Fixes
 
@@ -12,7 +12,7 @@ Fixes
 
 Miscellaneous
 
-* Code refactoring.
+* Code refactoring, update settings version.
 
 ## 0.3.5 (2024-10-13)
 

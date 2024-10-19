@@ -28,7 +28,7 @@ fn check_settings_version(settings_file: &mut SettingsFile) -> Result<()> {
             )
         })?;
         let settings_version_prefix = "# # Settings version: ";
-        let expected_settings_version = String::from("0.3.4");
+        let expected_settings_version = String::from("0.3.6");
         let mut detected_settings_version = String::from("0.1.0");
         for line in settings_toml_lines.map_while(Result::ok) {
             if line.starts_with(settings_version_prefix) {

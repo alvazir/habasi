@@ -28,11 +28,9 @@ features = ["esp"]
 # CLI
 clap = { version = "~4.5.20", features = ["derive", "suggestions", "wrap_help"] }
 # settings file
-confique = { version = "~0.2.6", default-features = false, features = ["toml"] }
-# required by confique
-serde = "~1.0.210"
+confique = { version = "~0.3.0", default-features = false, features = ["toml"] }
 # error management
-anyhow = "~1.0.89"
+anyhow = "~1.0.90"
 # find openmw.cfg
 dirs = "~5.0.1"
 # find files in parallel

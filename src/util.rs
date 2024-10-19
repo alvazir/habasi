@@ -166,23 +166,14 @@ pub fn process_plugin(
     log: &mut Log,
 ) -> Result<()> {
     let (plugin_pathbuf, plugin_pathstring) = get_plugin_pathbuf_pathstring(plugin_name, h);
-    msg(
-        format!("  Processing plugin \"{}\"", &plugin_pathstring),
-        2,
-        cfg,
-        log,
-    )?;
+    let text = format!("  Processing plugin \"{}\"", &plugin_pathstring);
+    msg(text, 2, cfg, log)?;
     h.local_init(plugin_pathbuf, h.g.plugins_processed.len())
         .with_context(|| "Failed to start processing plugin")?;
     let plugin = Plugin::from_path(&plugin_pathstring)
         .with_context(|| format!("Failed to read plugin \"{plugin_pathstring}\""))?;
-    process_records(plugin, out, name, h, cfg, log).with_context(|| {
-        format!(
-            "Failed to process records from plugin \"{}\"",
-            &plugin_pathstring
-        )
-    })?;
-    Ok(())
+    process_records(plugin, out, name, h, cfg, log)
+        .with_context(|| format!("Failed to process records from plugin \"{plugin_pathstring}\"",))
 }
 
 fn get_plugin_pathbuf_pathstring(plugin_name: &str, h: &Helper) -> (PathBuf, String) {
