@@ -3,6 +3,12 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.3.7 (2024-11-13)
+
+Fixes
+
+* Fix comparison to previous output plugin. Negative zero coordinates(-0.0) were considered different due to recently changed rust's float logic(NaN != NaN).
+
 ## 0.3.6 (2024-10-19)
 
 Fixes

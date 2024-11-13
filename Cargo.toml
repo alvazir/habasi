@@ -1,6 +1,6 @@
 [package]
 name = "habasi"
-version = "0.3.6"
+version = "0.3.7"
 authors = ["alvazir <basha.alvazir@gmail.com>"]
 edition = "2021"
 rust-version = "1.75.0"
@@ -19,24 +19,24 @@ maintenance = { status = "actively-developed" }
 [dependencies.tes3]
 # path = "../tes3"
 git = "https://github.com/Greatness7/tes3"
-rev = "f897f74"
+rev = "161d784"
 # branch = "dev"
 default-features = false
 features = ["esp"]
 
 [dependencies]
 # CLI
-clap = { version = "~4.5.20", features = ["derive", "suggestions", "wrap_help"] }
+clap = { version = "~4.5.21", features = ["derive", "suggestions", "wrap_help"] }
 # settings file
 confique = { version = "~0.3.0", default-features = false, features = ["toml"] }
 # error management
-anyhow = "~1.0.90"
+anyhow = "~1.0.93"
 # find openmw.cfg
 dirs = "~5.0.1"
 # find files in parallel
 rayon = "~1.10.0"
 # better fs errors
-fs-err = "~2.11.0"
+fs-err = "~3.0.0"
 # references processing
 hashbrown = { version = "~0.14.5", features = ["rayon"] }
 # find files
@@ -44,7 +44,7 @@ walkdir = "~2.5.0"
 # create id for sscr with empty id
 crc = "~3.2.1"
 # provide list of plugins via regex
-regex = { version = "~1.11.0", default-features = false, features = ["std", "unicode-case"] }
+regex = { version = "~1.11.1", default-features = false, features = ["std", "unicode-case"] }
 # provide list of plugins via glob
 glob = "~0.3.1"
 # provide list of plugins via wildcards
@@ -52,7 +52,7 @@ wild = "~2.2.1"
 # QOL for DRY
 paste = "~1.0.15"
 # memory usage
-# peak_alloc = "~0.2.0" # disabled due to slowing down the program
+# peak_alloc = "~0.2.1" # disabled due to slowing down the program
 
 [profile.dev]
 debug = 0

@@ -228,17 +228,56 @@ fn is_plugin_equal_to_previous(
                         )?;
                         return Ok((false, text));
                     };
+                    if new_cell.references.len() != old_cell.references.len() {
+                        write!(
+                            text,
+                            "number of references was changed from {} to {} in cell \"{}\".",
+                            old_cell.references.len(),
+                            new_cell.references.len(),
+                            get_cell_name(new_cell)
+                        )?;
+                        return Ok((false, text));
+                    }
                     let mut new_refs: Vec<&Reference> = new_cell.references.values().collect();
                     references_sorted(&mut new_refs);
                     let mut old_refs: Vec<&Reference> = old_cell.references.values().collect();
                     references_sorted(&mut old_refs);
                     if new_refs != old_refs {
-                        write!(
-                            text,
-                            "references were changed in \"{}\".",
-                            get_cell_name(new_cell)
-                        )?;
-                        return Ok((false, text));
+                        for (new_ref, old_ref) in new_refs.iter().zip(&old_refs) {
+                            if new_ref != old_ref {
+                                if new_ref
+                                    .translation
+                                    .iter()
+                                    .chain(new_ref.rotation.iter())
+                                    .any(|x| x.is_nan())
+                                    && nan_to_zero(new_ref) == nan_to_zero(old_ref)
+                                {
+                                    continue;
+                                };
+                                if new_ref.mast_index == old_ref.mast_index
+                                    && new_ref.refr_index == old_ref.refr_index
+                                {
+                                    write!(
+                                        text,
+                                        "reference \"({}, {})\" was changed in cell \"{}\".",
+                                        new_ref.refr_index,
+                                        new_ref.mast_index,
+                                        get_cell_name(new_cell)
+                                    )?;
+                                } else {
+                                    write!(
+                                        text,
+                                        "new reference \"({}, {})\" != old reference \"({}, {})\" in cell \"{}\".",
+                                        new_ref.refr_index,
+                                        new_ref.mast_index,
+                                        old_ref.refr_index,
+                                        old_ref.mast_index,
+                                        get_cell_name(new_cell)
+                                    )?;
+                                }
+                                return Ok((false, text));
+                            }
+                        }
                     }
                 } else {
                     write!(
@@ -335,4 +374,14 @@ fn strip_author_description_master_sizes(header: &Header) -> Header {
             .collect::<Vec<(String, u64)>>(),
         ..header.clone()
     }
+}
+
+fn nan_to_zero(reference: &Reference) -> Reference {
+    let mut res = reference.to_owned();
+    for float in res.translation.iter_mut().chain(res.rotation.iter_mut()) {
+        if float.is_nan() {
+            *float = 0.0;
+        }
+    }
+    res
 }
