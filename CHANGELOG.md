@@ -5,6 +5,10 @@
 
 ## 0.3.8 (TBD)
 
+Bug fixes
+
+* Fix error that prevented CELL's AMBI field update sometimes.
+
 Fixes
 
 * Show error and quit when settings file passed with --settings option doesn't exist. Previously program silently ignored the error.

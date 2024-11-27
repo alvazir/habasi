@@ -174,7 +174,7 @@ pub fn process(
                         if cell.water_height.is_some() && o_cell.0.water_height != cell.water_height {
                             o_cell.0.water_height = cell.water_height;
                         }
-                        if cell.map_color.is_some() && o_cell.0.atmosphere_data != cell.atmosphere_data {
+                        if cell.atmosphere_data.is_some() && o_cell.0.atmosphere_data != cell.atmosphere_data {
                             o_cell.0.atmosphere_data = cell.atmosphere_data;
                         }
                     } else if h.g.list_options.debug {
