@@ -3,6 +3,12 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
+## 0.3.8 (TBD)
+
+Fixes
+
+* Show error and quit when settings file passed with --settings option doesn't exist. Previously program silently ignored the error.
+
 ## 0.3.7 (2024-11-13)
 
 Fixes

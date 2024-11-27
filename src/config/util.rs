@@ -55,6 +55,12 @@ pub fn get_settings_file(
             }
         }
     };
+    if options.settings.is_some() && !settings_file_path.exists() {
+        return Err(anyhow!(
+            "Settings file \"{}\" not found",
+            settings_file_path.display()
+        ));
+    }
     let settings_file = SettingsFile {
         path: settings_file_path,
         version_message: None,
