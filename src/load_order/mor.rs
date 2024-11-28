@@ -1,6 +1,6 @@
 use super::{GlobalGetPluginsHelper, LocalGetPluginsHelper};
 use crate::{err_or_ignore, increment, Cfg, LoadOrder, Log};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use std::path::Path;
 
 pub(super) fn get_data_dir(

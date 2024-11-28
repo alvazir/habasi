@@ -2,7 +2,7 @@ use crate::{
     msg, Cfg, Helper, Log, Mode, Out, StatsUpdateKind, CRC64, SNDG_ID_MAX_LEN, SNDG_ID_SUFFIX_LEN,
     SNDG_MAX_SOUND_FLAG,
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use hashbrown::hash_map::Entry;
 use std::fmt::Write as _;
 use tes3::esp::{Plugin, SoundGen, StartScript, TES3Object};

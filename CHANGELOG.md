@@ -3,7 +3,7 @@
 <!-- markdownlint-disable MD036 -->
 # Changelog
 
-## 0.3.8 (TBD)
+## 0.3.8 (2024-11-28)
 
 Bug fixes
 

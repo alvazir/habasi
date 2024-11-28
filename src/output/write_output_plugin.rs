@@ -1,5 +1,5 @@
 use crate::{msg, msg_no_log, references_sorted, Cfg, Helper, Log, Mode, StatsUpdateKind};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use fs_err::create_dir_all;
 use std::{
     fmt::Write as _,

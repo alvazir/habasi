@@ -1,6 +1,6 @@
 use super::SettingsFile;
 use crate::read_lines;
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use confique::Config;
 mod advanced;
 mod guts;

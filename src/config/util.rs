@@ -1,6 +1,6 @@
 use super::{Options, SettingsFile, StringOsPath, TngStatIds};
 use crate::{increment, Mode};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use fs_err::rename;
 use hashbrown::{hash_map::Entry, HashMap, HashSet};
 use std::{
@@ -18,6 +18,7 @@ pub fn get_exe_name_and_dir() -> (Option<String>, Option<PathBuf>) {
     })
 }
 
+#[allow(clippy::ref_option)]
 pub fn get_settings_file(
     exe: &Option<String>,
     dir: &Option<PathBuf>,

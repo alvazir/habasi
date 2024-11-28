@@ -1,9 +1,9 @@
 use super::{create_dir_early, msg};
 use crate::Cfg;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use fs_err::{rename, File};
 use std::{
-    io::{self, BufWriter, Write},
+    io::{self, BufWriter, Write as _},
     path::PathBuf,
 };
 

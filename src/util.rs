@@ -1,10 +1,10 @@
 use crate::{input::process_records, Cfg, Helper, ListOptions, Mode, Out, Plugin};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use crc::{Crc, CRC_64_ECMA_182};
 use fs_err::{create_dir_all, File};
 use std::{
     fmt::Write as _,
-    io::{BufRead, BufReader, Lines},
+    io::{BufRead as _, BufReader, Lines},
     path::{Path, PathBuf},
 };
 use tes3::esp::{Cell, CellFlags};

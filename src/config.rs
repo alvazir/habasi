@@ -1,5 +1,5 @@
 use crate::{create_dir_early, IndirectListOptions, ListOptions};
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use fs_err::write;
 use hashbrown::{HashMap, HashSet};
 use std::{ffi::OsString, path::PathBuf};

@@ -3,7 +3,7 @@ use crate::{
     get_append_to_use_load_order_string, get_base_dir_path, get_game_config_string,
     get_skip_from_use_load_order_string, msg, increment, Cfg, Log
 };
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use std::{
     fmt::Write as _,
     path::PathBuf,

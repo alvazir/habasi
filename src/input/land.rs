@@ -1,6 +1,6 @@
 use super::keep_previous;
 use crate::{GlobalVtexId, Helper, LocalVtexId, Out, StatsUpdateKind};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use hashbrown::{hash_map::Entry, HashMap};
 use tes3::esp::{Landscape, TextureIndices};
 

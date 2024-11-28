@@ -1,7 +1,7 @@
 use crate::{err_or_ignore_thread_safe, msg_no_log, Assets, Bsa, Cfg, FileInBsa, LoadOrder};
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use hashbrown::{hash_map::Entry, HashMap};
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator as _, ParallelIterator as _};
 use std::path::{Path, PathBuf};
 use walkdir::{DirEntry, WalkDir};
 

@@ -1,6 +1,6 @@
 use super::{msg, msg_no_log, Log};
 use crate::{Cfg, Helper};
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use std::fmt::Write as _;
 
 pub fn select_header_description(h: &Helper, cfg: &Cfg) -> String {

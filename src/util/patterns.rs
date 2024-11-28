@@ -1,6 +1,6 @@
 use super::{err_or_ignore, increment, msg, Log};
 use crate::{Cfg, ListOptions, RegexPluginInfo};
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use fs_err::{metadata, read_dir};
 use glob::{glob_with, MatchOptions};
 use regex::RegexBuilder;

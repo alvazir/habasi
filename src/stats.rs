@@ -1,5 +1,5 @@
 use crate::increment;
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use std::{fmt, time::Instant};
 
 #[allow(clippy::module_name_repetitions)]

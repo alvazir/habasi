@@ -1,8 +1,8 @@
 // COMMENT: https://en.uesp.net/wiki/Morrowind_Mod:BSA_File_Format and linked ghostwheel's site
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use fs_err::File;
 use std::{
-    io::{Read, Seek, SeekFrom},
+    io::{Read as _, Seek as _, SeekFrom},
     str::from_utf8,
 };
 

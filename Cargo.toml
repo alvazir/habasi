@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 [dependencies.tes3]
 # path = "../tes3"
 git = "https://github.com/Greatness7/tes3"
-rev = "161d784"
+rev = "36fdeb6"
 # branch = "dev"
 default-features = false
 features = ["esp"]

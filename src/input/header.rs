@@ -2,7 +2,7 @@ use crate::{
     increment, GlobalMaster, Helper, LocalMaster, LocalMergedMaster, MasterNameLow, Out,
     StatsUpdateKind,
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use tes3::esp::TES3Object;
 
 pub fn process(record: TES3Object, out: &mut Out, h: &mut Helper) -> Result<()> {

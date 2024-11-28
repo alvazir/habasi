@@ -1,5 +1,5 @@
 use crate::{msg, Cfg, Helper, Log};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use dirs::{document_dir, preference_dir};
 use std::path::PathBuf;
 

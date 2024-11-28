@@ -1,5 +1,5 @@
 use crate::{msg, Cfg, Dial, Helper, Log, Out, Stats, StatsUpdateKind};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use hashbrown::hash_map::Entry;
 use tes3::esp::{DialogueInfo, ObjectFlags};
 

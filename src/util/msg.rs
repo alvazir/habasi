@@ -1,6 +1,6 @@
 use super::Log;
 use crate::Cfg;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 
 const PREFIX_IGNORED_IMPORTANT_ERROR: &str = "Ignored important error: ";
 const SUGGESTION_IGNORE_IMPORTANT_ERRORS: &str = "\n\tFix the problem or add \"--ignore-important-errors\"(may rarely cause unexpected behaviour) to ignore";

@@ -1,6 +1,6 @@
 use super::Options;
-use anyhow::{anyhow, Context, Result};
-use clap::{builder::StyledStr, Arg, CommandFactory};
+use anyhow::{anyhow, Context as _, Result};
+use clap::{builder::StyledStr, Arg, CommandFactory as _};
 
 fn arg_get_help(arg: &Arg) -> Result<StyledStr> {
     arg.get_long_help().map_or_else(

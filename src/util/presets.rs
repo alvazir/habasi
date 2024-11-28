@@ -1,6 +1,6 @@
 use super::Log;
 use crate::{get_tng_dir_and_plugin_names, load_order::scan, Cfg, Helper};
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 
 #[allow(clippy::module_name_repetitions)]
 pub fn check_presets(h: &mut Helper, cfg: &Cfg, log: &mut Log) -> Result<Vec<Vec<String>>> {

@@ -1,5 +1,5 @@
 use crate::{increment, msg, read_lines, Cfg, Helper, ListOptions, LoadOrder, Log};
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use hashbrown::HashMap;
 use paste::paste;
 use std::{

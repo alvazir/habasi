@@ -1,6 +1,6 @@
 use super::{msg, Log};
 use crate::{Cfg, Helper, IgnoredRefError, Out, PluginName};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use std::fmt::Write as _;
 use tes3::esp::Reference;
 

@@ -1,6 +1,6 @@
 use super::Log;
 use crate::{make_turn_normal_grass, write_output_plugin, Cfg, Helper, Out, Plugin};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use std::path::{Path, PathBuf};
 
 pub fn process_turn_normal_grass(

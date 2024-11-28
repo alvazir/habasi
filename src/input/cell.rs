@@ -4,7 +4,7 @@ use crate::{
     Mode, MovedInstanceGrids, MovedInstanceId, OldRefSources, Out, RefSources, RefrId,
     StatsUpdateKind,
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use hashbrown::{hash_map::Entry, HashMap};
 use std::fmt::Write as _;
 use tes3::esp::{Cell, CellFlags, Reference};

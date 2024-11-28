@@ -1,10 +1,10 @@
 use super::{GlobalGetPluginsHelper, LocalGetPluginsHelper};
 use crate::{err_or_ignore, err_or_ignore_thread_safe, increment, msg, Cfg, LoadOrder, Log};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use dirs::{data_dir, document_dir};
 use fs_err::read_dir;
 use hashbrown::{hash_map::Entry, HashMap};
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator as _, ParallelIterator as _};
 use std::{fmt::Write as _, path::PathBuf};
 
 pub(super) fn get_all_plugins(

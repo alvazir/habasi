@@ -1,11 +1,11 @@
 use super::{get_bsa_meshes, get_loose_meshes};
 use crate::{msg, Cfg, FallbackStatics, Helper, Log, Out, TurnNormalGrass};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use fs_err::{create_dir_all, read, File};
 use hashbrown::{hash_map::Entry, hash_set::Entry as SetEntry, HashMap, HashSet};
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator as _, ParallelIterator as _};
 use std::{
-    io::{BufWriter, Write},
+    io::{BufWriter, Write as _},
     path::{Path, PathBuf},
 };
 use tes3::esp::{Plugin, Static};

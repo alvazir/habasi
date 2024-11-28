@@ -17,7 +17,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use std::{
     io::{Error as IOError, ErrorKind},
     process::exit,

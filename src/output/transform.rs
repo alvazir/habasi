@@ -2,9 +2,9 @@ use crate::{
     get_cell_name, increment, msg, references_sorted, show_removed_record_ids, CellExtGrid, Cfg,
     Helper, Log, Mode, OldRefSources, Out, RefSources, StatsUpdateKind,
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use hashbrown::HashMap;
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator as _, ParallelIterator as _};
 use tes3::esp::{Cell, CellFlags, ObjectFlags, Reference, Static};
 
 pub fn transform(

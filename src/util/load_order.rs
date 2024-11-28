@@ -1,6 +1,6 @@
 use super::{msg, prepare_complex_arg_string, Log};
 use crate::{load_order::scan, Cfg, Helper, ListOptions, Mode};
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 
 pub fn get_expanded_plugin_list(
     plugin_list: &[String],

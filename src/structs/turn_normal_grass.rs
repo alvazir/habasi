@@ -1,6 +1,6 @@
 use super::{FileInBsa, LoadOrder};
 use crate::Bsa;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use fs_err::read;
 use std::path::PathBuf;
 use tes3::esp::Static;

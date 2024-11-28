@@ -3,7 +3,7 @@ use super::{
     ListOptions,
 };
 use crate::{msg, msg_no_log, show_ignored_ref_errors, Cfg, Log, StatsUpdateKind};
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use std::{path::PathBuf, time::Instant};
 use tes3::esp::Plugin;
 

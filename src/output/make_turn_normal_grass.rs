@@ -4,10 +4,10 @@ use crate::{
     references_sorted, CellExtGrid, Cfg, HeaderText, Helper, Log, MastId, OldRefSources, Out,
     PluginInfo, RefSources, RefrId, TurnNormalGrass,
 };
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context as _, Result};
 use hashbrown::{HashMap, HashSet};
 use rayon::iter::{
-    IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator,
+    IntoParallelIterator as _, IntoParallelRefIterator as _, IntoParallelRefMutIterator as _, ParallelIterator as _,
 };
 use std::fmt::Write as _;
 use tes3::esp::{Cell, CellFlags, ObjectFlags, Plugin, Reference, Static, TES3Object};
